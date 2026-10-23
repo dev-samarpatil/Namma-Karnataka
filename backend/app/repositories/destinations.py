@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import time
 from pathlib import Path
 from typing import Protocol
 
@@ -248,8 +249,26 @@ class SupabaseDestinationRepository:
             "Content-Type": "application/json",
         }
         self._fallback_repo = InMemoryDestinationRepository()
+        self._schema_unmigrated: bool = False
+        self._last_unmigrated_check: float = 0.0
+        self._unmigrated_cooldown_seconds: float = 60.0
+
+    def _is_schema_unmigrated(self) -> bool:
+        return (
+            self._schema_unmigrated
+            and (time.time() - self._last_unmigrated_check < self._unmigrated_cooldown_seconds)
+        )
+
+    def _mark_schema_unmigrated(self) -> None:
+        self._schema_unmigrated = True
+        self._last_unmigrated_check = time.time()
+
+    def _mark_schema_migrated(self) -> None:
+        self._schema_unmigrated = False
 
     def get_by_id(self, destination_id: str) -> DestinationRead | None:
+        if self._is_schema_unmigrated():
+            return self._fallback_repo.get_by_id(destination_id)
         try:
             with httpx.Client(timeout=10.0) as client:
                 select_fields = (
@@ -265,8 +284,10 @@ class SupabaseDestinationRepository:
                 )
                 if res.status_code == 404 and "PGRST205" in res.text:
                     logger.warning(
-                        "Supabase table 'destinations' not yet migrated; using in-memory dataset."
+                        "Supabase table 'destinations' not yet migrated; "
+                        "caching unmigrated state for 60s and using in-memory dataset."
                     )
+                    self._mark_schema_unmigrated()
                     return self._fallback_repo.get_by_id(destination_id)
                 if res.status_code != 200:
                     raise AppError(
@@ -274,6 +295,7 @@ class SupabaseDestinationRepository:
                         message="Failed to query destination by ID",
                         status_code=502,
                     )
+                self._mark_schema_migrated()
                 rows = res.json()
                 if not rows:
                     return None
@@ -286,6 +308,8 @@ class SupabaseDestinationRepository:
             ) from exc
 
     def get_by_slug(self, slug: str) -> DestinationRead | None:
+        if self._is_schema_unmigrated():
+            return self._fallback_repo.get_by_slug(slug)
         try:
             with httpx.Client(timeout=10.0) as client:
                 select_fields = (
@@ -301,8 +325,10 @@ class SupabaseDestinationRepository:
                 )
                 if res.status_code == 404 and "PGRST205" in res.text:
                     logger.warning(
-                        "Supabase table 'destinations' not yet migrated; using in-memory dataset."
+                        "Supabase table 'destinations' not yet migrated; "
+                        "caching unmigrated state for 60s and using in-memory dataset."
                     )
+                    self._mark_schema_unmigrated()
                     return self._fallback_repo.get_by_slug(slug)
                 if res.status_code != 200:
                     raise AppError(
@@ -310,6 +336,7 @@ class SupabaseDestinationRepository:
                         message="Failed to query destination by slug",
                         status_code=502,
                     )
+                self._mark_schema_migrated()
                 rows = res.json()
                 if not rows:
                     return None
@@ -326,6 +353,8 @@ class SupabaseDestinationRepository:
         params: DestinationFilterParams,
         published_only: bool = True,
     ) -> tuple[list[DestinationRead], int]:
+        if self._is_schema_unmigrated():
+            return self._fallback_repo.list_destinations(params, published_only)
         try:
             query_params: dict[str, str] = {
                 "select": "*,destination_translations(*),destination_sources(*),districts(*)",
@@ -353,8 +382,10 @@ class SupabaseDestinationRepository:
                 )
                 if res.status_code == 404 and "PGRST205" in res.text:
                     logger.warning(
-                        "Supabase table 'destinations' not yet migrated; using in-memory dataset."
+                        "Supabase table 'destinations' not yet migrated; "
+                        "caching unmigrated state for 60s and using in-memory dataset."
                     )
+                    self._mark_schema_unmigrated()
                     return self._fallback_repo.list_destinations(params, published_only)
 
                 if res.status_code not in (200, 206):
@@ -364,6 +395,7 @@ class SupabaseDestinationRepository:
                         status_code=502,
                     )
 
+                self._mark_schema_migrated()
                 total = 0
                 content_range = res.headers.get("Content-Range")
                 if content_range and "/" in content_range:

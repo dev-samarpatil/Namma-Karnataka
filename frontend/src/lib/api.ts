@@ -3,6 +3,14 @@
  * Provides typed HTTP communication, timeout handling, and normalized error management.
  */
 
+import {
+  DestinationFilterParams,
+  DestinationListResponse,
+  DestinationRead,
+  PlanningRequest,
+  PlanningRecommendationResponse,
+} from '../types';
+
 export interface ErrorDetail {
   code: string;
   message: string;
@@ -36,7 +44,13 @@ export class ApiClientError extends Error {
   requestId?: string;
   details?: Array<{ location: string; message: string; type: string }>;
 
-  constructor(message: string, status: number, code: string = 'API_ERROR', requestId?: string, details?: Array<{ location: string; message: string; type: string }>) {
+  constructor(
+    message: string,
+    status: number,
+    code: string = 'API_ERROR',
+    requestId?: string,
+    details?: Array<{ location: string; message: string; type: string }>
+  ) {
     super(message);
     this.name = 'ApiClientError';
     this.status = status;
@@ -47,6 +61,7 @@ export class ApiClientError extends Error {
 }
 
 const DEFAULT_TIMEOUT_MS = 10000;
+const PLANNING_TIMEOUT_MS = 32000; // Allows backend 28s monotonic deadline to complete
 
 export function getApiBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -79,7 +94,7 @@ export async function fetchApi<T>(
     const response = await fetch(url, {
       ...options,
       headers,
-      signal: controller.signal,
+      signal: options.signal || controller.signal,
     });
 
     const requestId = response.headers.get('X-Request-ID') || undefined;
@@ -146,4 +161,54 @@ export async function checkHealth(): Promise<HealthResponse> {
  */
 export async function checkReadiness(): Promise<ReadinessResponse> {
   return fetchApi<ReadinessResponse>('/ready');
+}
+
+/**
+ * Retrieve curated destinations with optional keyword, category, district, and offbeat filtering.
+ */
+export async function listDestinations(
+  params?: DestinationFilterParams,
+  signal?: AbortSignal
+): Promise<DestinationListResponse> {
+  const queryParts: string[] = [];
+  if (params) {
+    if (params.q) queryParts.push(`q=${encodeURIComponent(params.q)}`);
+    if (params.district) queryParts.push(`district=${encodeURIComponent(params.district)}`);
+    if (params.category) queryParts.push(`category=${encodeURIComponent(params.category)}`);
+    if (params.is_offbeat !== undefined) queryParts.push(`is_offbeat=${params.is_offbeat}`);
+    if (params.lang) queryParts.push(`lang=${encodeURIComponent(params.lang)}`);
+    if (params.limit !== undefined) queryParts.push(`limit=${params.limit}`);
+    if (params.offset !== undefined) queryParts.push(`offset=${params.offset}`);
+  }
+
+  const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+  return fetchApi<DestinationListResponse>(`/destinations${queryString}`, { signal });
+}
+
+/**
+ * Retrieve a single destination by stable UUID or URL slug.
+ */
+export async function getDestination(
+  idOrSlug: string,
+  signal?: AbortSignal
+): Promise<DestinationRead> {
+  return fetchApi<DestinationRead>(`/destinations/${encodeURIComponent(idOrSlug)}`, { signal });
+}
+
+/**
+ * Request AI-orchestrated itinerary recommendations or deterministic fallback.
+ */
+export async function generatePlanningRecommendations(
+  request: PlanningRequest,
+  signal?: AbortSignal
+): Promise<PlanningRecommendationResponse> {
+  return fetchApi<PlanningRecommendationResponse>(
+    '/planning/recommendations',
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+      signal,
+    },
+    PLANNING_TIMEOUT_MS
+  );
 }

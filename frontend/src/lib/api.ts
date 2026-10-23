@@ -9,6 +9,9 @@ import {
   DestinationRead,
   PlanningRequest,
   PlanningRecommendationResponse,
+  SaveCloudTripPayload,
+  SavedTripDetail,
+  CloudTripListResponse,
 } from '../types';
 
 export interface ErrorDetail {
@@ -211,4 +214,65 @@ export async function generatePlanningRecommendations(
     },
     PLANNING_TIMEOUT_MS
   );
+}
+
+/**
+ * List the current authenticated user's cloud-persisted trips.
+ */
+export async function listCloudTrips(
+  token: string,
+  signal?: AbortSignal
+): Promise<CloudTripListResponse> {
+  return fetchApi<CloudTripListResponse>('/trips', {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+}
+
+/**
+ * Retrieve a specific cloud-persisted trip by ID, enforcing user ownership.
+ */
+export async function getCloudTrip(
+  tripId: string,
+  token: string,
+  signal?: AbortSignal
+): Promise<SavedTripDetail> {
+  return fetchApi<SavedTripDetail>(`/trips/${encodeURIComponent(tripId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+}
+
+/**
+ * Save an itinerary to cloud persistence for the authenticated user.
+ */
+export async function saveCloudTrip(
+  payload: SaveCloudTripPayload,
+  token: string,
+  signal?: AbortSignal
+): Promise<SavedTripDetail> {
+  return fetchApi<SavedTripDetail>('/trips', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+/**
+ * Delete a cloud-persisted trip by ID for the authenticated user.
+ */
+export async function deleteCloudTrip(
+  tripId: string,
+  token: string,
+  signal?: AbortSignal
+): Promise<{ success: boolean; id: string }> {
+  return fetchApi<{ success: boolean; id: string }>(`/trips/${encodeURIComponent(tripId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
 }

@@ -187,3 +187,55 @@ export interface SavedTrip {
   request: PlanningRequest;
   plan: PlanningRecommendationResponse;
 }
+
+export interface SaveCloudTripPayload {
+  title: string;
+  origin_label: string;
+  duration_days: number;
+  pace: 'relaxed' | 'balanced' | 'packed';
+  is_offbeat_preferred?: boolean;
+  preferences?: Record<string, unknown>;
+  budget_min_inr?: number;
+  budget_max_inr?: number;
+  currency_code?: string;
+  itinerary: PlanningRecommendationResponse;
+}
+
+export interface SavedTripSummary {
+  id: string;
+  title: string;
+  origin_label: string;
+  duration_days: number;
+  pace: string;
+  budget_min_inr?: number;
+  budget_max_inr?: number;
+  currency_code: string;
+  total_stops: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SavedTripDetail {
+  id: string;
+  user_id: string;
+  title: string;
+  origin_label: string;
+  duration_days: number;
+  pace: string;
+  is_offbeat_preferred: boolean;
+  preferences: Record<string, unknown>;
+  budget_min_inr?: number;
+  budget_max_inr?: number;
+  currency_code: string;
+  status: string;
+  snapshot: PlanningRecommendationResponse;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CloudTripListResponse {
+  items: SavedTripSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}

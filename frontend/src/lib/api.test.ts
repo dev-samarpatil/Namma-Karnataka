@@ -7,6 +7,10 @@ import {
   listDestinations,
   getDestination,
   generatePlanningRecommendations,
+  listCloudTrips,
+  getCloudTrip,
+  saveCloudTrip,
+  deleteCloudTrip,
 } from './api';
 import { getSavedLanguage, saveLanguage, translations } from './i18n';
 import { PlanningRequest } from '../types';
@@ -216,6 +220,149 @@ describe('Central API Client', () => {
     expect(parsed.duration_days).toBe(2);
     expect(parsed.pace).toBe('relaxed');
     expect(parsed.is_offbeat_preferred).toBe(true);
+  });
+
+  it('performs authenticated cloud trips CRUD operations', async () => {
+    let capturedHeaders: Headers | undefined;
+    let capturedMethod = '';
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_, init) => {
+      capturedHeaders = new Headers(init?.headers);
+      capturedMethod = init?.method || 'GET';
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'trip-101',
+                title: 'Mysuru Heritage Trip',
+                origin_label: 'Bengaluru',
+                duration_days: 2,
+                pace: 'balanced',
+                currency_code: 'INR',
+                total_stops: 3,
+                created_at: '2026-10-23T00:00:00Z',
+                updated_at: '2026-10-23T00:00:00Z',
+              },
+            ],
+            total: 1,
+            limit: 20,
+            offset: 0,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+    });
+
+    const listRes = await listCloudTrips('test-jwt-token');
+    expect(listRes.items).toHaveLength(1);
+    expect(listRes.items[0].id).toBe('trip-101');
+    expect(capturedHeaders?.get('Authorization')).toBe('Bearer test-jwt-token');
+    expect(capturedMethod).toBe('GET');
+
+    // Test deleteCloudTrip
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_, init) => {
+      capturedMethod = init?.method || 'GET';
+      return Promise.resolve(
+        new Response(JSON.stringify({ success: true, id: 'trip-101' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    });
+
+    const delRes = await deleteCloudTrip('trip-101', 'test-jwt-token');
+    expect(delRes.success).toBe(true);
+    expect(delRes.id).toBe('trip-101');
+    expect(capturedMethod).toBe('DELETE');
+
+    // Test getCloudTrip
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_, init) => {
+      capturedMethod = init?.method || 'GET';
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: 'trip-101',
+            user_id: 'usr-1',
+            title: 'Mysuru Heritage Trip',
+            origin_label: 'Bengaluru',
+            duration_days: 2,
+            pace: 'balanced',
+            is_offbeat_preferred: false,
+            preferences: {},
+            currency_code: 'INR',
+            status: 'active',
+            snapshot: {
+              language: 'en',
+              generation_mode: 'fallback',
+              provider_used: 'deterministic_fallback',
+              items: [],
+              total_destinations: 0,
+              duration_days: 2,
+            },
+            created_at: '2026-10-23T00:00:00Z',
+            updated_at: '2026-10-23T00:00:00Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+    });
+
+    const detailRes = await getCloudTrip('trip-101', 'test-jwt-token');
+    expect(detailRes.id).toBe('trip-101');
+    expect(detailRes.title).toBe('Mysuru Heritage Trip');
+
+    // Test saveCloudTrip
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_, init) => {
+      capturedMethod = init?.method || 'POST';
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: 'trip-102',
+            user_id: 'usr-1',
+            title: 'Hampi Ancient Marvels',
+            origin_label: 'Hosapete',
+            duration_days: 3,
+            pace: 'relaxed',
+            is_offbeat_preferred: true,
+            preferences: {},
+            currency_code: 'INR',
+            status: 'active',
+            snapshot: {
+              language: 'en',
+              generation_mode: 'ai',
+              provider_used: 'gemini',
+              items: [],
+              total_destinations: 0,
+              duration_days: 3,
+            },
+            created_at: '2026-10-23T00:00:00Z',
+            updated_at: '2026-10-23T00:00:00Z',
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+    });
+
+    const saveRes = await saveCloudTrip(
+      {
+        title: 'Hampi Ancient Marvels',
+        origin_label: 'Hosapete',
+        duration_days: 3,
+        pace: 'relaxed',
+        itinerary: {
+          language: 'en',
+          generation_mode: 'ai',
+          provider_used: 'gemini',
+          items: [],
+          total_destinations: 0,
+          duration_days: 3,
+        },
+      },
+      'test-jwt-token'
+    );
+    expect(saveRes.id).toBe('trip-102');
+    expect(capturedMethod).toBe('POST');
   });
 });
 

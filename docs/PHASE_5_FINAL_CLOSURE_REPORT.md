@@ -16,11 +16,13 @@ The implementation and verification of **Phase 5** for Namma Karnataka (ನಮ�
 
 - **All Application Code:** 100% COMPLETE.
 - **Frontend & UI Persistence Integration:** 100% COMPLETE.
-- **Automated Regression Suite (102 Tests):** 100% PASSING (82 Pytest + 15 Vitest + 5 ASGI Integration).
+- **Automated Regression Suite (104 Tests):** 100% PASSING (82 Pytest + 17 Vitest + 5 ASGI Integration).
 - **Security & Secret Leakage Audit:** 100% PASSING (Zero secret leaks, anti-spoofing enabled).
+- **Live Supabase GoTrue Auth & Isolation:** 100% VERIFIED against remote `ayqwlxpaollxghdnbsqo.supabase.co`.
 - **AI Reliability & Failover Engine:** 100% VERIFIED (Gemini 2.5 Flash live, deterministic failover operational).
 - **Database Migrations & Seed Assets:** 100% PREPARED & TESTED LOCALLY.
-- **Known Limitation:** The remote Supabase PostgreSQL project (`ayqwlxpaollxghdnbsqo.supabase.co`) currently requires the database administrator to apply migrations `000001` through `000004` via the Supabase Dashboard SQL Editor or via a personal management token (`SUPABASE_ACCESS_TOKEN`). In the meantime, the application's built-in 60-second cooldown fallback protects all discovery, planning, and guest features with **zero downtime or crashes**.
+- **Phase 5I Live Deployment Audit:** Documented in [PHASE_5I_LIVE_SUPABASE_VERIFICATION_REPORT.md](file:///c:/Namma%20Karnataka/docs/PHASE_5I_LIVE_SUPABASE_VERIFICATION_REPORT.md).
+- **Known Limitation:** The remote Supabase PostgreSQL project currently requires the database administrator to apply migrations `000001` through `000004` via the Supabase Dashboard SQL Editor because PostgREST does not support DDL statements and CLI deployment requires a management token (`SUPABASE_ACCESS_TOKEN`). In the meantime, the application's built-in 60-second cooldown fallback protects all discovery, planning, and guest features with **zero downtime or crashes**.
 
 ---
 
@@ -107,14 +109,14 @@ Refer to: [PHASE_5G_RELEASE_REGRESSION_REPORT.md](file:///c:/Namma%20Karnataka/d
 | Component              Suite                  Passed / Total   Status    |
 +--------------------------------------------------------------------------+
 | Backend Unit & API     Pytest (FastAPI)             82 / 82    PASS      |
-| Frontend UI & Unit     Vitest (React 18)            15 / 15    PASS      |
+| Frontend UI & Unit     Vitest (React 18)            17 / 17    PASS      |
 | End-to-End ASGI        FastAPI TestClient            5 / 5     PASS      |
 | Backend Linter         Ruff (app & tests)            Clean     PASS      |
 | Frontend Linter        ESLint (src)                  Clean     PASS      |
 | TypeScript Strict      tsc -b                        Clean     PASS      |
 | Production Build       Vite 5.4.21                   Clean     PASS      |
 +--------------------------------------------------------------------------+
-| TOTAL TESTS VERIFIED                               102 / 102   PASS      |
+| TOTAL TESTS VERIFIED                               104 / 104   PASS      |
 +--------------------------------------------------------------------------+
 ```
 

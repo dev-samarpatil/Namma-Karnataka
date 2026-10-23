@@ -69,7 +69,7 @@ async def main():
         print(f"Status:          {res_groq['status']}")
         print(f"Model:           {res_groq['model']}")
         print(f"Duration:        {res_groq['duration_s']}s")
-        if res_groq['status'] == "PASS":
+        if res_groq["status"] == "PASS":
             print(f"Grounded Stops:  {res_groq['grounded_count']}")
         else:
             print(f"Failure Reason:  {res_groq['error']}")
@@ -86,7 +86,7 @@ async def main():
         print(f"Status:          {res_gemini['status']}")
         print(f"Model:           {res_gemini['model']}")
         print(f"Duration:        {res_gemini['duration_s']}s")
-        if res_gemini['status'] == "PASS":
+        if res_gemini["status"] == "PASS":
             print(f"Grounded Stops:  {res_gemini['grounded_count']}")
         else:
             print(f"Failure Reason:  {res_gemini['error']}")

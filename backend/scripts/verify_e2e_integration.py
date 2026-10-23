@@ -73,8 +73,8 @@ def run_e2e_verification() -> bool:
     res = client.get("/api/v1/destinations")
     data = res.json()
     if res.status_code == 200 and data.get("total", 0) > 0:
-        total = data['total']
-        limit = data['limit']
+        total = data["total"]
+        limit = data["limit"]
         print(f"PASS: /api/v1/destinations returned {total} total items (limit={limit})")
     else:
         print(f"FAIL: /api/v1/destinations -> HTTP {res.status_code}: {res.text}")

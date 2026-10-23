@@ -75,8 +75,7 @@ class GeminiAdapter:
         full_prompt = f"{system_prompt}\n\nUser Request & Permitted Catalog:\n{user_content}"
 
         endpoint = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{self._model}:generateContent"
+            f"https://generativelanguage.googleapis.com/v1beta/models/{self._model}:generateContent"
         )
 
         headers = {

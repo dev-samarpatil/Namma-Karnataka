@@ -36,9 +36,7 @@ class DeterministicFallbackEngine:
         pool = list(candidates)
 
         if request.preferred_districts:
-            district_matches = [
-                d for d in pool if d.district_code in request.preferred_districts
-            ]
+            district_matches = [d for d in pool if d.district_code in request.preferred_districts]
             if district_matches:
                 pool = district_matches
 
@@ -104,10 +102,7 @@ class DeterministicFallbackEngine:
                 district_name = dest.district.name_kn
 
             if request.language == LanguageCode.KN:
-                rationale = (
-                    f"{district_name} ಜಿಲ್ಲೆಯಲ್ಲಿ ನಿಮ್ಮ ಆದ್ಯತೆಗೆ ಅನುಗುಣವಾಗಿ "
-                    f"ಆಯ್ಕೆ ಮಾಡಲಾದ ಪ್ರಮುಖ ತಾಣ."
-                )
+                rationale = f"{district_name} ಜಿಲ್ಲೆಯಲ್ಲಿ ನಿಮ್ಮ ಆದ್ಯತೆಗೆ ಅನುಗುಣವಾಗಿ ಆಯ್ಕೆ ಮಾಡಲಾದ ಪ್ರಮುಖ ತಾಣ."
             else:
                 rationale = (
                     f"Curated {dest.category} destination in {district_name} matching "

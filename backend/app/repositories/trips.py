@@ -98,8 +98,7 @@ class InMemoryTripRepository:
         with self._lock:
             # Multi-tenant isolation: strictly filter by user_id
             user_trips = [
-                t for t in self._trips.values()
-                if t.user_id == user_id and t.status == "active"
+                t for t in self._trips.values() if t.user_id == user_id and t.status == "active"
             ]
 
         # Order by created_at descending
@@ -171,9 +170,8 @@ class SupabaseTripRepository:
         self._unmigrated_cooldown_seconds: float = 60.0
 
     def _is_schema_unmigrated(self) -> bool:
-        return (
-            self._schema_unmigrated
-            and (time.time() - self._last_unmigrated_check < self._unmigrated_cooldown_seconds)
+        return self._schema_unmigrated and (
+            time.time() - self._last_unmigrated_check < self._unmigrated_cooldown_seconds
         )
 
     def _mark_schema_unmigrated(self) -> None:

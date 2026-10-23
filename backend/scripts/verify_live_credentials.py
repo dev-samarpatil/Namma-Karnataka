@@ -76,7 +76,7 @@ def verify_supabase(settings: Settings) -> None:
 
     raw_url = settings.SUPABASE_URL.rstrip("/")
     if raw_url.endswith("/rest/v1"):
-        raw_url = raw_url[:-len("/rest/v1")]
+        raw_url = raw_url[: -len("/rest/v1")]
 
     base_url = raw_url
     print(f"Target Supabase Host: {base_url}")

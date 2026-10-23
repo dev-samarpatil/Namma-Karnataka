@@ -52,10 +52,7 @@ def test_fallback_preserves_language_and_unknown_fee(catalog_candidates):
     assert len(plan) > 0
 
     # Verify at least one destination resolves with Kannada characters
-    has_kannada = any(
-        any("\u0c80" <= char <= "\u0cff" for char in item.name)
-        for item in plan
-    )
+    has_kannada = any(any("\u0c80" <= char <= "\u0cff" for char in item.name) for item in plan)
     assert has_kannada is True
 
     # Verify fees are either float or None, never arbitrary strings or forced 0s

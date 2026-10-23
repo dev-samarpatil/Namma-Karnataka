@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # Enums and Controlled Vocabularies
 # ============================================================================
 
+
 class LanguageCode(StrEnum):
     EN = "en"
     KN = "kn"
@@ -81,6 +82,7 @@ SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 # Core Types & Value Objects
 # ============================================================================
 
+
 class StrictSchema(BaseModel):
     """Base schema enforcing whitespace stripping and strict extra fields."""
 
@@ -126,9 +128,7 @@ class DestinationSourceRead(StrictSchema):
     source_url: str | None = None
     source_type: SourceType = SourceType.OTHER
     claim_scope: str = Field(..., min_length=1, max_length=100)
-    checked_at: str | datetime = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    checked_at: str | datetime = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     license_notes: str | None = None
     attribution_required: bool = False
 
@@ -136,6 +136,7 @@ class DestinationSourceRead(StrictSchema):
 # ============================================================================
 # Destination Entity Models
 # ============================================================================
+
 
 class DestinationBase(StrictSchema):
     """Base destination model capturing core business invariants."""
@@ -207,7 +208,12 @@ class DestinationRead(DestinationBase):
             name_en = data.get("name_en")
             slug = data.get("slug", "")
             for t in translations:
-                t_dict = t if isinstance(t, dict) else (t.model_dump() if hasattr(t, "model_dump") else {})
+                if isinstance(t, dict):
+                    t_dict = t
+                elif hasattr(t, "model_dump"):
+                    t_dict = t.model_dump()
+                else:
+                    t_dict = {}
                 lang = str(t_dict.get("language_code", "")).lower()
                 if lang in ("en", "languagecode.en"):
                     if not name_en and t_dict.get("name"):

@@ -220,9 +220,7 @@ class InMemoryDestinationRepository:
             if published_only and dest.content_status != "published":
                 continue
 
-            dist = haversine_distance_meters(
-                lat, lon, dest.coordinates.lat, dest.coordinates.lon
-            )
+            dist = haversine_distance_meters(lat, lon, dest.coordinates.lat, dest.coordinates.lon)
             if dist <= radius_meters:
                 nearby.append((dest, dist))
 
@@ -255,9 +253,8 @@ class SupabaseDestinationRepository:
         self._unmigrated_cooldown_seconds: float = 60.0
 
     def _is_schema_unmigrated(self) -> bool:
-        return (
-            self._schema_unmigrated
-            and (time.time() - self._last_unmigrated_check < self._unmigrated_cooldown_seconds)
+        return self._schema_unmigrated and (
+            time.time() - self._last_unmigrated_check < self._unmigrated_cooldown_seconds
         )
 
     def _mark_schema_unmigrated(self) -> None:
@@ -276,9 +273,7 @@ class SupabaseDestinationRepository:
             return None
         try:
             with httpx.Client(timeout=10.0) as client:
-                select_fields = (
-                    "*,destination_translations(*),destination_sources(*),districts(*)"
-                )
+                select_fields = "*,destination_translations(*),destination_sources(*),districts(*)"
                 res = client.get(
                     f"{self._base_url}/rest/v1/destinations",
                     headers=self._headers,
@@ -317,9 +312,7 @@ class SupabaseDestinationRepository:
             return self._fallback_repo.get_by_slug(slug)
         try:
             with httpx.Client(timeout=10.0) as client:
-                select_fields = (
-                    "*,destination_translations(*),destination_sources(*),districts(*)"
-                )
+                select_fields = "*,destination_translations(*),destination_sources(*),districts(*)"
                 res = client.get(
                     f"{self._base_url}/rest/v1/destinations",
                     headers=self._headers,
@@ -451,29 +444,33 @@ class SupabaseDestinationRepository:
         raw_translations = row_copy.pop("destination_translations", []) or []
         cleaned_translations = []
         for t in raw_translations:
-            cleaned_translations.append({
-                "language_code": t["language_code"],
-                "name": t["name"],
-                "summary": t.get("summary"),
-                "description": t.get("description"),
-                "how_to_reach": t.get("how_to_reach"),
-                "accessibility_notes": t.get("accessibility_notes"),
-                "translation_status": t.get("translation_status", "needs_review"),
-            })
+            cleaned_translations.append(
+                {
+                    "language_code": t["language_code"],
+                    "name": t["name"],
+                    "summary": t.get("summary"),
+                    "description": t.get("description"),
+                    "how_to_reach": t.get("how_to_reach"),
+                    "accessibility_notes": t.get("accessibility_notes"),
+                    "translation_status": t.get("translation_status", "needs_review"),
+                }
+            )
         row_copy["translations"] = cleaned_translations
 
         raw_sources = row_copy.pop("destination_sources", []) or []
         cleaned_sources = []
         for s in raw_sources:
-            cleaned_sources.append({
-                "source_name": s["source_name"],
-                "source_url": s.get("source_url"),
-                "source_type": s.get("source_type", "other"),
-                "claim_scope": s.get("claim_scope", "general_info"),
-                "checked_at": s.get("checked_at"),
-                "license_notes": s.get("license_notes"),
-                "attribution_required": s.get("attribution_required", False),
-            })
+            cleaned_sources.append(
+                {
+                    "source_name": s["source_name"],
+                    "source_url": s.get("source_url"),
+                    "source_type": s.get("source_type", "other"),
+                    "claim_scope": s.get("claim_scope", "general_info"),
+                    "checked_at": s.get("checked_at"),
+                    "license_notes": s.get("license_notes"),
+                    "attribution_required": s.get("attribution_required", False),
+                }
+            )
         row_copy["sources"] = cleaned_sources
 
         district_data = row_copy.pop("districts", None)

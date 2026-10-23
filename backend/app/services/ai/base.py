@@ -11,6 +11,7 @@ from app.schemas.planning import PlanningRequest
 # Normalized Provider Exceptions
 # ============================================================================
 
+
 class AIProviderError(Exception):
     """Base exception for all AI provider integration failures."""
 
@@ -86,6 +87,7 @@ class AIProviderResponseError(AIProviderError):
 # Provider Interface Protocol
 # ============================================================================
 
+
 class AIProvider(Protocol):
     """Contract that all AI provider adapters must implement."""
 
@@ -112,9 +114,7 @@ class AIProvider(Protocol):
         ...
 
 
-def build_candidate_prompt_context(
-    candidates: list[DestinationRead], language: str = "en"
-) -> str:
+def build_candidate_prompt_context(candidates: list[DestinationRead], language: str = "en") -> str:
     """Format candidate destinations as a concise allowlisted catalog for the LLM prompt."""
     lines: list[str] = [
         "PERMITTED DESTINATION CATALOG (You MUST select ONLY from this list using the exact slug):"
@@ -128,7 +128,7 @@ def build_candidate_prompt_context(
                 summary = t.summary or ""
                 break
         lines.append(
-            f"- slug: \"{c.slug}\" | name: \"{name}\" | category: {c.category} | "
+            f'- slug: "{c.slug}" | name: "{name}" | category: {c.category} | '
             f"district: {c.district_code} | offbeat: {c.is_offbeat} | summary: {summary}"
         )
     return "\n".join(lines)
@@ -145,13 +145,12 @@ def build_system_prompt(language: str = "en") -> str:
         f"   PERMITTED DESTINATION CATALOG provided in the user prompt.\n"
         f"2. Under NO circumstance should you invent or recommend any place not in the catalog.\n"
         f"3. Every item must have:\n"
-        f"   - \"destination_id\": the EXACT slug of the permitted destination\n"
-        f"   - \"day_number\": integer from 1 to total duration\n"
-        f"   - \"order\": sequence order integer (1, 2, 3...)\n"
-        f"   - \"rationale\": 1-2 sentences explaining why this destination fits in {lang_name}.\n"
+        f'   - "destination_id": the EXACT slug of the permitted destination\n'
+        f'   - "day_number": integer from 1 to total duration\n'
+        f'   - "order": sequence order integer (1, 2, 3...)\n'
+        f'   - "rationale": 1-2 sentences explaining why this destination fits in {lang_name}.\n'
         f"4. Output MUST be valid JSON adhering to:\n"
-        f"   {{\"items\": [{{\"destination_id\": \"...\", \"day_number\": 1, "
-        f"\"order\": 1, \"rationale\": \"...\"}}], \"notes\": \"...\"}}\n"
+        f'   {{"items": [{{"destination_id": "...", "day_number": 1, '
+        f'"order": 1, "rationale": "..."}}], "notes": "..."}}\n'
         f"Do not include markdown fences or extra commentary. Return only valid JSON.\n"
     )
-

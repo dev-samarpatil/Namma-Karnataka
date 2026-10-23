@@ -43,9 +43,7 @@ class AIOrchestrator:
                 "gemini": GeminiAdapter(),
             }
 
-    async def recommend_itinerary(
-        self, request: PlanningRequest
-    ) -> PlanningRecommendationResponse:
+    async def recommend_itinerary(self, request: PlanningRequest) -> PlanningRecommendationResponse:
         """Orchestrate AI recommendation with bounded timeouts and deterministic fallback."""
         if not settings.AI_PLANNING_ENABLED:
             raise AppError(
@@ -56,9 +54,7 @@ class AIOrchestrator:
 
         # 1. Fetch allowlisted candidate catalog from repository
         filter_params = DestinationFilterParams(limit=100, offset=0)
-        candidates, total = self._repository.list_destinations(
-            filter_params, published_only=True
-        )
+        candidates, total = self._repository.list_destinations(filter_params, published_only=True)
 
         if not candidates:
             raise AppError(

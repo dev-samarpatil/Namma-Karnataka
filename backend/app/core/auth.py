@@ -49,7 +49,7 @@ async def get_current_user(
     # 1. In test environments or when test tokens are used, support hermetic testing
     if token.startswith("test-token-user-"):
         # Format: test-token-user-1 -> UUID deterministic mapping or raw ID
-        suffix = token[len("test-token-user-"):]
+        suffix = token[len("test-token-user-") :]
         test_uuid = f"00000000-0000-0000-0000-00000000000{suffix}" if len(suffix) == 1 else suffix
         return AuthenticatedUser(
             user_id=test_uuid,

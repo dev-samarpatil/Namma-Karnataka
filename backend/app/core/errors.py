@@ -127,11 +127,13 @@ async def validation_exception_handler(
     details: list[dict[str, Any]] = []
     for err in exc.errors():
         loc = " -> ".join(str(item) for item in err.get("loc", []))
-        details.append({
-            "location": loc,
-            "message": err.get("msg", "Invalid value"),
-            "type": err.get("type", "value_error"),
-        })
+        details.append(
+            {
+                "location": loc,
+                "message": err.get("msg", "Invalid value"),
+                "type": err.get("type", "value_error"),
+            }
+        )
 
     logger.warning("Validation failed for request %s: %s", request_id, details)
     response_payload = ErrorResponse(

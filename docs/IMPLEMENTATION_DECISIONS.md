@@ -273,3 +273,26 @@ The following items are documented as proposed defaults and do not block Phase 1
 | `DEC-UNRES-03` | Destination Image Licensing | Use Wikimedia Commons / Karnataka Tourism CC-BY-SA images with explicit attribution in `destination_sources`. | Legal review prior to marketing launch. | Product Owner |
 | `DEC-UNRES-04` | Max Trip Duration Limit for MVP | Cap at 7 consecutive days to control LLM context size and combinatorial route complexity. | User requests for extended tours post-MVP. | Product Owner |
 | `DEC-UNRES-05` | Editorial Reviewer for Kannada Content | Native Kannada speaker reviews seed catalog translations before production deploy. | Before seeding production DB. | Content Lead |
+
+---
+
+## 13. Architecture Decision Record 005 (ADR-005): Phase 3 AI Provider Orchestration, Catalog Grounding, and Fallback Engine
+
+* **Decision Status:** `ACCEPTED`
+* **Date:** October 2026
+* **Context:**
+  Phase 3 requires reliable, hallucination-free AI generation for Karnataka travel recommendations. LLMs must not fabricate destinations, fees, coordinates, or travel durations. System availability must not depend on third-party uptime or live API keys during tests and offline usage.
+* **Decisions:**
+  1. **Direct HTTP Transport via httpx:**
+     Groq and Google Gemini Generative Language APIs are called directly using `httpx.Client` rather than vendor-specific SDK wrappers. This eliminates heavy external C/binary dependencies, prevents import-time failures on varied Python versions, and provides uniform timeout and header control (`Bearer` for Groq, `x-goog-api-key` for Gemini).
+  2. **Shared Protocol & Decoupled Architecture:**
+     All AI providers implement the `AIProvider` protocol (`provider_name`, `is_configured`, `generate_plan`). The `AIOrchestrator` service interacts exclusively with the protocol, never vendor clients. Route handlers interact exclusively with `AIOrchestrator`.
+  3. **Global Deadline & Dynamic Time Allocation:**
+     A configurable global deadline (28 seconds default) governs the entire recommendation lifecycle. The orchestrator computes `remaining_deadline = global_deadline - elapsed` prior to every provider invocation, bounding each provider call to `min(remaining_deadline, provider_timeout)`. If remaining time drops below 2.0s, the orchestrator immediately branches to offline fallback.
+  4. **Strict Schema Validation & Catalog Grounding:**
+     Raw AI responses are defensively stripped of markdown fences and parsed into `RawAIPlanResponse` with Pydantic v2. Every referenced `destination_id` (slug or UUID) is strictly checked against the curated candidate pool retrieved from `DestinationRepository`. Unrecognized references raise `AI_DESTINATION_NOT_GROUNDED`. Accepted references have their metadata (coordinates, fee ranges, translations, access status) authoritatively hydrated from the repository, ignoring any model-fabricated fields. Unknown fees remain `NULL` (never converted to ₹0).
+  5. **Deterministic Offline Fallback Engine:**
+     When remote providers fail, time out, or are disabled, `DeterministicFallbackEngine` produces a stable, reproducible itinerary from verified seed data. Candidates are stably sorted by `(offbeat_priority, category, district_code, slug)` and distributed across requested days based on pace. The response is explicitly tagged with `generation_mode: "fallback"` and `provider_used: "deterministic_fallback"`.
+  6. **Versioned Route Boundary:**
+     `POST /api/v1/planning/recommendations` provides the public interface. It is protected by the `AI_PLANNING_ENABLED` feature flag (returning HTTP 403 `AI_PLANNING_DISABLED` when disabled), handles error normalization, injects `X-Request-ID`, and guarantees full bilingual parity in Kannada and English.
+

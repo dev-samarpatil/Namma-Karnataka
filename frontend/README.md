@@ -4,44 +4,47 @@ React Single Page Application (SPA) built with Vite, TypeScript, and Tailwind CS
 
 ---
 
-## Technology Stack
+## Prerequisites
 
-- **Framework:** React 18+ with TypeScript
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS + shadcn/ui (Radix primitives)
-- **Routing:** React Router v6
-- **Localization:** `react-i18next` (English `en` & Kannada `kn`)
-- **Maps:** Leaflet & `react-leaflet`
-- **Server State:** TanStack Query
+- **Node.js:** v18.0.0 or higher (v20+ recommended)
+- **Package Manager:** `npm` (uses `package-lock.json` for reproducible CI builds)
 
 ---
 
-## Getting Started
+## Available Scripts
 
-1. Copy the environment configuration:
-   ```bash
-   cp .env.example .env
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-4. Build for production:
-   ```bash
-   npm run build
-   ```
-5. Run linting checks:
-   ```bash
-   npm run lint
-   ```
+| Command | Purpose |
+|---|---|
+| `npm install` | Install all required dependencies |
+| `npm run dev` | Start local Vite development server on `http://localhost:5173` |
+| `npm run build` | Compile TypeScript (`tsc -b`) and build production bundle with Vite into `dist/` |
+| `npm run lint` | Run ESLint across all TypeScript and React files |
+| `npm run test` | Run Vitest unit tests in jsdom environment |
+| `npm run preview` | Locally preview the production build in `dist/` |
 
 ---
 
-## Security Guidelines
+## Central API Client
 
-- **Never place server credentials in frontend files or `.env`:** Variables prefixed with `VITE_` are embedded into the client JavaScript bundle and are publicly visible to anyone inspecting the browser.
-- Only public URLs (`VITE_API_BASE_URL`, `VITE_SUPABASE_URL`) and anonymous public keys (`VITE_SUPABASE_ANON_KEY`) belong here.
+All frontend-to-backend communication is channeled through [`src/lib/api.ts`](./src/lib/api.ts):
+- Reads the backend API URL from `import.meta.env.VITE_API_BASE_URL`.
+- Defaults to `http://localhost:8000/api/v1`.
+- Standardizes timeout management via `AbortController`.
+- Normalizes HTTP errors into typed `ApiClientError` objects with `code`, `message`, `status`, and `requestId`.
+- Provides pre-typed `checkHealth()` and `checkReadiness()` methods.
+
+---
+
+## Environment Configuration
+
+Configure environment variables via `.env` (copy from [`.env.example`](./.env.example)):
+```dotenv
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=placeholder_public_anon_key
+VITE_DEFAULT_LANGUAGE=en
+```
+
+### Security Warning
+- Variables prefixed with `VITE_` are embedded directly into client JavaScript bundles and are publicly visible in browser inspector tools.
+- **NEVER** place server-side secrets (such as `GROQ_API_KEY`, `GEMINI_API_KEY`, or `SUPABASE_SERVICE_ROLE_KEY`) in frontend `.env` files.

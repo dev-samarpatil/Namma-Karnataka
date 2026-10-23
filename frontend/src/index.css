@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #0f172a;
+  background-color: #0b1329;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,7 +22,7 @@ body {
 }
 
 #root {
-  max-width: 1280px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
@@ -31,41 +31,143 @@ body {
 .scaffold-card {
   background: #1e293b;
   border: 1px solid #334155;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
 }
 
 .badge {
   display: inline-block;
   background: #d97706;
   color: #ffffff;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  letter-spacing: 0.025em;
 }
 
 h1 {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   line-height: 1.2;
-  margin: 0.5rem 0;
+  margin: 1rem 0 0.5rem;
   color: #f8fafc;
 }
 
-p {
-  color: #94a3b8;
-  font-size: 1.1rem;
+.subtitle {
+  color: #38bdf8;
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0 0 1.5rem;
 }
 
-.info-box {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: #0f172a;
+.status-banner {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #334155;
   border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-text {
+  color: #a7f3d0;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.connectivity-card {
+  background: #0f172a;
   border: 1px solid #1e293b;
-  font-family: monospace;
-  font-size: 0.9rem;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.connectivity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.connectivity-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.pill {
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pill-warning {
+  background: #78350f;
+  color: #fde68a;
+}
+
+.pill-success {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.pill-danger {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+.api-url {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0.25rem 0;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: #1e293b;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
   color: #38bdf8;
+}
+
+.connection-details {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.offline-notice {
+  margin-top: 0.5rem;
+}
+
+.error-hint {
+  font-size: 0.85rem;
+  color: #f87171;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.btn-retry {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-retry:hover {
+  background: #1d4ed8;
+}
+
+.architecture-note {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
 }

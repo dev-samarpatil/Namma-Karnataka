@@ -5,6 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_v1_router
 from app.core.config import settings
+from app.core.errors import register_error_handlers
+from app.core.logging import setup_logging
+from app.core.middleware import RequestIdMiddleware
+
+# Initialize secret-safe structured logging
+setup_logging(settings.LOG_LEVEL)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -15,7 +21,10 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# Configure CORS
+# 1. Register Request ID Middleware (first in stack so all responses and logs receive request ID)
+app.add_middleware(RequestIdMiddleware)
+
+# 2. Register CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -24,7 +33,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount API v1 router
+# 3. Register Centralized Error Handlers
+register_error_handlers(app)
+
+# 4. Mount versioned API router
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
 
@@ -32,7 +44,9 @@ app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 async def root() -> dict[str, str]:
     """Root welcoming endpoint indicating scaffold status."""
     return {
-        "message": "Namma Karnataka API Scaffold is running",
+        "service": "namma-karnataka-api",
+        "message": "Namma Karnataka API Foundation is running",
         "docs_url": "/docs",
         "health_url": f"{settings.API_V1_STR}/health",
+        "ready_url": f"{settings.API_V1_STR}/ready",
     }

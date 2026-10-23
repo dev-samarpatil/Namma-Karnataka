@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import math
 import time
+import uuid
 from pathlib import Path
 from typing import Protocol
 
@@ -270,6 +271,10 @@ class SupabaseDestinationRepository:
         if self._is_schema_unmigrated():
             return self._fallback_repo.get_by_id(destination_id)
         try:
+            uuid.UUID(str(destination_id))
+        except (ValueError, AttributeError):
+            return None
+        try:
             with httpx.Client(timeout=10.0) as client:
                 select_fields = (
                     "*,destination_translations(*),destination_sources(*),districts(*)"
@@ -437,16 +442,39 @@ class SupabaseDestinationRepository:
 
     def _map_row(self, row: dict) -> DestinationRead:
         row_copy = dict(row)
+        row_copy.pop("location", None)
         lat = row_copy.pop("latitude", None)
         lon = row_copy.pop("longitude", None)
         if lat is not None and lon is not None:
             row_copy["coordinates"] = Coordinates(lat=float(lat), lon=float(lon))
 
         raw_translations = row_copy.pop("destination_translations", []) or []
-        row_copy["translations"] = raw_translations
+        cleaned_translations = []
+        for t in raw_translations:
+            cleaned_translations.append({
+                "language_code": t["language_code"],
+                "name": t["name"],
+                "summary": t.get("summary"),
+                "description": t.get("description"),
+                "how_to_reach": t.get("how_to_reach"),
+                "accessibility_notes": t.get("accessibility_notes"),
+                "translation_status": t.get("translation_status", "needs_review"),
+            })
+        row_copy["translations"] = cleaned_translations
 
         raw_sources = row_copy.pop("destination_sources", []) or []
-        row_copy["sources"] = raw_sources
+        cleaned_sources = []
+        for s in raw_sources:
+            cleaned_sources.append({
+                "source_name": s["source_name"],
+                "source_url": s.get("source_url"),
+                "source_type": s.get("source_type", "other"),
+                "claim_scope": s.get("claim_scope", "general_info"),
+                "checked_at": s.get("checked_at"),
+                "license_notes": s.get("license_notes"),
+                "attribution_required": s.get("attribution_required", False),
+            })
+        row_copy["sources"] = cleaned_sources
 
         district_data = row_copy.pop("districts", None)
         if district_data and isinstance(district_data, dict):

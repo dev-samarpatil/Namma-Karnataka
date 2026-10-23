@@ -3,8 +3,18 @@
 from app.core.config import Settings
 
 
-def test_configuration_safe_defaults():
+def test_configuration_safe_defaults(monkeypatch):
     """Verify settings initialize with expected defaults without requiring environment variables."""
+    for key in [
+        "AI_PLANNING_ENABLED",
+        "GROQ_API_KEY",
+        "GEMINI_API_KEY",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "AI_ENABLE_LIVE_PROVIDERS",
+    ]:
+        monkeypatch.delenv(key, raising=False)
     cfg = Settings(_env_file=None)
     assert cfg.APP_NAME == "Namma Karnataka API"
     assert cfg.APP_VERSION == "0.1.0"

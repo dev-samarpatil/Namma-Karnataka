@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -186,6 +186,55 @@ class DestinationRead(DestinationBase):
     district: DistrictSummary | None = None
     created_at: datetime | str | None = None
     updated_at: datetime | str | None = None
+
+    # Localized convenience projections for frontend consumers
+    name_en: str = ""
+    name_kn: str | None = None
+    summary_en: str | None = None
+    summary_kn: str | None = None
+    description_en: str | None = None
+    description_kn: str | None = None
+    how_to_reach_en: str | None = None
+    how_to_reach_kn: str | None = None
+    accessibility_notes_en: str | None = None
+    accessibility_notes_kn: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_localized_projections(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            translations = data.get("translations") or data.get("destination_translations") or []
+            name_en = data.get("name_en")
+            slug = data.get("slug", "")
+            for t in translations:
+                t_dict = t if isinstance(t, dict) else (t.model_dump() if hasattr(t, "model_dump") else {})
+                lang = str(t_dict.get("language_code", "")).lower()
+                if lang in ("en", "languagecode.en"):
+                    if not name_en and t_dict.get("name"):
+                        data["name_en"] = t_dict["name"]
+                        name_en = t_dict["name"]
+                    if data.get("summary_en") is None:
+                        data["summary_en"] = t_dict.get("summary")
+                    if data.get("description_en") is None:
+                        data["description_en"] = t_dict.get("description")
+                    if data.get("how_to_reach_en") is None:
+                        data["how_to_reach_en"] = t_dict.get("how_to_reach")
+                    if data.get("accessibility_notes_en") is None:
+                        data["accessibility_notes_en"] = t_dict.get("accessibility_notes")
+                elif lang in ("kn", "languagecode.kn"):
+                    if data.get("name_kn") is None:
+                        data["name_kn"] = t_dict.get("name")
+                    if data.get("summary_kn") is None:
+                        data["summary_kn"] = t_dict.get("summary")
+                    if data.get("description_kn") is None:
+                        data["description_kn"] = t_dict.get("description")
+                    if data.get("how_to_reach_kn") is None:
+                        data["how_to_reach_kn"] = t_dict.get("how_to_reach")
+                    if data.get("accessibility_notes_kn") is None:
+                        data["accessibility_notes_kn"] = t_dict.get("accessibility_notes")
+            if not data.get("name_en") and slug:
+                data["name_en"] = slug.replace("-", " ").title()
+        return data
 
 
 class DestinationPublicItem(StrictSchema):

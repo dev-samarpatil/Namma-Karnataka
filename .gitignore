@@ -86,3 +86,5 @@ pnpm-debug.log*
 lerna-debug.log*
 *.tmp
 *.bak
+.temp/
+supabase/.temp/

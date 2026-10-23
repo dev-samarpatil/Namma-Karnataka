@@ -3,6 +3,7 @@
  * Preserves language selection in localStorage across navigation, refresh, and errors.
  */
 
+import { useCallback } from 'react';
 import { Language } from '../types';
 
 export const LANGUAGE_STORAGE_KEY = 'nk_user_language';
@@ -134,7 +135,7 @@ export const translations = {
     toggleListView: 'Switch to List View',
     toggleMapView: 'Switch to Map View',
 
-    // Saved Trips
+    // Saved Trips & Cloud Sync
     savedTripsTitle: 'Your Saved Trips',
     noSavedTrips: 'You have not saved any itineraries yet.',
     noSavedTripsDesc: 'Generate a trip in the planner and click "Save Itinerary" to bookmark it for later.',
@@ -143,6 +144,18 @@ export const translations = {
     deleteTrip: 'Remove',
     supabaseNoticeTitle: 'Cloud Account Persistence Status',
     supabaseNoticeDesc: 'Offline guest bookmarking is active in your browser. Cloud multi-device synchronization will activate once live Supabase migrations are applied.',
+    localTripsTab: 'Device Trips (Guest)',
+    cloudTripsTab: 'Cloud Account Trips',
+    signInButton: 'Sign In / Connect',
+    signOutButton: 'Sign Out',
+    signedInAs: 'Signed in as',
+    syncToCloud: 'Save to Cloud',
+    savingToCloud: 'Saving to Cloud...',
+    cloudSaveSuccess: 'Itinerary saved to your cloud account!',
+    cloudSaveFailed: 'Could not save to cloud (local copy preserved).',
+    cloudTripsEmpty: 'No cloud-persisted trips found.',
+    guestModeActive: 'Guest Mode Active',
+    accountSwitchNote: 'Account changed. Stale session trips cleared.',
 
     // Error & Resilience States
     errorTitle: 'Something Went Wrong',
@@ -261,7 +274,7 @@ export const translations = {
     toggleListView: 'ಪಟ್ಟಿ ರೂಪಕ್ಕೆ ಬದಲಾಯಿಸಿ',
     toggleMapView: 'ನಕ್ಷೆ ರೂಪಕ್ಕೆ ಬದಲಾಯಿಸಿ',
 
-    // Saved Trips
+    // Saved Trips & Cloud Sync
     savedTripsTitle: 'ಉಳಿಸಿದ ಪ್ರವಾಸಗಳು',
     noSavedTrips: 'ನೀವು ಇನ್ನೂ ಯಾವುದೇ ಪ್ರವಾಸ ಪಟ್ಟಿಯನ್ನು ಉಳಿಸಿಲ್ಲ.',
     noSavedTripsDesc: 'ಪ್ಲಾನರ್‌ನಲ್ಲಿ ಹೊಸ ಪ್ರವಾಸ ರಚಿಸಿ "ಪ್ರವಾಸ ಪಟ್ಟಿ ಉಳಿಸಿ" ಕ್ಲಿಕ್ ಮಾಡಿ.',
@@ -270,6 +283,18 @@ export const translations = {
     deleteTrip: 'ತೆಗೆದುಹಾಕಿ',
     supabaseNoticeTitle: 'ಕ್ಲೌಡ್ ಖಾತೆ ಸಿಂಕ್ ಸ್ಥಿತಿ',
     supabaseNoticeDesc: 'ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಸ್ಥಳೀಯ ಉಳಿಸುವಿಕೆ ಸಕ್ರಿಯವಾಗಿದೆ. ಸುಪಾಬೇಸ್ ಡೇಟಾಬೇಸ್ ಮೈಗ್ರೇಶನ್ ಪೂರ್ಣಗೊಂಡ ನಂತರ ಕ್ಲೌಡ್ ಸಿಂಕ್ ಲಭ್ಯವಾಗಲಿದೆ.',
+    localTripsTab: 'ಸಾಧನದ ಪ್ರವಾಸಗಳು (ಅತಿಥಿ)',
+    cloudTripsTab: 'ಕ್ಲೌಡ್ ಖಾತೆಯ ಪ್ರವಾಸಗಳು',
+    signInButton: 'ಲಾಗಿನ್ / ಸಂಪರ್ಕಿಸಿ',
+    signOutButton: 'ಲಾಗ್ ಔಟ್',
+    signedInAs: 'ಲಾಗಿನ್ ಆಗಿರುವ ಬಳಕೆದಾರ',
+    syncToCloud: 'ಕ್ಲೌಡ್‌ಗೆ ಉಳಿಸಿ',
+    savingToCloud: 'ಕ್ಲೌಡ್‌ಗೆ ಉಳಿಸಲಾಗುತ್ತಿದೆ...',
+    cloudSaveSuccess: 'ಪ್ರವಾಸ ಪಟ್ಟಿಯನ್ನು ನಿಮ್ಮ ಕ್ಲೌಡ್ ಖಾತೆಯಲ್ಲಿ ಉಳಿಸಲಾಗಿದೆ!',
+    cloudSaveFailed: 'ಕ್ಲೌಡ್‌ಗೆ ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ (ಸ್ಥಳೀಯ ಪ್ರತಿ ಸುರಕ್ಷಿತವಾಗಿದೆ).',
+    cloudTripsEmpty: 'ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಯಾವುದೇ ಪ್ರವಾಸಗಳು ಕಂಡುಬಂದಿಲ್ಲ.',
+    guestModeActive: 'ಅತಿಥಿ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ',
+    accountSwitchNote: 'ಖಾತೆ ಬದಲಾಗಿದೆ. ಹಳೆಯ ಸೆಶನ್ ಪ್ರವಾಸಗಳನ್ನು ತೆರವುಗೊಳಿಸಲಾಗಿದೆ.',
 
     // Error & Resilience States
     errorTitle: 'ದೋಷ ಸಂಭವಿಸಿದೆ',
@@ -283,8 +308,11 @@ export const translations = {
 export type TranslationKey = keyof typeof translations.en;
 
 export function useTranslation(language: Language) {
-  const t = (key: TranslationKey): string => {
-    return translations[language][key] || translations.en[key] || key;
-  };
+  const t = useCallback(
+    (key: TranslationKey): string => {
+      return translations[language][key] || translations.en[key] || key;
+    },
+    [language]
+  );
   return { t, language };
 }

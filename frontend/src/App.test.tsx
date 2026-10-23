@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 import * as api from './lib/api';
@@ -152,10 +152,11 @@ describe('Namma Karnataka Phase 4 Complete Journey', () => {
     fireEvent.click(detailsBtn);
 
     // Verify modal appears with trusted metadata
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Tudor-style royal residence/i)).toBeInTheDocument();
-    expect(screen.getByText(/Karnataka Tourism Official Portal/i)).toBeInTheDocument();
-    expect(screen.getByText(/12.9988° N/i)).toBeInTheDocument();
+    const modal = screen.getByRole('dialog');
+    expect(modal).toBeInTheDocument();
+    expect(within(modal).getByText(/Tudor-style royal residence/i)).toBeInTheDocument();
+    expect(within(modal).getByText(/Karnataka Tourism Official Portal/i)).toBeInTheDocument();
+    expect(within(modal).getByText(/12.9988° N/i)).toBeInTheDocument();
 
     // Close modal
     const closeBtn = screen.getByTestId('modal-close-button');

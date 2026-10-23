@@ -1,6 +1,7 @@
-import React from 'react';
-import { SavedTrip, Language } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { SavedTrip, SavedTripSummary, SavedTripDetail, Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
+import { listCloudTrips, deleteCloudTrip, getCloudTrip, ApiClientError } from '../../lib/api';
 
 interface SavedTripsViewProps {
   savedTrips: SavedTrip[];
@@ -8,6 +9,9 @@ interface SavedTripsViewProps {
   onSelectTrip: (trip: SavedTrip) => void;
   onDeleteTrip: (id: string) => void;
   onNavigatePlanner: () => void;
+  authToken?: string | null;
+  onAuthTokenChange?: (token: string | null) => void;
+  onSelectCloudTrip?: (tripDetail: SavedTripDetail) => void;
 }
 
 export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
@@ -16,92 +20,377 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   onSelectTrip,
   onDeleteTrip,
   onNavigatePlanner,
+  authToken = null,
+  onAuthTokenChange,
+  onSelectCloudTrip,
 }) => {
   const { t } = useTranslation(language);
+  const [activeSubTab, setActiveSubTab] = useState<'local' | 'cloud'>('local');
+
+  // Cloud state
+  const [cloudTrips, setCloudTrips] = useState<SavedTripSummary[]>([]);
+  const [isLoadingCloud, setIsLoadingCloud] = useState<boolean>(false);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [tokenInput, setTokenInput] = useState<string>('');
+
+  // Fetch cloud trips when switching to cloud tab or changing auth token
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (activeSubTab === 'cloud' && authToken) {
+      setIsLoadingCloud(true);
+      setCloudError(null);
+
+      listCloudTrips(authToken)
+        .then((res) => {
+          if (!isCancelled) {
+            setCloudTrips(res.items);
+          }
+        })
+        .catch((err) => {
+          if (!isCancelled) {
+            if (err instanceof ApiClientError) {
+              setCloudError(
+                err.status === 401
+                  ? t('validationError')
+                  : `${err.message} (Using local fallback)`
+              );
+            } else {
+              setCloudError(t('networkError'));
+            }
+          }
+        })
+        .finally(() => {
+          if (!isCancelled) {
+            setIsLoadingCloud(false);
+          }
+        });
+    } else if (!authToken) {
+      // Clear cloud state on sign-out to prevent cross-account cache leakage
+      setCloudTrips([]);
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeSubTab, authToken, t]);
+
+  const handleSignIn = (token: string) => {
+    if (onAuthTokenChange) {
+      onAuthTokenChange(token);
+    }
+    setShowAuthModal(false);
+    setActiveSubTab('cloud');
+  };
+
+  const handleSignOut = () => {
+    if (onAuthTokenChange) {
+      onAuthTokenChange(null);
+    }
+    setCloudTrips([]);
+    setActiveSubTab('local');
+  };
+
+  const handleDeleteCloudTrip = async (tripId: string) => {
+    if (!authToken) return;
+    try {
+      await deleteCloudTrip(tripId, authToken);
+      setCloudTrips((prev) => prev.filter((item) => item.id !== tripId));
+    } catch (err) {
+      const msg = err instanceof ApiClientError ? err.message : 'Failed to delete cloud trip';
+      setCloudError(msg);
+    }
+  };
+
+  const handleViewCloudTrip = async (tripId: string) => {
+    if (!authToken || !onSelectCloudTrip) return;
+    try {
+      const detail = await getCloudTrip(tripId, authToken);
+      onSelectCloudTrip(detail);
+    } catch (err) {
+      const msg = err instanceof ApiClientError ? err.message : 'Failed to load cloud trip details';
+      setCloudError(msg);
+    }
+  };
 
   return (
     <section className="saved-trips-section" aria-label="Saved Itineraries">
       <div className="section-intro">
         <h2>{t('savedTripsTitle')}</h2>
         <p className="section-description">
-          Review, reopen, or manage itineraries you have planned and saved on this device.
+          Review, reopen, or manage itineraries you have planned and saved on this device or in your cloud account.
         </p>
       </div>
 
-      {/* Cloud Sync Status Notice */}
+      {/* Cloud Persistence Notice & Account Controls */}
       <div className="supabase-status-notice" data-testid="supabase-status-notice">
         <div className="notice-icon" aria-hidden="true">☁️</div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h4>{t('supabaseNoticeTitle')}</h4>
           <p>{t('supabaseNoticeDesc')}</p>
+          <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {authToken ? (
+              <>
+                <span className="badge badge-success" data-testid="auth-status-badge">
+                  ✓ {t('signedInAs')}: {authToken.slice(0, 16)}...
+                </span>
+                <button
+                  type="button"
+                  className="btn-danger-outline btn-sm"
+                  onClick={handleSignOut}
+                  data-testid="sign-out-btn"
+                >
+                  {t('signOutButton')}
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="badge badge-neutral" data-testid="guest-status-badge">
+                  👤 {t('guestModeActive')}
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => setShowAuthModal(true)}
+                  data-testid="connect-account-btn"
+                >
+                  🔐 {t('signInButton')}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {savedTrips.length === 0 ? (
-        <div className="empty-saved-trips" data-testid="no-saved-trips">
-          <div className="empty-icon" aria-hidden="true">📭</div>
-          <h3>{t('noSavedTrips')}</h3>
-          <p>{t('noSavedTripsDesc')}</p>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={onNavigatePlanner}
-            data-testid="create-trip-btn"
-          >
-            ✨ {t('navPlan')}
-          </button>
-        </div>
-      ) : (
-        <div className="saved-trips-grid" data-testid="saved-trips-grid">
-          {savedTrips.map((trip) => (
-            <article key={trip.id} className="saved-trip-card" data-testid={`saved-trip-${trip.id}`}>
-              <div className="saved-trip-header">
-                <span className="badge badge-neutral">
-                  📅 {trip.plan.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.plan.items.length} stops
-                </span>
-                <span className="saved-trip-date">
-                  {t('savedOn')} {new Date(trip.saved_at).toLocaleDateString()}
-                </span>
-              </div>
-
-              <h3 className="saved-trip-title">{trip.title}</h3>
-              <p className="saved-trip-origin">
-                Origin: <strong>{trip.request.origin_label}</strong> · Pace:{' '}
-                <strong>{trip.request.pace}</strong>
+      {/* Authentication Modal / Inline Token Form */}
+      {showAuthModal && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" data-testid="auth-modal">
+          <div className="modal-card" style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <h3>🔐 {t('signInButton')}</h3>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setShowAuthModal(false)}
+                aria-label={t('close')}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Enter your Supabase JWT or Bearer session token to synchronize and manage itineraries across devices.
               </p>
-
-              <div className="saved-trip-stops-preview">
-                {trip.plan.items.slice(0, 4).map((stop) => (
-                  <span key={stop.id} className="preview-pill">
-                    {stop.name}
-                  </span>
-                ))}
-                {trip.plan.items.length > 4 && (
-                  <span className="preview-more">+{trip.plan.items.length - 4} more</span>
-                )}
+              <div style={{ marginTop: '1rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Bearer Token:
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="eyJhbGciOiJIUzI1Ni... or test-token-user-1"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}
+                  data-testid="token-input"
+                />
               </div>
-
-              <div className="saved-trip-actions">
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    handleSignIn('test-token-user-1');
+                  }}
+                  data-testid="demo-user-btn"
+                >
+                  ⚡ Use Demo User
+                </button>
                 <button
                   type="button"
                   className="btn-primary"
-                  onClick={() => onSelectTrip(trip)}
-                  data-testid={`view-saved-${trip.id}`}
+                  onClick={() => {
+                    if (tokenInput.trim()) {
+                      handleSignIn(tokenInput.trim());
+                    }
+                  }}
+                  disabled={!tokenInput.trim()}
+                  data-testid="submit-auth-btn"
                 >
-                  {t('viewSavedTrip')}
-                </button>
-                <button
-                  type="button"
-                  className="btn-danger-outline"
-                  onClick={() => onDeleteTrip(trip.id)}
-                  data-testid={`delete-saved-${trip.id}`}
-                >
-                  {t('deleteTrip')}
+                  ✓ Connect
                 </button>
               </div>
-            </article>
-          ))}
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Sub-Tabs: Device Trips (Guest) vs Cloud Account Trips */}
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-subtle)', marginBottom: '1.5rem' }}>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('local')}
+          className={`filter-btn ${activeSubTab === 'local' ? 'active' : ''}`}
+          data-testid="subtab-local-trips"
+        >
+          📱 {t('localTripsTab')} ({savedTrips.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!authToken) {
+              setShowAuthModal(true);
+            } else {
+              setActiveSubTab('cloud');
+            }
+          }}
+          className={`filter-btn ${activeSubTab === 'cloud' ? 'active' : ''}`}
+          data-testid="subtab-cloud-trips"
+        >
+          ☁️ {t('cloudTripsTab')} {authToken ? `(${cloudTrips.length})` : ''}
+        </button>
+      </div>
+
+      {cloudError && (
+        <div className="app-error-banner" role="alert" style={{ marginBottom: '1rem' }} data-testid="cloud-error-banner">
+          <span>⚠️ {cloudError}</span>
+          <button type="button" onClick={() => setCloudError(null)}>✕</button>
+        </div>
+      )}
+
+      {/* 1. Device Local Trips View (Guest) */}
+      {activeSubTab === 'local' && (
+        savedTrips.length === 0 ? (
+          <div className="empty-saved-trips" data-testid="no-saved-trips">
+            <div className="empty-icon" aria-hidden="true">📭</div>
+            <h3>{t('noSavedTrips')}</h3>
+            <p>{t('noSavedTripsDesc')}</p>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={onNavigatePlanner}
+              data-testid="create-trip-btn"
+            >
+              ✨ {t('navPlan')}
+            </button>
+          </div>
+        ) : (
+          <div className="saved-trips-grid" data-testid="saved-trips-grid">
+            {savedTrips.map((trip) => (
+              <article key={trip.id} className="saved-trip-card" data-testid={`saved-trip-${trip.id}`}>
+                <div className="saved-trip-header">
+                  <span className="badge badge-neutral">
+                    📅 {trip.plan.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.plan.items.length} stops
+                  </span>
+                  <span className="saved-trip-date">
+                    {t('savedOn')} {new Date(trip.saved_at).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <h3 className="saved-trip-title">{trip.title}</h3>
+                <p className="saved-trip-origin">
+                  Origin: <strong>{trip.request.origin_label}</strong> · Pace:{' '}
+                  <strong>{trip.request.pace}</strong>
+                </p>
+
+                <div className="saved-trip-stops-preview">
+                  {trip.plan.items.slice(0, 4).map((stop) => (
+                    <span key={stop.id} className="preview-pill">
+                      {stop.name}
+                    </span>
+                  ))}
+                  {trip.plan.items.length > 4 && (
+                    <span className="preview-more">+{trip.plan.items.length - 4} more</span>
+                  )}
+                </div>
+
+                <div className="saved-trip-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => onSelectTrip(trip)}
+                    data-testid={`view-saved-${trip.id}`}
+                  >
+                    {t('viewSavedTrip')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-danger-outline"
+                    onClick={() => onDeleteTrip(trip.id)}
+                    data-testid={`delete-saved-${trip.id}`}
+                  >
+                    {t('deleteTrip')}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* 2. Cloud Account Trips View */}
+      {activeSubTab === 'cloud' && (
+        isLoadingCloud ? (
+          <div style={{ textAlign: 'center', padding: '3rem' }} data-testid="loading-cloud-trips">
+            <div className="loading-spinner" aria-hidden="true" />
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Loading cloud trips...</p>
+          </div>
+        ) : cloudTrips.length === 0 ? (
+          <div className="empty-saved-trips" data-testid="no-cloud-trips">
+            <div className="empty-icon" aria-hidden="true">☁️</div>
+            <h3>{t('cloudTripsEmpty')}</h3>
+            <p>Save an itinerary to the cloud using the planner to access it across devices.</p>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={onNavigatePlanner}
+            >
+              ✨ {t('navPlan')}
+            </button>
+          </div>
+        ) : (
+          <div className="saved-trips-grid" data-testid="cloud-trips-grid">
+            {cloudTrips.map((trip) => (
+              <article key={trip.id} className="saved-trip-card" data-testid={`cloud-trip-${trip.id}`}>
+                <div className="saved-trip-header">
+                  <span className="badge badge-success">
+                    ☁️ Cloud · {trip.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.total_stops} stops
+                  </span>
+                  <span className="saved-trip-date">
+                    {t('savedOn')} {new Date(trip.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <h3 className="saved-trip-title">{trip.title}</h3>
+                <p className="saved-trip-origin">
+                  Origin: <strong>{trip.origin_label}</strong> · Pace: <strong>{trip.pace}</strong>
+                </p>
+
+                <div className="saved-trip-actions">
+                  {onSelectCloudTrip && (
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => handleViewCloudTrip(trip.id)}
+                      data-testid={`view-cloud-${trip.id}`}
+                    >
+                      {t('viewSavedTrip')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-danger-outline"
+                    onClick={() => handleDeleteCloudTrip(trip.id)}
+                    data-testid={`delete-cloud-${trip.id}`}
+                  >
+                    {t('deleteTrip')}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )
       )}
     </section>
   );

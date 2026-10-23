@@ -5,9 +5,10 @@ import {
   PlanningRequest,
   PlanningRecommendationResponse,
   SavedTrip,
+  SavedTripDetail,
 } from './types';
 import { getSavedLanguage, saveLanguage } from './lib/i18n';
-import { generatePlanningRecommendations, ApiClientError } from './lib/api';
+import { generatePlanningRecommendations, saveCloudTrip, ApiClientError } from './lib/api';
 import { Header, ActiveTab } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { DestinationDiscovery } from './features/discovery/DestinationDiscovery';
@@ -16,6 +17,7 @@ import { ItineraryView } from './features/itinerary/ItineraryView';
 import { SavedTripsView } from './features/saved-trips/SavedTripsView';
 
 const SAVED_TRIPS_STORAGE_KEY = 'nk_saved_trips';
+const AUTH_TOKEN_STORAGE_KEY = 'nk_auth_token';
 
 export const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>(getSavedLanguage());
@@ -30,7 +32,29 @@ export const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [plannerError, setPlannerError] = useState<string | null>(null);
 
-  // Saved trips
+  // Cloud auth token state
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleAuthTokenChange = (token: string | null) => {
+    setAuthToken(token);
+    try {
+      if (token) {
+        localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+      } else {
+        localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      }
+    } catch {
+      // localStorage fallback
+    }
+  };
+
+  // Saved trips (Guest / Local device)
   const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(() => {
     try {
       const stored = localStorage.getItem(SAVED_TRIPS_STORAGE_KEY);
@@ -79,7 +103,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSaveTrip = (plan: PlanningRecommendationResponse) => {
+  const handleSaveTrip = async (plan: PlanningRecommendationResponse) => {
     if (!activeRequest) return;
 
     const newTrip: SavedTrip = {
@@ -98,7 +122,29 @@ export const App: React.FC = () => {
       // localStorage fallback
     }
 
-    setToastMessage('💾 Trip saved to your device!');
+    if (authToken) {
+      try {
+        await saveCloudTrip(
+          {
+            title: newTrip.title,
+            origin_label: activeRequest.origin_label,
+            duration_days: activeRequest.duration_days,
+            pace: activeRequest.pace || 'balanced',
+            is_offbeat_preferred: activeRequest.is_offbeat_preferred,
+            budget_min_inr: plan.items.reduce((sum, item) => sum + (item.entry_fee_min_inr || 0), 0),
+            budget_max_inr: plan.items.reduce((sum, item) => sum + (item.entry_fee_max_inr || 0), 0),
+            currency_code: 'INR',
+            itinerary: plan,
+          },
+          authToken
+        );
+        setToastMessage('💾 Trip saved locally and synced to cloud!');
+      } catch {
+        setToastMessage('💾 Trip saved locally (cloud sync unavailable).');
+      }
+    } else {
+      setToastMessage('💾 Trip saved to your device!');
+    }
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -115,6 +161,24 @@ export const App: React.FC = () => {
   const handleSelectSavedTrip = (trip: SavedTrip) => {
     setActivePlan(trip.plan);
     setActiveRequest(trip.request);
+    setCurrentTab('itinerary');
+  };
+
+  const handleSelectCloudTrip = (tripDetail: SavedTripDetail) => {
+    setActivePlan(tripDetail.snapshot);
+    const validPace: 'relaxed' | 'balanced' | 'packed' =
+      tripDetail.pace === 'relaxed' || tripDetail.pace === 'packed'
+        ? tripDetail.pace
+        : 'balanced';
+
+    setActiveRequest({
+      language,
+      origin_label: tripDetail.origin_label,
+      duration_days: tripDetail.duration_days,
+      pace: validPace,
+      is_offbeat_preferred: tripDetail.is_offbeat_preferred ?? false,
+      categories: [],
+    });
     setCurrentTab('itinerary');
   };
 
@@ -188,6 +252,9 @@ export const App: React.FC = () => {
             onSelectTrip={handleSelectSavedTrip}
             onDeleteTrip={handleDeleteTrip}
             onNavigatePlanner={() => setCurrentTab('planner')}
+            authToken={authToken}
+            onAuthTokenChange={handleAuthTokenChange}
+            onSelectCloudTrip={handleSelectCloudTrip}
           />
         )}
       </main>

@@ -384,15 +384,33 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
                                 ₹{acc.estimated_cost_per_night_inr} {t('perNightEst')}
                               </span>
                             )}
-                            <span className="place-pill-source">🏛️ {acc.source_name}</span>
-                            {acc.booking_reference_url && (
+                            {acc.link_status === 'verified' || acc.official_booking_url ? (
+                              <span className="place-pill-source" style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' }}>
+                                🏛️ {t('officialGovtProperty')}
+                              </span>
+                            ) : (
+                              <span className="place-pill-source">🏛️ {acc.source_name}</span>
+                            )}
+                            {(acc.official_booking_url || acc.booking_reference_url) && (
                               <a
-                                href={acc.booking_reference_url}
+                                href={acc.official_booking_url || acc.booking_reference_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="place-booking-link"
+                                style={acc.official_booking_url ? { background: '#15803d', color: '#ffffff', fontWeight: 600, padding: '3px 8px', borderRadius: '4px' } : undefined}
+                                title={t('bookingDisclaimer')}
+                              >
+                                {acc.official_booking_url ? `🏛️ ${t('officialBookingAction')}` : `🔗 ${t('viewBookingRef')}`}
+                              </a>
+                            )}
+                            {acc.official_website_url && (
+                              <a
+                                href={acc.official_website_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="place-booking-link"
                               >
-                                🔗 {t('viewBookingRef')}
+                                🌐 {t('officialWebsiteAction')}
                               </a>
                             )}
                           </div>

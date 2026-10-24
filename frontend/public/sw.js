@@ -138,6 +138,18 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'nk-itinerary-sync') {
+    event.waitUntil(
+      self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'TRIGGER_SYNC' });
+        });
+      })
+    );
+  }
+});
+
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

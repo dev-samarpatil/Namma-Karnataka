@@ -34,6 +34,9 @@ class SaveTripRequest(StrictBaseModel):
     budget_min_inr: float | None = Field(default=None, ge=0)
     budget_max_inr: float | None = Field(default=None, ge=0)
     currency_code: str = Field(default="INR", pattern="^INR$")
+    idempotency_key: str | None = Field(
+        default=None, max_length=128, description="Optional client mutation identifier for safe import/creation retry"
+    )
     itinerary: PlanningRecommendationResponse = Field(
         ..., description="Full verified itinerary response to snapshot"
     )
@@ -94,6 +97,9 @@ class UpdateTripRequest(StrictBaseModel):
     expected_version: int | None = Field(
         default=None, ge=1, description="Optional optimistic concurrency control check"
     )
+    idempotency_key: str | None = Field(
+        default=None, max_length=128, description="Optional client mutation identifier for safe offline retry"
+    )
     itinerary: PlanningRecommendationResponse = Field(
         ..., description="Updated verified itinerary response to snapshot"
     )
@@ -152,6 +158,9 @@ class UpdateSharedTripRequest(StrictBaseModel):
 
     expected_version: int = Field(
         ..., ge=1, description="Expected trip version for optimistic locking"
+    )
+    idempotency_key: str | None = Field(
+        default=None, max_length=128, description="Optional client mutation identifier for safe offline retry"
     )
     title: str | None = Field(default=None, min_length=1, max_length=160)
     itinerary: PlanningRecommendationResponse = Field(

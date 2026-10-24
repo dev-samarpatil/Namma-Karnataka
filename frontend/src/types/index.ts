@@ -302,6 +302,10 @@ export interface SavedTrip {
   saved_at: string;
   request: PlanningRequest;
   plan: PlanningRecommendationResponse;
+  cloud_trip_id?: string;
+  sync_status?: 'local_only' | 'pending_sync' | 'synced' | 'conflict' | 'failed';
+  last_synced_at?: string;
+  version?: number;
 }
 
 export interface SaveCloudTripPayload {
@@ -506,6 +510,8 @@ export interface RestaurantRead {
   estimated_cost_per_person_inr?: number;
   price_status: 'verified' | 'estimated' | 'unknown';
   opening_hours?: string;
+  official_website_url?: string | null;
+  link_status?: 'verified' | 'needs_review' | 'unavailable';
   source_name: string;
   source_type: string;
   verified_at: string;
@@ -531,6 +537,11 @@ export interface AccommodationRead {
   price_status: 'verified' | 'estimated' | 'unknown';
   amenities: string[];
   booking_reference_url?: string;
+  official_website_url?: string | null;
+  official_booking_url?: string | null;
+  link_source_name?: string | null;
+  link_status?: 'verified' | 'needs_review' | 'unavailable';
+  link_verified_at?: string | null;
   source_name: string;
   source_type: string;
   verified_at: string;
@@ -602,5 +613,73 @@ export interface TransitComparison {
   transit_available: boolean;
   carbon_comparison_note_en: string;
   carbon_comparison_note_kn: string;
+}
+
+// ============================================================================
+// Phase 7: AI Visual Place Discovery & Resilient PWA Synchronization Types
+// ============================================================================
+
+export type ConfidenceLabel = 'strong_match' | 'possible_match' | 'uncertain_suggestion';
+
+export interface VisualEvidence {
+  observed_features: string[];
+  architectural_style?: string | null;
+  landscape_clues: string[];
+  detected_signage?: string | null;
+  notes?: string | null;
+}
+
+export interface VisualDiscoveryCandidate {
+  destination_id: string;
+  slug: string;
+  name_en: string;
+  name_kn: string;
+  district_code: string;
+  district_name_en?: string | null;
+  district_name_kn?: string | null;
+  category: DestinationCategory | string;
+  summary_en?: string | null;
+  summary_kn?: string | null;
+  match_score: number;
+  confidence_label: ConfidenceLabel;
+  matching_reasons: string[];
+  visual_evidence?: VisualEvidence | null;
+  uncertainty_notes?: string | null;
+  image_url?: string | null;
+}
+
+export interface VisualDiscoveryResponse {
+  query_type: 'image' | 'video';
+  is_confident: boolean;
+  message_en: string;
+  message_kn: string;
+  candidates: VisualDiscoveryCandidate[];
+  sampled_frame_count?: number | null;
+  analyzed_at: string;
+  privacy_notice: string;
+}
+
+export type SyncOperationStatus =
+  | 'pending'
+  | 'syncing'
+  | 'synced'
+  | 'conflict'
+  | 'needs_auth'
+  | 'failed_retryable'
+  | 'failed_permanent';
+
+export interface SyncOperation {
+  operation_id: string;
+  idempotency_key: string;
+  trip_id: string;
+  share_token?: string;
+  operation_type: 'UPDATE_TRIP' | 'UPDATE_SHARED_TRIP';
+  payload: any;
+  expected_version: number;
+  created_at: string;
+  retry_count: number;
+  status: SyncOperationStatus;
+  last_error?: string;
+  last_attempt_at?: string;
 }
 

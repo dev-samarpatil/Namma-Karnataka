@@ -21,6 +21,11 @@ import {
   revokeTripShare,
   updateSharedTrip,
 } from '../../lib/api';
+import {
+  getTripSyncStatus,
+  processSyncQueue,
+  enqueueOperation,
+} from '../../services/offlineSync';
 import { BudgetSummary } from './BudgetSummary';
 import { MapView } from './MapView';
 import { TransitComparisonCard } from './TransitComparisonCard';
@@ -141,6 +146,27 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [copiedNotice, setCopiedNotice] = useState<boolean>(false);
   const [shareLoading, setShareLoading] = useState<boolean>(false);
   const [conflictError, setConflictError] = useState<boolean>(false);
+  const [syncInfo, setSyncInfo] = useState(() => getTripSyncStatus(cloudTripId || tripId));
+  const [isSyncingQueue, setIsSyncingQueue] = useState<boolean>(false);
+
+  useEffect(() => {
+    setSyncInfo(getTripSyncStatus(cloudTripId || tripId));
+  }, [cloudTripId, tripId, plan]);
+
+  const handleManualSync = async () => {
+    setIsSyncingQueue(true);
+    try {
+      const res = await processSyncQueue(_authToken || undefined);
+      setSyncInfo(getTripSyncStatus(cloudTripId || tripId));
+      if (res.conflicts > 0) {
+        setConflictError(true);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsSyncingQueue(false);
+    }
+  };
 
   const isReadOnly = userRole === 'viewer';
 
@@ -211,7 +237,19 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             setConflictError(true);
             return;
           }
-          throw updateErr;
+          // Offline or transient network failure: enqueue resilient sync operation
+          enqueueOperation({
+            operation_type: 'UPDATE_SHARED_TRIP',
+            trip_id: cloudTripId || tripId || 'shared-trip',
+            share_token: shareToken,
+            expected_version: version,
+            idempotency_key: `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            payload: { itinerary: response },
+          });
+          setSyncInfo(getTripSyncStatus(cloudTripId || tripId));
+          if (onUpdatePlan) {
+            onUpdatePlan(response);
+          }
         }
       } else if (onUpdatePlan) {
         onUpdatePlan(response);
@@ -639,6 +677,47 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             <span className="badge badge-neutral">
               📅 {plan.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {plan.total_destinations} {t('destinationsFound')}
             </span>
+            <div
+              className="badge"
+              data-testid="pwa-sync-status-pill"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: syncInfo.status === 'conflict' ? '#fef2f2' : syncInfo.pendingCount > 0 ? '#fffbeb' : '#f0fdf4',
+                color: syncInfo.status === 'conflict' ? '#991b1b' : syncInfo.pendingCount > 0 ? '#b45309' : '#166534',
+                border: '1px solid currentColor',
+              }}
+            >
+              <span>
+                {syncInfo.status === 'conflict'
+                  ? `⚠️ ${t('syncStatusConflict')}`
+                  : syncInfo.status === 'needs_auth'
+                  ? `🔒 ${t('syncStatusNeedsAuth')}`
+                  : syncInfo.pendingCount > 0
+                  ? `⏳ ${syncInfo.pendingCount} ${t('syncStatusPending')}`
+                  : `✓ ${t('syncStatusSynced')}`}
+              </span>
+              {syncInfo.pendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleManualSync}
+                  disabled={isSyncingQueue}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0 2px',
+                    fontWeight: 600,
+                    textDecoration: 'underline',
+                    color: 'inherit',
+                  }}
+                  data-testid="pwa-sync-now-btn"
+                >
+                  {isSyncingQueue ? '...' : t('syncNowBtn')}
+                </button>
+              )}
+            </div>
           </div>
           <h2>{t('itineraryTitle')}</h2>
         </div>

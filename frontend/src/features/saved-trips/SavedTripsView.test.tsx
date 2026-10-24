@@ -180,6 +180,8 @@ describe('SavedTripsView Component', () => {
     // Delete cloud trip
     const delBtn = screen.getByTestId('delete-cloud-cloud-trip-101');
     fireEvent.click(delBtn);
+    const confirmBtn = screen.getByTestId('confirm-delete-cloud-btn');
+    fireEvent.click(confirmBtn);
     await waitFor(() => {
       expect(deleteSpy).toHaveBeenCalledWith('cloud-trip-101', 'mock-valid-jwt-token');
       expect(screen.queryByText('Cloud Hampi Expedition')).not.toBeInTheDocument();

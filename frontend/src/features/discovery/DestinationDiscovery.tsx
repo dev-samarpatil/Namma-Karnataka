@@ -15,6 +15,9 @@ import {
 } from '../../services/offlineStorage';
 import { DestinationCard } from './DestinationCard';
 import { DestinationModal } from './DestinationModal';
+import { DestinationInteractiveMap } from './DestinationInteractiveMap';
+import { VisualDiscoveryModal } from './VisualDiscoveryModal';
+import { VisualDiscoveryCandidate } from '../../types';
 
 interface DestinationDiscoveryProps {
   language: Language;
@@ -57,6 +60,11 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
   const [durationFilter, setDurationFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('');
   const [isOffbeatOnly, setIsOffbeatOnly] = useState<boolean>(false);
+
+  // Phase 7: Interactive Map & Visual Discovery
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [isVisualDiscoveryOpen, setIsVisualDiscoveryOpen] = useState<boolean>(false);
+  const [mapActiveDestId, setMapActiveDestId] = useState<string | null>(null);
 
   // Modal
   const [activeDestination, setActiveDestination] = useState<DestinationRead | null>(null);
@@ -156,17 +164,41 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
       </div>
 
       <div className="filter-panel" role="search" aria-label="Destination filters">
-        <div className="search-bar">
-          <span className="search-icon" aria-hidden="true">🔍</span>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('searchPlaceholder')}
-            aria-label="Search destinations"
-            className="search-input"
-            data-testid="destination-search-input"
-          />
+        <div className="search-bar-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="search-bar" style={{ flex: 1 }}>
+            <span className="search-icon" aria-hidden="true">🔍</span>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              aria-label="Search destinations"
+              className="search-input"
+              data-testid="destination-search-input"
+            />
+          </div>
+          <button
+            type="button"
+            className="btn-visual-discovery-trigger"
+            onClick={() => setIsVisualDiscoveryOpen(true)}
+            data-testid="open-visual-discovery-btn"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              background: '#4f46e5',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+          >
+            {t('visualDiscoveryBtn')}
+          </button>
         </div>
 
         <div className="filter-controls-row">
@@ -335,15 +367,56 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
       </div>
 
 
-      <div className="results-header">
-        <span className="results-counter" data-testid="results-counter">
-          {totalCount} {t('destinationsFound')}
-        </span>
-        {isOfflineData && (
-          <span className="badge badge-cached" data-testid="offline-cached-badge" style={{ marginLeft: '12px', fontSize: '0.85rem', color: '#b45309', background: '#fef3c7', padding: '4px 8px', borderRadius: '4px' }}>
-            ⚡ {t('cachedBadge')} {cachedTime ? `(${t('cachedAt')} ${cachedTime})` : ''}
+      <div className="results-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="results-counter" data-testid="results-counter">
+            {totalCount} {t('destinationsFound')}
           </span>
-        )}
+          {isOfflineData && (
+            <span className="badge badge-cached" data-testid="offline-cached-badge" style={{ fontSize: '0.85rem', color: '#b45309', background: '#fef3c7', padding: '4px 8px', borderRadius: '4px' }}>
+              ⚡ {t('cachedBadge')} {cachedTime ? `(${t('cachedAt')} ${cachedTime})` : ''}
+            </span>
+          )}
+        </div>
+
+        <div className="view-mode-toggle-group" style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            className={`btn-mode-toggle ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+            data-testid="toggle-view-list"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              background: viewMode === 'list' ? '#4f46e5' : '#ffffff',
+              color: viewMode === 'list' ? '#ffffff' : '#374151',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '0.875rem'
+            }}
+          >
+            📋 {t('toggleListView')}
+          </button>
+          <button
+            type="button"
+            className={`btn-mode-toggle ${viewMode === 'map' ? 'active' : ''}`}
+            onClick={() => setViewMode('map')}
+            data-testid="toggle-view-map"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              background: viewMode === 'map' ? '#4f46e5' : '#ffffff',
+              color: viewMode === 'map' ? '#ffffff' : '#374151',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '0.875rem'
+            }}
+          >
+            🗺️ {t('toggleMapView')}
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -378,17 +451,29 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
       )}
 
       {!loading && !errorMessage && destinations.length > 0 && (
-        <div className="destinations-grid" data-testid="destinations-grid">
-          {destinations.map((dest) => (
-            <DestinationCard
-              key={dest.id}
-              destination={dest}
-              language={language}
-              onSelect={setActiveDestination}
-              onPlanAround={onPlanWithDestination}
-            />
-          ))}
-        </div>
+        viewMode === 'map' ? (
+          <DestinationInteractiveMap
+            destinations={destinations}
+            selectedDistrict={selectedDistrict}
+            language={language}
+            activeDestinationId={mapActiveDestId}
+            onSelectDestination={(dest) => setMapActiveDestId(dest.id)}
+            onOpenDetails={(dest) => setActiveDestination(dest)}
+            onPlanWithDestination={onPlanWithDestination}
+          />
+        ) : (
+          <div className="destinations-grid" data-testid="destinations-grid">
+            {destinations.map((dest) => (
+              <DestinationCard
+                key={dest.id}
+                destination={dest}
+                language={language}
+                onSelect={setActiveDestination}
+                onPlanAround={onPlanWithDestination}
+              />
+            ))}
+          </div>
+        )
       )}
 
       {activeDestination && (
@@ -397,6 +482,26 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
           language={language}
           onClose={() => setActiveDestination(null)}
           onPlanAround={onPlanWithDestination}
+        />
+      )}
+
+      {isVisualDiscoveryOpen && (
+        <VisualDiscoveryModal
+          isOpen={isVisualDiscoveryOpen}
+          onClose={() => setIsVisualDiscoveryOpen(false)}
+          language={language}
+          onSelectCandidate={(candidate: VisualDiscoveryCandidate) => {
+            const matched = destinations.find((d) => d.id === candidate.destination_id || d.slug === candidate.slug);
+            if (matched) {
+              onPlanWithDestination(matched);
+            }
+          }}
+          onOpenDestinationDetailsBySlug={(slug: string) => {
+            const matched = destinations.find((d) => d.slug === slug);
+            if (matched) {
+              setActiveDestination(matched);
+            }
+          }}
         />
       )}
     </section>

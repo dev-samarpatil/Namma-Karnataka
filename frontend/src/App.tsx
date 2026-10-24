@@ -15,6 +15,7 @@ import {
   getSharedTrip,
   ApiClientError,
 } from './lib/api';
+import { loadGuestTrips, saveGuestTrip, deleteGuestTrip } from './services/guestStorage';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { Header, ActiveTab } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -23,7 +24,6 @@ import { TripPlannerForm } from './features/planner/TripPlannerForm';
 import { ItineraryView } from './features/itinerary/ItineraryView';
 import { SavedTripsView } from './features/saved-trips/SavedTripsView';
 
-const SAVED_TRIPS_STORAGE_KEY = 'nk_saved_trips';
 const AUTH_TOKEN_STORAGE_KEY = 'nk_auth_token';
 
 export const App: React.FC = () => {
@@ -57,21 +57,19 @@ export const App: React.FC = () => {
         localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
       } else {
         localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+        // Clear active cloud and share states on sign-out to prevent account leakage
+        setActiveCloudTripId(null);
+        setActiveShareToken(null);
+        setActiveUserRole(null);
       }
     } catch {
       // localStorage fallback
     }
+    setSavedTrips(loadGuestTrips());
   };
 
-  // Saved trips (Guest / Local device)
-  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(() => {
-    try {
-      const stored = localStorage.getItem(SAVED_TRIPS_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Saved trips (Guest / Local device) using hardened storage with corrupt isolation
+  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(() => loadGuestTrips());
 
   // Active saved trip IDs for syncing edits
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
@@ -168,29 +166,40 @@ export const App: React.FC = () => {
   const handleSaveTrip = async (plan: PlanningRecommendationResponse) => {
     if (!activeRequest) return;
 
-    const newTripId = `trip-${Date.now()}`;
-    const newTrip: SavedTrip = {
-      id: newTripId,
-      title: `${activeRequest.duration_days}-Day ${activeRequest.origin_label} Itinerary`,
+    // Stable identity: preserve existing trip id if updating, or generate stable ID
+    const tripId = activeTripId || `guest-${Date.now()}`;
+    const existing = savedTrips.find((t) => t.id === tripId);
+
+    const tripRecord: SavedTrip = {
+      id: tripId,
+      title: existing ? existing.title : `${activeRequest.duration_days}-Day ${activeRequest.origin_label} Itinerary`,
       saved_at: new Date().toISOString(),
       request: activeRequest,
       plan,
+      cloud_trip_id: existing?.cloud_trip_id,
+      sync_status: existing?.cloud_trip_id ? 'synced' : 'local_only',
     };
 
-    const updated = [newTrip, ...savedTrips];
-    setSavedTrips(updated);
-    setActiveTripId(newTripId);
-    try {
-      localStorage.setItem(SAVED_TRIPS_STORAGE_KEY, JSON.stringify(updated));
-    } catch {
-      // localStorage fallback
+    const saveResult = saveGuestTrip(tripRecord);
+    if (!saveResult.success) {
+      if (saveResult.error === 'quota_exceeded') {
+        setToastMessage(`⚠️ ${t('storageQuotaWarning')}`);
+      } else {
+        setToastMessage(`⚠️ ${saveResult.message || 'Failed to save trip locally.'}`);
+      }
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
     }
+
+    setActiveTripId(tripId);
+    setSavedTrips(loadGuestTrips());
 
     if (authToken) {
       try {
+        const idempotencyKey = `import-${tripId}`;
         const cloudTrip = await saveCloudTrip(
           {
-            title: newTrip.title,
+            title: tripRecord.title,
             origin_label: activeRequest.origin_label,
             duration_days: activeRequest.duration_days,
             pace: activeRequest.pace || 'balanced',
@@ -200,9 +209,15 @@ export const App: React.FC = () => {
             currency_code: 'INR',
             itinerary: plan,
           },
-          authToken
+          authToken,
+          idempotencyKey
         );
         setActiveCloudTripId(cloudTrip.id);
+        // Link cloud trip in local guest storage
+        tripRecord.cloud_trip_id = cloudTrip.id;
+        tripRecord.sync_status = 'synced';
+        saveGuestTrip(tripRecord);
+        setSavedTrips(loadGuestTrips());
         setToastMessage('💾 Trip saved locally and synced to cloud!');
       } catch {
         setToastMessage('💾 Trip saved locally (cloud sync unavailable).');
@@ -218,14 +233,16 @@ export const App: React.FC = () => {
 
     // Update in local savedTrips if this trip is saved locally
     if (activeTripId) {
-      const updated = savedTrips.map((t) =>
-        t.id === activeTripId ? { ...t, plan: updatedPlan } : t
-      );
-      setSavedTrips(updated);
-      try {
-        localStorage.setItem(SAVED_TRIPS_STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // localStorage fallback
+      const existing = savedTrips.find((t) => t.id === activeTripId);
+      if (existing) {
+        const updatedTrip: SavedTrip = {
+          ...existing,
+          plan: updatedPlan,
+          saved_at: new Date().toISOString(),
+          sync_status: activeCloudTripId ? 'pending_sync' : existing.sync_status,
+        };
+        saveGuestTrip(updatedTrip);
+        setSavedTrips(loadGuestTrips());
       }
     }
 
@@ -247,15 +264,10 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteTrip = (id: string) => {
-    const updated = savedTrips.filter((t) => t.id !== id);
-    setSavedTrips(updated);
+    deleteGuestTrip(id);
+    setSavedTrips(loadGuestTrips());
     if (activeTripId === id) {
       setActiveTripId(null);
-    }
-    try {
-      localStorage.setItem(SAVED_TRIPS_STORAGE_KEY, JSON.stringify(updated));
-    } catch {
-      // localStorage fallback
     }
   };
 

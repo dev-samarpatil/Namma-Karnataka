@@ -67,6 +67,8 @@ class RestaurantRead(StrictSchema):
     estimated_cost_per_person_inr: float | None = Field(None, ge=0.0)
     price_status: PriceStatus = PriceStatus.ESTIMATED
     opening_hours: str | None = None
+    official_website_url: str | None = None
+    link_status: str = "verified"
     source_name: str = Field(..., min_length=1)
     source_type: DataSourceType = DataSourceType.CURATED_VERIFIED
     verified_at: str | datetime = Field(default_factory=lambda: datetime.now(UTC).isoformat())
@@ -94,6 +96,11 @@ class AccommodationRead(StrictSchema):
     price_status: PriceStatus = PriceStatus.ESTIMATED
     amenities: list[str] = Field(default_factory=list)
     booking_reference_url: str | None = None
+    official_website_url: str | None = None
+    official_booking_url: str | None = None
+    link_source_name: str | None = None
+    link_status: str = "verified"
+    link_verified_at: str | None = None
     source_name: str = Field(..., min_length=1)
     source_type: DataSourceType = DataSourceType.CURATED_VERIFIED
     verified_at: str | datetime = Field(default_factory=lambda: datetime.now(UTC).isoformat())

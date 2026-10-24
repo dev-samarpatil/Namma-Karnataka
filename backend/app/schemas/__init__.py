@@ -30,8 +30,16 @@ from app.schemas.planning import (
     RecommendedDestination,
 )
 
+from app.schemas.visual_discovery import (
+    ConfidenceLabel,
+    VisualDiscoveryCandidate,
+    VisualDiscoveryResponse,
+    VisualEvidence,
+)
+
 __all__ = [
     "AccessStatus",
+    "ConfidenceLabel",
     "ContentStatus",
     "Coordinates",
     "DestinationBase",
@@ -56,4 +64,7 @@ __all__ = [
     "SourceType",
     "TranslationStatus",
     "VerificationStatus",
+    "VisualDiscoveryCandidate",
+    "VisualDiscoveryResponse",
+    "VisualEvidence",
 ]

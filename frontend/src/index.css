@@ -334,7 +334,7 @@ body {
 
 .destinations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1.25rem;
 }
 
@@ -1283,7 +1283,7 @@ body {
 
 .saved-trips-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 1.25rem;
 }
 
@@ -1849,6 +1849,398 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
   z-index: 1100;
+}
+
+/* ==========================================================================
+   Phase 9 — Responsive Mobile Bottom Navigation & Accessibility
+   ========================================================================== */
+
+/* Focus Ring for Keyboard Users (WCAG 2.1 AA) */
+:focus-visible {
+  outline: 2px solid var(--accent-gold) !important;
+  outline-offset: 2px !important;
+}
+
+/* Touch Target Minimum Sizes (44px) */
+button,
+input[type="button"],
+input[type="submit"],
+.btn-primary,
+.btn-secondary,
+.btn-duration,
+.lang-switcher-btn,
+.nav-tab,
+.filter-btn {
+  min-height: 44px;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(3.8rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(19, 27, 46, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-subtle);
+  z-index: 1000;
+  justify-content: space-around;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .app-main {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.35rem 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 48px;
+  gap: 0.15rem;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item:focus-visible {
+  color: var(--text-primary);
+}
+
+.mobile-nav-item.active {
+  color: var(--accent-gold);
+}
+
+.mobile-nav-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.mobile-nav-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-tab-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  color: var(--accent-gold);
+  font-size: 0.65rem;
+}
+
+.mobile-tab-count {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: var(--accent-cyan);
+  color: #0b1329;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--radius-full);
+  line-height: 1;
+}
+
+.mobile-nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 75px;
+}
+
+/* Responsive Brand Header for Narrow Screens (< 480px) */
+@media (max-width: 480px) {
+  .header-top {
+    padding: 0.65rem 0.75rem 0.4rem;
+  }
+  .brand-title {
+    font-size: 1.05rem;
+    gap: 0.25rem;
+  }
+  .brand-title-kn {
+    font-size: 0.85rem;
+  }
+  .brand-subtitle {
+    display: none;
+  }
+  .brand-icon {
+    font-size: 1.5rem;
+  }
+  .lang-switcher-btn {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* ==========================================================================
+   Phase 9 — Interactive Map Usability
+   ========================================================================== */
+
+.interactive-map-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.map-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.map-title-area h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+  color: #ffffff;
+}
+
+.map-controls-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.map-layers-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  align-items: center;
+}
+
+.layer-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.leaflet-map-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.leaflet-actual-map {
+  height: 360px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  z-index: 10;
+}
+
+@media (min-width: 768px) {
+  .leaflet-actual-map {
+    height: 480px;
+  }
+}
+
+.map-selected-flyout-card {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  background: rgba(19, 27, 46, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  z-index: 1000;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 640px) {
+  .map-selected-flyout-card {
+    left: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: 320px;
+    max-height: 280px;
+  }
+}
+
+.flyout-header {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.flyout-title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+.flyout-summary {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.flyout-coords {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 0.65rem;
+}
+
+.flyout-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-flyout-details,
+.btn-flyout-plan {
+  flex: 1;
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.btn-flyout-details {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.btn-flyout-plan {
+  background: var(--accent-gold);
+  border: none;
+  color: #0b1329;
+}
+
+.map-list-alternative-view {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.map-list-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.map-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  gap: 0.5rem;
+}
+
+.map-list-row.active {
+  border-color: var(--accent-gold);
+}
+
+.btn-row-action {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 38px;
+}
+
+.map-footer-attribution {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: right;
+  padding-top: 0.25rem;
+}
+
+/* Responsive Itinerary Stop Actions */
+@media (max-width: 640px) {
+  .itinerary-stop-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+  .itinerary-stop-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .day-actions-toolbar {
+    margin-left: 0;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
 }
 
 /* ==========================================================================

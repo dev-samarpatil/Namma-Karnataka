@@ -105,32 +105,43 @@ class InMemoryTripRepository:
         self._trips: dict[str, SavedTripDetail] = {}
         self._shares: dict[str, TripShareInfo] = {}
         self._audit_events: dict[str, list[TripAuditEvent]] = {}
+        self._idempotency_records: dict[tuple[str, str], Any] = {}
 
     def create_trip(self, user_id: str, request: SaveTripRequest) -> SavedTripDetail:
-        now_str = datetime.datetime.now(datetime.UTC).isoformat()
-        trip_id = f"trip-{uuid.uuid4()}"
-
-        detail = SavedTripDetail(
-            id=trip_id,
-            user_id=user_id,
-            title=request.title,
-            origin_label=request.origin_label,
-            duration_days=request.duration_days,
-            pace=request.pace,
-            is_offbeat_preferred=request.is_offbeat_preferred,
-            preferences=request.preferences,
-            budget_min_inr=request.budget_min_inr,
-            budget_max_inr=request.budget_max_inr,
-            currency_code=request.currency_code,
-            status="active",
-            version=1,
-            last_modified_by=user_id,
-            snapshot=request.itinerary,
-            created_at=now_str,
-            updated_at=now_str,
-        )
-
         with self._lock:
+            if request.idempotency_key:
+                cached = self._idempotency_records.get((user_id, request.idempotency_key))
+                if cached:
+                    logger.info(
+                        "Idempotent create_trip replay hit for user %s and key %s",
+                        user_id,
+                        request.idempotency_key,
+                    )
+                    return cached
+
+            now_str = datetime.datetime.now(datetime.UTC).isoformat()
+            trip_id = f"trip-{uuid.uuid4()}"
+
+            detail = SavedTripDetail(
+                id=trip_id,
+                user_id=user_id,
+                title=request.title,
+                origin_label=request.origin_label,
+                duration_days=request.duration_days,
+                pace=request.pace,
+                is_offbeat_preferred=request.is_offbeat_preferred,
+                preferences=request.preferences,
+                budget_min_inr=request.budget_min_inr,
+                budget_max_inr=request.budget_max_inr,
+                currency_code=request.currency_code,
+                status="active",
+                version=1,
+                last_modified_by=user_id,
+                snapshot=request.itinerary,
+                created_at=now_str,
+                updated_at=now_str,
+            )
+
             self._trips[trip_id] = detail
             init_event = TripAuditEvent(
                 id=f"audit-{uuid.uuid4()}",
@@ -144,6 +155,9 @@ class InMemoryTripRepository:
                 created_at=now_str,
             )
             self._audit_events[trip_id] = [init_event]
+
+            if request.idempotency_key:
+                self._idempotency_records[(user_id, request.idempotency_key)] = detail
 
         logger.info("Saved trip created: trip_id=%s, user_id=%s", trip_id, user_id)
         return detail
@@ -207,6 +221,11 @@ class InMemoryTripRepository:
             trip = self._trips.get(trip_id)
             if trip is None or trip.user_id != user_id:
                 return None
+
+            if request.idempotency_key:
+                cached = self._idempotency_records.get((user_id, request.idempotency_key))
+                if cached is not None:
+                    return cached
 
             if request.expected_version is not None and request.expected_version != trip.version:
                 logger.warning(
@@ -277,6 +296,8 @@ class InMemoryTripRepository:
                 user_id,
                 new_version,
             )
+            if request.idempotency_key:
+                self._idempotency_records[(user_id, request.idempotency_key)] = updated_trip
             return updated_trip
 
 
@@ -418,6 +439,11 @@ class InMemoryTripRepository:
             if trip is None or trip.status != "active":
                 return None, "not_found"
 
+            if request.idempotency_key:
+                cached = self._idempotency_records.get((share_token, request.idempotency_key))
+                if cached is not None:
+                    return cached, None
+
             now_str = datetime.datetime.now(datetime.UTC).isoformat()
             if request.expected_version != trip.version:
                 event = TripAuditEvent(
@@ -484,25 +510,25 @@ class InMemoryTripRepository:
             )
             self._audit_events.setdefault(trip.id, []).append(event)
 
-            return (
-                SharedTripDetail(
-                    id=updated_trip.id,
-                    title=updated_trip.title,
-                    origin_label=updated_trip.origin_label,
-                    duration_days=updated_trip.duration_days,
-                    pace=updated_trip.pace,
-                    is_offbeat_preferred=updated_trip.is_offbeat_preferred,
-                    budget_min_inr=updated_trip.budget_min_inr,
-                    budget_max_inr=updated_trip.budget_max_inr,
-                    currency_code=updated_trip.currency_code,
-                    version=new_version,
-                    role=share.role,
-                    snapshot=updated_trip.snapshot,
-                    created_at=updated_trip.created_at,
-                    updated_at=updated_trip.updated_at,
-                ),
-                None,
+            shared_detail = SharedTripDetail(
+                id=updated_trip.id,
+                title=updated_trip.title,
+                origin_label=updated_trip.origin_label,
+                duration_days=updated_trip.duration_days,
+                pace=updated_trip.pace,
+                is_offbeat_preferred=updated_trip.is_offbeat_preferred,
+                budget_min_inr=updated_trip.budget_min_inr,
+                budget_max_inr=updated_trip.budget_max_inr,
+                currency_code=updated_trip.currency_code,
+                version=new_version,
+                role=share.role,
+                snapshot=updated_trip.snapshot,
+                created_at=updated_trip.created_at,
+                updated_at=updated_trip.updated_at,
             )
+            if request.idempotency_key:
+                self._idempotency_records[(share_token, request.idempotency_key)] = shared_detail
+            return shared_detail, None
 
     def get_trip_history(
         self, trip_id: str, user_id: str | None = None, share_token: str | None = None

@@ -27,6 +27,7 @@ import {
   DayPlan,
   DestinationCategory,
   StopRegenerateResponse,
+  VisualDiscoveryResponse,
 } from '../types';
 
 
@@ -344,14 +345,20 @@ export async function getCloudTrip(
 export async function saveCloudTrip(
   payload: SaveCloudTripPayload,
   token: string,
+  idempotencyKey?: string,
   signal?: AbortSignal
 ): Promise<SavedTripDetail> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+
   return fetchApi<SavedTripDetail>('/trips', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(payload),
     signal,
   });
@@ -574,6 +581,43 @@ export async function getTripHistory(
 ): Promise<TripAuditHistoryResponse> {
   const query = shareToken ? `?share_token=${encodeURIComponent(shareToken)}` : '';
   return fetchApi<TripAuditHistoryResponse>(`/trips/${encodeURIComponent(tripId)}/history${query}`);
+}
+
+/**
+ * Discover Karnataka destinations from an uploaded photograph.
+ */
+export async function analyzeImageVisualDiscovery(
+  file: File,
+  language: string = 'en'
+): Promise<VisualDiscoveryResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('language', language);
+
+  return fetchApi<VisualDiscoveryResponse>('/visual-discovery/analyze-image', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+/**
+ * Discover Karnataka destinations from sampled video keyframes.
+ */
+export async function analyzeVideoVisualDiscovery(
+  frames: (Blob | File)[],
+  language: string = 'en'
+): Promise<VisualDiscoveryResponse> {
+  const formData = new FormData();
+  frames.forEach((frame, idx) => {
+    const filename = frame instanceof File ? frame.name : `frame_${idx}.jpg`;
+    formData.append('frames', frame, filename);
+  });
+  formData.append('language', language);
+
+  return fetchApi<VisualDiscoveryResponse>('/visual-discovery/analyze-video', {
+    method: 'POST',
+    body: formData,
+  });
 }
 
 

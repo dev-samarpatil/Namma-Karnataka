@@ -6,7 +6,7 @@ strictly from verified credentials, never from client body payload.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import AppError
@@ -37,8 +37,11 @@ async def create_saved_trip(
     request: SaveTripRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
     repo: TripRepository = Depends(get_trip_repository),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
 ) -> SavedTripDetail:
     """Persist an itinerary snapshot associated with the authenticated user."""
+    if idempotency_key and not request.idempotency_key:
+        request.idempotency_key = idempotency_key
     return repo.create_trip(user_id=current_user.user_id, request=request)
 
 
@@ -108,8 +111,11 @@ async def update_shared_trip(
     share_token: str,
     request: UpdateSharedTripRequest,
     repo: TripRepository = Depends(get_trip_repository),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
 ) -> SharedTripDetail:
     """Update a shared trip under optimistic concurrency control (requires editor permission)."""
+    if idempotency_key and not request.idempotency_key:
+        request.idempotency_key = idempotency_key
     trip, error = repo.update_shared_trip(share_token, request)
     if error == "forbidden":
         raise AppError(
@@ -185,11 +191,14 @@ async def update_saved_trip(
     request: UpdateTripRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
     repo: TripRepository = Depends(get_trip_repository),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
 ) -> SavedTripDetail:
     """Update a saved trip if owned by the caller.
 
     Returns 404 if the trip does not exist or belongs to another user.
     """
+    if idempotency_key and not request.idempotency_key:
+        request.idempotency_key = idempotency_key
     updated = repo.update_trip(
         user_id=current_user.user_id, trip_id=trip_id, request=request
     )

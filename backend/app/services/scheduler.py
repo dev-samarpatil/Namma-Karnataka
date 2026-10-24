@@ -513,9 +513,7 @@ class DeterministicScheduler:
                         else CostStatus.ESTIMATED
                     )
                     stay_source = chosen_acc.source_name
-                    stay_coords = Coordinates(
-                        lat=chosen_acc.latitude, lon=chosen_acc.longitude
-                    )
+                    stay_coords = Coordinates(lat=chosen_acc.latitude, lon=chosen_acc.longitude)
                 else:
                     stay_name = (
                         f"Overnight Stay ({primary_district})"
@@ -630,9 +628,7 @@ class DeterministicScheduler:
             day_num = day.day_number
             # Extract user attraction/activity stops in their specified sequence
             attraction_stops = [
-                s
-                for s in day.stops
-                if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY)
+                s for s in day.stops if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY)
             ]
 
             stops: list[ItineraryStop] = []
@@ -710,9 +706,7 @@ class DeterministicScheduler:
                 ):
                     lunch_end = current_time + timedelta(minutes=60)
                     nearby_rests = (
-                        places_svc.get_restaurants_near(
-                            coords.lat, coords.lon, radius_km=35.0
-                        )
+                        places_svc.get_restaurants_near(coords.lat, coords.lon, radius_km=35.0)
                         if coords
                         else []
                     )
@@ -730,9 +724,7 @@ class DeterministicScheduler:
                             or chosen_rest.address_kn
                             or chosen_rest.address_en
                         )
-                        unit_cost = (
-                            chosen_rest.estimated_cost_per_person_inr or 200.0
-                        )
+                        unit_cost = chosen_rest.estimated_cost_per_person_inr or 200.0
                         lunch_cost_min = unit_cost * request.travelers_count
                         lunch_cost_max = lunch_cost_min * 1.25
                         lunch_cost_status = (
@@ -757,9 +749,7 @@ class DeterministicScheduler:
                             else "ಕರ್ನಾಟಕದ ಸಾಂಪ್ರದಾಯಿಕ ಊಟ. ಹತ್ತಿರದ ಪರಿಶೀಲಿಸಿದ ಉಪಹಾರ ಗೃಹದಲ್ಲಿ ಭೋಜನ."
                         )
                         lunch_cost_min = round(lunch_unit * request.travelers_count, 2)
-                        lunch_cost_max = round(
-                            lunch_unit * 1.5 * request.travelers_count, 2
-                        )
+                        lunch_cost_max = round(lunch_unit * 1.5 * request.travelers_count, 2)
                         lunch_cost_status = CostStatus.ESTIMATED
                         lunch_source = None
                         lunch_coords = None
@@ -830,22 +820,14 @@ class DeterministicScheduler:
                 # Also populate recommended items
                 dest_rec = None
                 if attr.destination_id:
-                    dest_rec = dest_repo.get_by_id(
+                    dest_rec = dest_repo.get_by_id(attr.destination_id) or dest_repo.get_by_slug(
                         attr.destination_id
-                    ) or dest_repo.get_by_slug(attr.destination_id)
+                    )
 
                 slug = dest_rec.slug if dest_rec else attr.stop_id.replace("stop-", "")
-                cat = (
-                    dest_rec.category
-                    if dest_rec
-                    else DestinationCategory.OTHER
-                )
+                cat = dest_rec.category if dest_rec else DestinationCategory.OTHER
                 dist_code = dest_rec.district_code if dest_rec else "KA"
-                dist_name = (
-                    dest_rec.district.name_en
-                    if dest_rec and dest_rec.district
-                    else None
-                )
+                dist_name = dest_rec.district.name_en if dest_rec and dest_rec.district else None
 
                 recommended_items.append(
                     RecommendedDestination(
@@ -872,9 +854,7 @@ class DeterministicScheduler:
                         ),
                         currency_code="INR",
                         access_status=(
-                            dest_rec.access_status
-                            if dest_rec
-                            else AccessStatus.OPEN_REPORTED
+                            dest_rec.access_status if dest_rec else AccessStatus.OPEN_REPORTED
                         ),
                         is_offbeat=dest_rec.is_offbeat if dest_rec else False,
                         sources=dest_rec.sources if dest_rec else [],
@@ -903,9 +883,7 @@ class DeterministicScheduler:
                         end_time=lunch_end.strftime("%H:%M"),
                         duration_minutes=60,
                         cost_min_inr=round(lunch_unit * request.travelers_count, 2),
-                        cost_max_inr=round(
-                            lunch_unit * 1.5 * request.travelers_count, 2
-                        ),
+                        cost_max_inr=round(lunch_unit * 1.5 * request.travelers_count, 2),
                         currency="INR",
                         cost_status=CostStatus.ESTIMATED,
                         rationale="Nutritional pause and recharge.",
@@ -942,16 +920,13 @@ class DeterministicScheduler:
                     else chosen_dinner_rest.name_kn
                 )
                 dinner_desc = (
-                    chosen_dinner_rest.user_notes_en
-                    or chosen_dinner_rest.address_en
+                    chosen_dinner_rest.user_notes_en or chosen_dinner_rest.address_en
                     if request.language == LanguageCode.EN
                     else chosen_dinner_rest.user_notes_kn
                     or chosen_dinner_rest.address_kn
                     or chosen_dinner_rest.address_en
                 )
-                unit_cost = (
-                    chosen_dinner_rest.estimated_cost_per_person_inr or 250.0
-                )
+                unit_cost = chosen_dinner_rest.estimated_cost_per_person_inr or 250.0
                 dinner_cost_min = unit_cost * request.travelers_count
                 dinner_cost_max = dinner_cost_min * 1.3
                 dinner_cost_status = (
@@ -976,9 +951,7 @@ class DeterministicScheduler:
                     else "ಸ್ಥಳೀಯ ಶೈಲಿಯ ರಾತ್ರಿಯ ಊಟ ಮತ್ತು ಸಂಜೆಯ ವಿಶ್ರಾಂತಿ."
                 )
                 dinner_cost_min = round(dinner_unit * request.travelers_count, 2)
-                dinner_cost_max = round(
-                    dinner_unit * 1.6 * request.travelers_count, 2
-                )
+                dinner_cost_max = round(dinner_unit * 1.6 * request.travelers_count, 2)
                 dinner_cost_status = CostStatus.ESTIMATED
                 dinner_source = None
                 dinner_coords = None
@@ -1037,9 +1010,7 @@ class DeterministicScheduler:
                         or chosen_acc.address_kn
                         or chosen_acc.address_en
                     )
-                    unit_night_cost = (
-                        chosen_acc.estimated_cost_per_night_inr or 2200.0
-                    )
+                    unit_night_cost = chosen_acc.estimated_cost_per_night_inr or 2200.0
                     stay_cost_min = unit_night_cost * rooms
                     stay_cost_max = stay_cost_min * 1.2
                     stay_cost_status = (
@@ -1048,9 +1019,7 @@ class DeterministicScheduler:
                         else CostStatus.ESTIMATED
                     )
                     stay_source = chosen_acc.source_name
-                    stay_coords = Coordinates(
-                        lat=chosen_acc.latitude, lon=chosen_acc.longitude
-                    )
+                    stay_coords = Coordinates(lat=chosen_acc.latitude, lon=chosen_acc.longitude)
                 else:
                     stay_name = (
                         f"Overnight Stay (Day {day_num})"
@@ -1138,9 +1107,7 @@ class DeterministicScheduler:
         dest_repo = get_destination_repository()
         routing_svc = get_routing_service()
 
-        target_day = next(
-            (d for d in current_plan.days if d.day_number == day_number), None
-        )
+        target_day = next((d for d in current_plan.days if d.day_number == day_number), None)
         if target_day is None:
             raise AppError(
                 code="DAY_NOT_FOUND",
@@ -1148,9 +1115,7 @@ class DeterministicScheduler:
                 status_code=404,
             )
 
-        target_stop = next(
-            (s for s in target_day.stops if s.stop_id == stop_id), None
-        )
+        target_stop = next((s for s in target_day.stops if s.stop_id == stop_id), None)
         if target_stop is None:
             raise AppError(
                 code="STOP_NOT_FOUND",
@@ -1177,33 +1142,19 @@ class DeterministicScheduler:
 
         # Determine preceding and following coordinates
         attr_stops = [
-            s
-            for s in target_day.stops
-            if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY)
+            s for s in target_day.stops if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY)
         ]
-        target_idx = next(
-            (i for i, s in enumerate(attr_stops) if s.stop_id == stop_id), 0
-        )
-        prev_coords = (
-            attr_stops[target_idx - 1].coordinates if target_idx > 0 else None
-        )
+        target_idx = next((i for i, s in enumerate(attr_stops) if s.stop_id == stop_id), 0)
+        prev_coords = attr_stops[target_idx - 1].coordinates if target_idx > 0 else None
         next_coords = (
-            attr_stops[target_idx + 1].coordinates
-            if target_idx + 1 < len(attr_stops)
-            else None
+            attr_stops[target_idx + 1].coordinates if target_idx + 1 < len(attr_stops) else None
         )
 
         target_dest = (
-            dest_repo.get_by_id(target_stop.destination_id)
-            if target_stop.destination_id
-            else None
+            dest_repo.get_by_id(target_stop.destination_id) if target_stop.destination_id else None
         )
-        target_district = (
-            target_dest.district_code if target_dest else None
-        )
-        target_cat = (
-            preferred_category or (target_dest.category if target_dest else None)
-        )
+        target_district = target_dest.district_code if target_dest else None
+        target_cat = preferred_category or (target_dest.category if target_dest else None)
 
         # Original leg duration for comparison
         orig_transit_mins = target_stop.transit_from_prev_minutes or 0
@@ -1253,15 +1204,9 @@ class DeterministicScheduler:
 
             cand_fee = cand.entry_fee_min_inr or 0.0
             orig_fee = target_stop.cost_min_inr or 0.0
-            fee_diff = round(
-                (cand_fee * request.travelers_count) - orig_fee, 2
-            )
+            fee_diff = round((cand_fee * request.travelers_count) - orig_fee, 2)
 
-            is_same_district = (
-                cand.district_code == target_district
-                if target_district
-                else False
-            )
+            is_same_district = cand.district_code == target_district if target_district else False
             is_cat_match = cand.category == target_cat if target_cat else False
 
             # Ranking score: lower is better
@@ -1329,9 +1274,7 @@ class DeterministicScheduler:
         day_number: int,
     ) -> DayPlan:
         """Regenerate attractions for a single day while preserving locked stops and other days."""
-        target_day = next(
-            (d for d in current_plan.days if d.day_number == day_number), None
-        )
+        target_day = next((d for d in current_plan.days if d.day_number == day_number), None)
         if target_day is None:
             raise AppError(
                 code="DAY_NOT_FOUND",
@@ -1374,9 +1317,7 @@ class DeterministicScheduler:
             dominant_district = request.preferred_districts[0]
 
         candidates = [
-            d
-            for d in all_dests
-            if d.id not in used_other_day_ids and d.id not in locked_ids
+            d for d in all_dests if d.id not in used_other_day_ids and d.id not in locked_ids
         ]
 
         if dominant_district:
@@ -1434,10 +1375,7 @@ class DeterministicScheduler:
             stops=new_attraction_stops,
         )
 
-        all_days = [
-            (temp_day if d.day_number == day_number else d)
-            for d in current_plan.days
-        ]
+        all_days = [(temp_day if d.day_number == day_number else d) for d in current_plan.days]
 
         rescheduled_days, _, _ = cls.reschedule_itinerary(request, all_days)
         return next(d for d in rescheduled_days if d.day_number == day_number)

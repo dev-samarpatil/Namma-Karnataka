@@ -56,17 +56,16 @@ class TerrainAdjustedRoutingProvider(RoutingProvider):
             )
 
         # Detect terrain characteristics
-        in_ghats = (
-            is_in_western_ghats_corridor(origin_lat, origin_lon)
-            or is_in_western_ghats_corridor(dest_lat, dest_lon)
-        )
+        in_ghats = is_in_western_ghats_corridor(
+            origin_lat, origin_lon
+        ) or is_in_western_ghats_corridor(dest_lat, dest_lon)
 
         if in_ghats:
             winding_factor = 1.45  # Hairpin turns, hill gradients
-            avg_speed_kmh = 32.0   # Slower ghat driving speed
+            avg_speed_kmh = 32.0  # Slower ghat driving speed
         else:
             winding_factor = 1.30  # Standard state/national highway winding
-            avg_speed_kmh = 48.0   # Moderate highway driving speed
+            avg_speed_kmh = 48.0  # Moderate highway driving speed
 
         estimated_road_km = round(straight_km * winding_factor, 1)
 

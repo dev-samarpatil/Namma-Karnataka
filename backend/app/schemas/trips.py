@@ -193,4 +193,3 @@ class TripAuditHistoryResponse(StrictBaseModel):
 
     items: list[TripAuditEvent]
     total: int
-

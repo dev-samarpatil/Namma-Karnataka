@@ -90,6 +90,76 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
         )}
       </div>
 
+      {/* Target Budget Comparison Banner (if user set a numeric limit) */}
+      {budget && budget.budget_limit_inr !== undefined && budget.budget_limit_inr !== null && (
+        <div
+          data-testid="budget-limit-comparison-card"
+          style={{
+            margin: '12px 0',
+            padding: '12px 16px',
+            background: budget.is_budget_feasible ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.12)',
+            border: `1px solid ${budget.is_budget_feasible ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)'}`,
+            borderRadius: 'var(--radius-md, 8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.1rem' }}>{budget.is_budget_feasible ? '🎯' : '⚠️'}</span>
+              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary, #f8fafc)' }}>
+                {language === 'kn' ? 'ನಿಗದಿಪಡಿಸಿದ ಬಜೆಟ್ ಮಿತಿ' : 'Target Budget Limit'}:
+              </span>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--accent-gold, #f59e0b)' }}>
+                ₹{budget.budget_limit_inr.toLocaleString('en-IN')}
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)' }}>
+                ({budget.budget_scope === 'per_person' ? (language === 'kn' ? 'ಪ್ರತಿ ಪ್ರಯಾಣಿಕನಿಗೆ' : 'Per Traveler') : (language === 'kn' ? 'ಸಂಪೂರ್ಣ ಗುಂಪು' : 'Entire Group')})
+              </span>
+            </div>
+            <div>
+              {budget.is_budget_feasible ? (
+                <span
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    color: '#34d399',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                  }}
+                >
+                  ✓ {language === 'kn' ? 'ಬಜೆಟ್ ಮಿತಿಯಲ್ಲಿದೆ' : 'Within Budget Cap'}
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                  }}
+                >
+                  ⚠️ {language === 'kn' ? 'ಬಜೆಟ್ ಮಿತಿ ಮೀರಿದೆ' : 'Budget Overrun'}: +₹{Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}
+                </span>
+              )}
+            </div>
+          </div>
+          {!budget.is_budget_feasible && (
+            <div style={{ fontSize: '0.8rem', color: '#fca5a5', lineHeight: 1.4 }}>
+              {language === 'kn'
+                ? `ಅಂದಾಜು ಕನಿಷ್ಠ ವೆಚ್ಚವು (₹${budget.grand_total_min_inr?.toLocaleString('en-IN')}) ನಿಮ್ಮ ಗುರಿ ಮಿತಿಗಿಂತ ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')} ಹೆಚ್ಚಾಗಿದೆ. ಕಡಿಮೆ ವೆಚ್ಚದ ಆಕರ್ಷಣೆಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ.`
+                : `Estimated minimum expenses (₹${budget.grand_total_min_inr?.toLocaleString('en-IN')}) exceed your target spending limit by ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}. Consider choosing fewer paid attractions or adjusting transport options.`}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Subtotals & Breakdown Bar */}
       {budget && (
         <div
@@ -98,27 +168,27 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '10px',
             margin: '12px 0',
-            padding: '10px 14px',
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '6px',
+            padding: '12px 16px',
+            background: 'var(--bg-card, #182238)',
+            border: '1px solid var(--border-subtle, #243350)',
+            borderRadius: 'var(--radius-md, 8px)',
           }}
         >
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t('verifiedSubtotalLabel')}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#166534' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>{t('verifiedSubtotalLabel')}</div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#34d399' }}>
               ₹{budget.verified_subtotal_inr || 0}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t('estimatedSubtotalLabel')}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f766e' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>{t('estimatedSubtotalLabel')}</div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--accent-cyan, #38bdf8)' }}>
               ₹{budget.estimated_subtotal_min_inr || 0} – ₹{budget.estimated_subtotal_max_inr || 0}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t('contingencyLabel')}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#b45309' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>{t('contingencyLabel')}</div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--accent-gold, #f59e0b)' }}>
               +10% Buffer Included
             </div>
           </div>

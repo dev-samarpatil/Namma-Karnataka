@@ -187,9 +187,8 @@ class InMemoryDestinationRepository:
                         continue
                 elif params.fee_type == "paid":
                     has_fee = (
-                        (dest.entry_fee_min_inr is not None and dest.entry_fee_min_inr > 0)
-                        or (dest.entry_fee_max_inr is not None and dest.entry_fee_max_inr > 0)
-                    )
+                        dest.entry_fee_min_inr is not None and dest.entry_fee_min_inr > 0
+                    ) or (dest.entry_fee_max_inr is not None and dest.entry_fee_max_inr > 0)
                     if not has_fee:
                         continue
                 elif params.fee_type == "unknown":
@@ -226,7 +225,6 @@ class InMemoryDestinationRepository:
                 key=lambda d: (d.district_code, d.name_en.lower() if d.name_en else d.slug)
             )
         elif params.sort_by == "duration_asc":
-
             filtered.sort(key=lambda d: (d.estimated_visit_minutes or 9999, d.slug))
         elif params.sort_by == "duration_desc":
             filtered.sort(key=lambda d: (-(d.estimated_visit_minutes or 0), d.slug))
@@ -398,7 +396,6 @@ class SupabaseDestinationRepository:
             return self._fallback_repo.list_destinations(params, published_only)
         try:
             query_params: dict[str, str] = {
-
                 "select": "*,destination_translations(*),destination_sources(*),districts(*)",
                 "order": "slug.asc,id.asc",
                 "limit": str(params.limit),
@@ -533,7 +530,6 @@ class SupabaseDestinationRepository:
                 row_copy["primary_image_url"] = fb_dest.primary_image_url
 
         return DestinationRead.model_validate(row_copy)
-
 
 
 # Central Repository Singleton / Dependency Factory

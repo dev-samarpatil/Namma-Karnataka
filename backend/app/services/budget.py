@@ -160,8 +160,7 @@ class BudgetCalculator:
             meal_count = duration * 3
             meal_status = CostStatus.ESTIMATED
             meal_basis = (
-                f"{duration * 3} planned meals for {travelers} traveler(s) "
-                f"({scenario} dining tier)"
+                f"{duration * 3} planned meals for {travelers} traveler(s) ({scenario} dining tier)"
             )
             estimated_min_subtotal += meal_min
             estimated_max_subtotal += meal_max
@@ -329,7 +328,7 @@ class BudgetCalculator:
 
         calculation_notes.append(
             f"Transport: {cumulative_route_km:.1f} km route distance "
-            f"({ 'round-trip' if is_return else 'one-way' } = "
+            f"({'round-trip' if is_return else 'one-way'} = "
             f"{trans_estimate.billable_distance_km:.1f} billable km)."
         )
 
@@ -364,6 +363,43 @@ class BudgetCalculator:
         per_person_min = round(grand_min / travelers, 2)
         per_person_max = round(grand_max / travelers, 2)
 
+        # Budget Feasibility Check
+        budget_limit = getattr(request, "budget_limit_inr", None)
+        budget_scope = getattr(request, "budget_scope", "total_trip") or "total_trip"
+        is_feasible = True
+        budget_overrun: float | None = None
+
+        if budget_limit is not None and budget_limit > 0:
+            effective_target_total = (
+                budget_limit if budget_scope == "total_trip" else budget_limit * travelers
+            )
+
+            if grand_min > effective_target_total:
+                is_feasible = False
+                budget_overrun = round(grand_min - effective_target_total, 2)
+                scope_label = budget_scope.replace("_", " ")
+                warning_text = (
+                    f"Target budget of ₹{budget_limit:,.0f} ({scope_label}) is exceeded by "
+                    f"approximately ₹{budget_overrun:,.0f}. Minimum estimated trip cost is "
+                    f"₹{grand_min:,.0f} (₹{per_person_min:,.0f}/person). Consider selecting "
+                    f"free/nature attractions or choosing budget transport."
+                )
+                if getattr(request, "language", "en") == "kn":
+                    warning_text = (
+                        f"ನಿಗದಿಪಡಿಸಿದ ಬಜೆಟ್ ₹{budget_limit:,.0f} ಗಿಂತ ಅಂದಾಜು ವೆಚ್ಚವು "
+                        f"₹{budget_overrun:,.0f} ಹೆಚ್ಚಾಗಿದೆ. ಕನಿಷ್ಠ ವೆಚ್ಚ ₹{grand_min:,.0f}."
+                    )
+                warnings.append(warning_text)
+                calculation_notes.append(
+                    f"Budget constraint: ₹{budget_limit:,.0f} ({budget_scope}). "
+                    f"Target exceeded by ₹{budget_overrun:,.0f}."
+                )
+            else:
+                calculation_notes.append(
+                    f"Budget constraint: ₹{budget_limit:,.0f} ({budget_scope}). "
+                    f"Plan is within budget (estimated ₹{grand_min:,.0f} - ₹{grand_max:,.0f})."
+                )
+
         return CompleteBudgetBreakdown(
             grand_total_min_inr=grand_min,
             grand_total_max_inr=grand_max,
@@ -377,6 +413,10 @@ class BudgetCalculator:
             travel_mode_used=travel_mode,
             budget_scenario_used=scenario,
             is_return_trip=is_return,
+            budget_limit_inr=budget_limit,
+            budget_scope=budget_scope,
+            is_budget_feasible=is_feasible,
+            budget_overrun_inr=budget_overrun,
             categories=categories,
             has_unknown_costs=has_unknown_entry_fees,
             calculation_notes=calculation_notes,

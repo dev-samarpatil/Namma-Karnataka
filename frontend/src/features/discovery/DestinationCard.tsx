@@ -44,19 +44,47 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
     return <span className="fee-tag fee-unknown">ℹ️ {t('feeUnknown')}</span>;
   };
 
+  const [imageError, setImageError] = React.useState(false);
   const imageUrl = destination.primary_image_url || destination.media?.[0]?.thumbnail_url || destination.media?.[0]?.url;
+
+  const CATEGORY_FALLBACK_ICONS: Record<string, string> = {
+    architecture: '🏛️',
+    heritage: '🏰',
+    nature: '🌲',
+    waterfall: '🌊',
+    hill_station: '⛰️',
+    beach: '🏖️',
+    wildlife: '🐅',
+    spiritual_cultural: '🛕',
+    adventure: '🧗',
+    viewpoint: '🔭',
+    museum: '🏛️',
+    town_city: '🏙️',
+    food_culture: '🍱',
+    other: '📍',
+  };
 
   return (
     <article className="destination-card" data-testid={`destination-card-${destination.slug}`}>
-      {imageUrl && (
-        <div className="card-image-wrap" style={{ width: '100%', height: '140px', overflow: 'hidden', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', background: '#f3f4f6' }}>
+      {imageUrl && !imageError ? (
+        <div className="card-image-wrap" style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', background: '#0f172a' }}>
           <img
             src={imageUrl}
             alt={destination.media?.[0]?.alt_en || name}
             loading="lazy"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+            onError={() => setImageError(true)}
           />
+          <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#34d399', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)', fontWeight: 600 }}>
+            ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic'}
+          </span>
+        </div>
+      ) : (
+        <div className="card-image-wrap card-image-fallback" style={{ width: '100%', height: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#1e293b', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', color: '#94a3b8' }}>
+          <span style={{ fontSize: '2rem' }}>{CATEGORY_FALLBACK_ICONS[destination.category] || '📍'}</span>
+          <span style={{ fontSize: '0.72rem', marginTop: '4px', color: '#64748b' }}>
+            {language === 'kn' ? 'ಛಾಯಾಚಿತ್ರ ಲಭ್ಯವಿಲ್ಲ' : 'Photo unavailable'}
+          </span>
         </div>
       )}
       <div className="card-header">

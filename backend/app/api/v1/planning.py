@@ -47,9 +47,7 @@ async def recalculate_itinerary(
         recalc_req.request, recalc_req.days
     )
 
-    budget = BudgetCalculator.calculate_budget(
-        recalc_req.request, rescheduled_days, items
-    )
+    budget = BudgetCalculator.calculate_budget(recalc_req.request, rescheduled_days, items)
 
     return PlanningRecommendationResponse(
         request_id=None,
@@ -107,9 +105,7 @@ async def regenerate_day(
         day_regen_req.request, updated_days
     )
 
-    budget = BudgetCalculator.calculate_budget(
-        day_regen_req.request, rescheduled_days, items
-    )
+    budget = BudgetCalculator.calculate_budget(day_regen_req.request, rescheduled_days, items)
 
     return PlanningRecommendationResponse(
         request_id=day_regen_req.current_plan.request_id,
@@ -121,8 +117,6 @@ async def regenerate_day(
         duration_days=day_regen_req.request.duration_days,
         days=rescheduled_days,
         budget_breakdown=budget,
-        assumptions=[
-            f"Day {day_regen_req.day_number} regenerated while preserving locked stops."
-        ],
+        assumptions=[f"Day {day_regen_req.day_number} regenerated while preserving locked stops."],
         warnings=warnings,
     )

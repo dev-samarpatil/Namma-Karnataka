@@ -146,4 +146,3 @@ def test_find_transit_journeys_transfer_feasibility():
 
     # Fare must aggregate both legs
     assert transfer_journey["total_fare_min_inr"] >= leg1["fare_inr"] + leg2["fare_inr"]
-

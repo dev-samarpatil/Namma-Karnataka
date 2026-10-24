@@ -60,10 +60,22 @@ class DeterministicFallbackEngine:
                 )
 
         # 3. Deterministic Stable Sorting:
-        # Prioritize offbeat if requested, then sort alphabetically by category, district, and slug
+        # Prioritize offbeat if requested, budget-affordability if limit is specified,
+        # then sort deterministically by category, district, and slug
+        budget_limit = getattr(request, "budget_limit_inr", None)
+
         def sort_key(d: DestinationRead) -> tuple:
             offbeat_score = 0 if (request.is_offbeat_preferred and d.is_offbeat) else 1
-            return (offbeat_score, d.category, d.district_code, d.slug)
+            fee = d.entry_fee_min_inr if d.entry_fee_min_inr is not None else 50.0
+            fee_tier = (0 if fee == 0.0 else 1) if budget_limit else 0
+            return (
+                offbeat_score,
+                fee_tier,
+                fee if budget_limit else 0.0,
+                d.category,
+                d.district_code,
+                d.slug,
+            )
 
         pool.sort(key=sort_key)
 

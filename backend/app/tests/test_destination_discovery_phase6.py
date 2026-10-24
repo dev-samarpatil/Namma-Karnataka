@@ -55,9 +55,7 @@ def test_destination_fee_type_filter(client: TestClient):
     for item in free_items:
         min_fee = item.get("entry_fee_min_inr")
         max_fee = item.get("entry_fee_max_inr")
-        assert (min_fee is not None and min_fee == 0.0) or (
-            max_fee is not None and max_fee == 0.0
-        )
+        assert (min_fee is not None and min_fee == 0.0) or (max_fee is not None and max_fee == 0.0)
 
     paid_res = client.get("/api/v1/destinations?fee_type=paid&limit=50")
     assert paid_res.status_code == 200
@@ -90,7 +88,6 @@ def test_destination_sorting(client: TestClient):
     assert dur_asc.status_code == 200
     durs = [item.get("estimated_visit_minutes") or 9999 for item in dur_asc.json()["items"]]
     assert durs == sorted(durs)
-
 
 
 def test_destination_nearby_endpoint(client: TestClient):

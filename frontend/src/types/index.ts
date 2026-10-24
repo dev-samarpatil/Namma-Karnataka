@@ -188,6 +188,8 @@ export interface PlanningRequest {
   is_offbeat_preferred: boolean;
   travel_mode?: 'driving_car' | 'cab_taxi' | 'public_transit' | 'mixed';
   budget_scenario?: 'budget' | 'standard' | 'comfort';
+  budget_limit_inr?: number;
+  budget_scope?: 'total_trip' | 'per_person';
   fuel_efficiency_km_per_litre?: number;
   fuel_price_per_litre?: number;
   is_return_trip?: boolean;
@@ -275,6 +277,10 @@ export interface CompleteBudgetBreakdown {
   travel_mode_used?: string;
   budget_scenario_used?: string;
   is_return_trip?: boolean;
+  budget_limit_inr?: number;
+  budget_scope?: 'total_trip' | 'per_person';
+  is_budget_feasible?: boolean;
+  budget_overrun_inr?: number;
   categories: BudgetCategoryItem[];
   has_unknown_costs: boolean;
   calculation_notes?: string[];
@@ -681,5 +687,55 @@ export interface SyncOperation {
   status: SyncOperationStatus;
   last_error?: string;
   last_attempt_at?: string;
+}
+
+export interface Waypoint {
+  name: string;
+  lat: number;
+  lon: number;
+  stop_id?: string;
+  stop_order?: number;
+  day_number?: number;
+}
+
+export interface RouteStep {
+  instruction: string;
+  distance_meters: number;
+  duration_seconds: number;
+  name?: string;
+}
+
+export interface RouteLeg {
+  origin: Waypoint;
+  destination: Waypoint;
+  distance_meters: number;
+  distance_km: number;
+  duration_seconds: number;
+  duration_minutes: number;
+  steps: RouteStep[];
+  geometry_coordinates: [number, number][];
+  calculation_method: string;
+  warnings: string[];
+}
+
+export interface DirectionsRequest {
+  origin: Waypoint;
+  destination: Waypoint;
+  waypoints?: Waypoint[];
+  travel_mode?: string;
+  day_number?: number;
+}
+
+export interface DirectionsResponse {
+  provider: string;
+  calculation_method: string;
+  travel_mode: string;
+  total_distance_km: number;
+  total_duration_minutes: number;
+  legs: RouteLeg[];
+  all_coordinates: [number, number][];
+  google_maps_url: string;
+  is_live_traffic?: boolean;
+  warnings?: string[];
 }
 

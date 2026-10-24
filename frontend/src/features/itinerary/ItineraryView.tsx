@@ -66,6 +66,17 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
   const { t } = useTranslation(language);
   const [showMap, setShowMap] = useState<boolean>(true);
+  const [activeDayTab, setActiveDayTab] = useState<number>(0);
+
+  const handleSelectDayTab = (dNum: number) => {
+    setActiveDayTab(dNum);
+    if (dNum > 0) {
+      const el = document.getElementById(`day-block-${dNum}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   // Backward compatibility: derive effectiveDays from plan.days or fallback to grouping items
   const effectiveDays: DayPlan[] = useMemo(() => {
@@ -782,6 +793,66 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       {/* Embedded Budget Breakdown Section */}
       <BudgetSummary stops={plan.items} language={language} budget={plan.budget_breakdown} />
 
+      {/* Day Navigator Bar (for multi-day trips) */}
+      {effectiveDays.length > 1 && (
+        <div
+          className="day-navigator-container"
+          data-testid="day-navigator"
+          style={{
+            display: 'flex',
+            gap: '8px',
+            overflowX: 'auto',
+            padding: '10px 4px',
+            margin: '1.25rem 0 0.5rem',
+            alignItems: 'center',
+            borderBottom: '1px solid var(--border-subtle, #243350)',
+          }}
+        >
+          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)', whiteSpace: 'nowrap' }}>
+            {language === 'kn' ? 'ದಿನಗಳಿಗೆ ಹೋಗಿ:' : 'Day Navigation:'}
+          </span>
+          <button
+            type="button"
+            onClick={() => handleSelectDayTab(0)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              background: activeDayTab === 0 ? 'var(--accent-cyan, #38bdf8)' : 'var(--bg-card, #182238)',
+              color: activeDayTab === 0 ? '#0b1329' : 'var(--text-primary, #f8fafc)',
+              border: '1px solid var(--border-subtle, #243350)',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {language === 'kn' ? 'ಎಲ್ಲಾ ದಿನಗಳು' : 'All Days'} ({effectiveDays.length})
+          </button>
+          {effectiveDays.map((d) => (
+            <button
+              key={d.day_number}
+              type="button"
+              onClick={() => handleSelectDayTab(d.day_number)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: activeDayTab === d.day_number ? 'var(--accent-gold, #f59e0b)' : 'var(--bg-card, #182238)',
+                color: activeDayTab === d.day_number ? '#0b1329' : 'var(--text-primary, #f8fafc)',
+                border: '1px solid var(--border-subtle, #243350)',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {language === 'kn' ? `ದಿನ ${d.day_number}` : `Day ${d.day_number}`}: {d.theme ? d.theme.substring(0, 20) : `${d.stops.length} stops`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Chronological Day-by-Day Timeline */}
       <div className="timeline-container" data-testid="itinerary-timeline">
         {effectiveDays.length > 0 && (
@@ -791,7 +862,12 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             );
 
             return (
-              <div key={day.day_number} className="timeline-day-block" data-testid={`day-block-${day.day_number}`}>
+              <div
+                key={day.day_number}
+                id={`day-block-${day.day_number}`}
+                className={`timeline-day-block ${activeDayTab === day.day_number ? 'day-block-active' : ''}`}
+                data-testid={`day-block-${day.day_number}`}
+              >
                 <div className="day-header">
                   <div>
                     <span className="day-pill">{t('day')} {day.day_number}</span>

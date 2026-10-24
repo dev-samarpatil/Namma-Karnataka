@@ -124,19 +124,27 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-dest-title" data-testid="destination-modal-overlay">
       <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         {/* Section A: Hero Image */}
-        {currentMedia && (
-          <div className="modal-hero-banner" style={{ position: 'relative', width: '100%', height: '240px', overflow: 'hidden', borderTopLeftRadius: '12px', borderTopRightRadius: '12px', background: '#111827' }}>
+        {currentMedia ? (
+          <div className="modal-hero-banner" style={{ position: 'relative', width: '100%', height: '260px', overflow: 'hidden', borderTopLeftRadius: '12px', borderTopRightRadius: '12px', background: '#0f172a' }}>
             <img
               src={currentMedia.url}
               alt={language === 'kn' && currentMedia.alt_kn ? currentMedia.alt_kn : currentMedia.alt_en || name}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
             />
-            <div style={{ position: 'absolute', bottom: '8px', right: '12px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px' }}>
-              📷 {currentMedia.attribution} ({currentMedia.license_type})
+            <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#34d399', fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(52, 211, 153, 0.3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic Photograph'}</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: '8px', right: '12px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#cbd5e1', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.1)', maxWidth: '90%' }}>
+              📷 {currentMedia.attribution} • <span style={{ color: '#93c5fd' }}>{currentMedia.license_type}</span>
+              {currentMedia.source_url && (
+                <a href={currentMedia.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', marginLeft: '6px', textDecoration: 'underline' }}>
+                  Source ↗
+                </a>
+              )}
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="modal-header">
           <div className="modal-badges">

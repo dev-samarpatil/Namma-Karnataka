@@ -199,9 +199,7 @@ async def update_saved_trip(
     """
     if idempotency_key and not request.idempotency_key:
         request.idempotency_key = idempotency_key
-    updated = repo.update_trip(
-        user_id=current_user.user_id, trip_id=trip_id, request=request
-    )
+    updated = repo.update_trip(user_id=current_user.user_id, trip_id=trip_id, request=request)
     if updated is None:
         raise AppError(
             code="TRIP_NOT_FOUND",
@@ -294,9 +292,7 @@ async def revoke_trip_share(
     repo: TripRepository = Depends(get_trip_repository),
 ) -> dict[str, str | bool]:
     """Revoke a share link so it can no longer be used to access or edit the trip."""
-    revoked = repo.revoke_share(
-        user_id=current_user.user_id, trip_id=trip_id, share_id=share_id
-    )
+    revoked = repo.revoke_share(user_id=current_user.user_id, trip_id=trip_id, share_id=share_id)
     if not revoked:
         raise AppError(
             code="SHARE_NOT_FOUND",
@@ -334,5 +330,3 @@ async def get_trip_history(
             status_code=status.HTTP_404_NOT_FOUND,
         )
     return TripAuditHistoryResponse(items=history, total=len(history))
-
-

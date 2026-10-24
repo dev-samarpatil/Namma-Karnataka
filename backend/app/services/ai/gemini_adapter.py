@@ -58,6 +58,11 @@ class GeminiAdapter:
 
         dist_str = ", ".join(request.preferred_districts) if request.preferred_districts else "Any"
         cat_str = ", ".join(request.categories) if request.categories else "Any"
+        budget_str = (
+            f"₹{request.budget_limit_inr:,.0f} ({request.budget_scope})"
+            if request.budget_limit_inr
+            else "No explicit cap"
+        )
 
         user_content = (
             f"Trip Request:\n"
@@ -66,6 +71,7 @@ class GeminiAdapter:
             f"- Preferred Districts: {dist_str}\n"
             f"- Preferred Categories: {cat_str}\n"
             f"- Travel Pace: {request.pace}\n"
+            f"- Budget Limit: {budget_str}\n"
             f"- Prioritize Offbeat: {request.is_offbeat_preferred}\n"
             f"- Notes: {request.notes or 'None'}\n\n"
             f"{catalog_context}\n\n"

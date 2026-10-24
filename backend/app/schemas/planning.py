@@ -64,13 +64,11 @@ class PlanningRequest(StrictSchema):
     )
     preferred_districts: list[str] = Field(
         default_factory=list,
-        max_length=5,
-        description="Optional district code filters e.g. ['KA-MYS', 'KA-KOD']",
+        description="Optional district code filters without arbitrary limits",
     )
     categories: list[DestinationCategory] = Field(
         default_factory=list,
-        max_length=5,
-        description="Preferred categories e.g. ['heritage', 'waterfall']",
+        description="Preferred categories e.g. ['heritage', 'waterfall'] without arbitrary limits",
     )
     pace: str = Field(
         "balanced",
@@ -89,6 +87,17 @@ class PlanningRequest(StrictSchema):
         "standard",
         pattern="^(budget|standard|comfort)$",
         description="Budget preference profile: budget, standard, or comfort",
+    )
+    budget_limit_inr: float | None = Field(
+        None,
+        gt=0.0,
+        le=10_000_000.0,
+        description="Optional maximum budget spending limit in INR (entire trip or per-traveler)",
+    )
+    budget_scope: str = Field(
+        "total_trip",
+        pattern="^(total_trip|per_person)$",
+        description="Budget limit scope: 'total_trip' (entire party) or 'per_person'",
     )
     fuel_efficiency_km_per_litre: float = Field(
         14.0,
@@ -235,6 +244,10 @@ class CompleteBudgetBreakdown(StrictSchema):
     travel_mode_used: str = "driving_car"
     budget_scenario_used: str = "standard"
     is_return_trip: bool = True
+    budget_limit_inr: float | None = None
+    budget_scope: str = "total_trip"
+    is_budget_feasible: bool = True
+    budget_overrun_inr: float | None = None
     categories: list[BudgetCategoryItem] = Field(default_factory=list)
     has_unknown_costs: bool = False
     calculation_notes: list[str] = Field(default_factory=list)

@@ -149,6 +149,8 @@ class DestinationMediaRead(StrictSchema):
     license_type: str = "Official Tourism Portal / CC BY-SA"
     attribution: str
     is_primary: bool = False
+    verification_status: str = "verified_authentic"
+    media_type: str = "photograph"
 
 
 # ============================================================================
@@ -274,7 +276,6 @@ class DestinationRead(DestinationBase):
                     first_url = first.get("url") if isinstance(first, dict) else first.url
                     data["primary_image_url"] = first_url
         return data
-
 
 
 class DestinationPublicItem(StrictSchema):

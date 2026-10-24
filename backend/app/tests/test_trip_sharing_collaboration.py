@@ -88,13 +88,11 @@ def sample_trip_payload() -> dict:
     }
 
 
-
 def auth_headers(user_id: str = "user_owner_1") -> dict[str, str]:
     token = "test-token-user-1" if "1" in user_id else "test-token-user-2"
     return {
         "Authorization": f"Bearer {token}",
     }
-
 
 
 def test_create_and_read_viewer_share(client: TestClient):
@@ -124,7 +122,6 @@ def test_create_and_read_viewer_share(client: TestClient):
     assert view_data["role"] == "viewer"
     assert view_data["version"] == 1
     assert len(view_data["snapshot"]["items"]) == 2
-
 
 
 def test_viewer_cannot_mutate_shared_trip(client: TestClient):
@@ -241,9 +238,7 @@ def test_share_revocation(client: TestClient):
     assert len(list_res.json()["items"]) == 1
 
     # Owner revokes share
-    del_res = client.delete(
-        f"/api/v1/trips/{trip_id}/shares/{share_id}", headers=auth_headers()
-    )
+    del_res = client.delete(f"/api/v1/trips/{trip_id}/shares/{share_id}", headers=auth_headers())
     assert del_res.status_code == 200
 
     # Viewer access is now rejected

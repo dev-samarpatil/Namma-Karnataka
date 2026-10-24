@@ -43,8 +43,14 @@ ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
 VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     "mysore-palace": {
         "features": [
-            "palace", "dome", "indo-saracenic", "arches",
-            "durbar", "royal", "illuminated", "amba vilas",
+            "palace",
+            "dome",
+            "indo-saracenic",
+            "arches",
+            "durbar",
+            "royal",
+            "illuminated",
+            "amba vilas",
         ],
         "style": "Indo-Saracenic & Royal Wadiyar",
         "landscape": ["Urban Mysore, Chamundi Hill backdrop"],
@@ -52,8 +58,14 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "virupaksha-temple-hampi": {
         "features": [
-            "gopuram", "stepped", "boulder", "stone chariot",
-            "ruins", "vijayanagara", "tungabhadra", "granite",
+            "gopuram",
+            "stepped",
+            "boulder",
+            "stone chariot",
+            "ruins",
+            "vijayanagara",
+            "tungabhadra",
+            "granite",
         ],
         "style": "Vijayanagara Dravidian Temple Architecture",
         "landscape": ["Granite boulder-strewn landscape along Tungabhadra river"],
@@ -61,8 +73,12 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "gol-gumbaz-vijayapura": {
         "features": [
-            "massive dome", "whispering gallery", "dark grey basalt",
-            "minarets", "adil shahi", "mausoleum",
+            "massive dome",
+            "whispering gallery",
+            "dark grey basalt",
+            "minarets",
+            "adil shahi",
+            "mausoleum",
         ],
         "style": "Deccan Islamic Architectural Style",
         "landscape": ["North Karnataka plains in Vijayapura"],
@@ -70,8 +86,15 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "jog-falls": {
         "features": [
-            "waterfall", "four cascades", "raja", "roorer",
-            "rocket", "rani", "sharavathi", "mist", "gorge",
+            "waterfall",
+            "four cascades",
+            "raja",
+            "roorer",
+            "rocket",
+            "rani",
+            "sharavathi",
+            "mist",
+            "gorge",
         ],
         "style": "Natural Waterfall Cataract",
         "landscape": ["Dense Western Ghats rainforest in Shivamogga"],
@@ -79,8 +102,12 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "chennakeshava-temple-belur": {
         "features": [
-            "star-shaped platform", "soapstone carvings", "bracket figures",
-            "madanika", "hoysala", "yagachi",
+            "star-shaped platform",
+            "soapstone carvings",
+            "bracket figures",
+            "madanika",
+            "hoysala",
+            "yagachi",
         ],
         "style": "Hoysala Soapstone Relief Architecture",
         "landscape": ["Hassan plateau riverbank"],
@@ -88,8 +115,13 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "badami-cave-temples": {
         "features": [
-            "red sandstone", "cave", "rock-cut",
-            "agastya lake", "chalukya", "nataraja", "cliffs",
+            "red sandstone",
+            "cave",
+            "rock-cut",
+            "agastya lake",
+            "chalukya",
+            "nataraja",
+            "cliffs",
         ],
         "style": "Early Chalukyan Rock-Cut Architecture",
         "landscape": ["Red sandstone ravine flanking Agastya Lake in Bagalkote"],
@@ -97,8 +129,13 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "om-beach-gokarna": {
         "features": [
-            "crescent beach", "om shape", "black rocks",
-            "arabian sea", "coastline", "golden sand", "palms",
+            "crescent beach",
+            "om shape",
+            "black rocks",
+            "arabian sea",
+            "coastline",
+            "golden sand",
+            "palms",
         ],
         "style": "Coastal Natural Shoreline",
         "landscape": ["Rugged Arabian Sea coastline of Uttara Kannada"],
@@ -106,8 +143,12 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "mullayanagiri-peak": {
         "features": [
-            "misty peak", "rolling hills", "western ghats",
-            "grasslands", "shola forest", "trekking trail",
+            "misty peak",
+            "rolling hills",
+            "western ghats",
+            "grasslands",
+            "shola forest",
+            "trekking trail",
         ],
         "style": "Montane Shola-Grassland Summit",
         "landscape": ["Highest summit in Karnataka, Baba Budan Giri range, Chikkamagaluru"],
@@ -115,8 +156,13 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "bandipur-national-park": {
         "features": [
-            "forest", "wildlife", "safari",
-            "elephant", "tiger", "dry deciduous", "nilgiri biosphere",
+            "forest",
+            "wildlife",
+            "safari",
+            "elephant",
+            "tiger",
+            "dry deciduous",
+            "nilgiri biosphere",
         ],
         "style": "Deciduous Forest Biosphere",
         "landscape": ["Foothills of the Nilgiris in Chamarajanagar"],
@@ -124,8 +170,11 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     },
     "murudeshwar-temple": {
         "features": [
-            "huge shiva statue", "coastal temple", "tall gopuram",
-            "arabian sea cliff", "colossus",
+            "huge shiva statue",
+            "coastal temple",
+            "tall gopuram",
+            "arabian sea cliff",
+            "colossus",
         ],
         "style": "Modern Dravidian Coastal Colossus",
         "landscape": ["Peninsula jutting into the Arabian Sea in Uttara Kannada"],
@@ -154,7 +203,7 @@ def validate_and_process_image_bytes(
         raise AppError(
             code="FILE_TOO_LARGE",
             message=(
-                f"Uploaded image size ({len(data) / (1024*1024):.1f}MB) "
+                f"Uploaded image size ({len(data) / (1024 * 1024):.1f}MB) "
                 f"exceeds maximum limit of 10MB."
             ),
             status_code=400,
@@ -179,8 +228,7 @@ def validate_and_process_image_bytes(
             raise AppError(
                 code="UNSUPPORTED_IMAGE_FORMAT",
                 message=(
-                    f"Image format '{fmt}' is not supported. "
-                    "Supported formats: JPEG, PNG, WebP."
+                    f"Image format '{fmt}' is not supported. Supported formats: JPEG, PNG, WebP."
                 ),
                 status_code=400,
             )
@@ -190,8 +238,7 @@ def validate_and_process_image_bytes(
             raise AppError(
                 code="IMAGE_TOO_SMALL",
                 message=(
-                    f"Image resolution ({width}x{height}) is too low "
-                    "for visual feature extraction."
+                    f"Image resolution ({width}x{height}) is too low for visual feature extraction."
                 ),
                 status_code=400,
             )
@@ -377,7 +424,7 @@ class VisualDiscoveryService:
             '  "detected_signage": string or null,\n'
             '  "reasoning": string,\n'
             '  "candidates": [\n'
-            '    {\n'
+            "    {\n"
             '      "slug": "canonical-slug-from-catalog",\n'
             '      "match_score": number between 0.0 and 1.0,\n'
             '      "confidence_label": "strong_match" | "possible_match" | '
@@ -583,8 +630,7 @@ class VisualDiscoveryService:
                 query_type=query_type,
                 is_confident=False,
                 message_en=(
-                    "No matching Karnataka destinations could be verified "
-                    "from the image evidence."
+                    "No matching Karnataka destinations could be verified from the image evidence."
                 ),
                 message_kn="ಚಿತ್ರದ ಆಧಾರದ ಮೇಲೆ ಯಾವುದೇ ಕರ್ನಾಟಕದ ತಾಣಗಳನ್ನು ದೃಢೀಕರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
                 candidates=[],

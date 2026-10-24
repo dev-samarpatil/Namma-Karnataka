@@ -308,9 +308,7 @@ def test_regenerate_day_preserves_locked_stops(
     first_attr.locked = True
 
     day2_slugs = [
-        s.destination_id
-        for s in sample_days[1].stops
-        if s.stop_type == StopType.ATTRACTION
+        s.destination_id for s in sample_days[1].stops if s.stop_type == StopType.ATTRACTION
     ]
 
     current_plan = {
@@ -339,8 +337,6 @@ def test_regenerate_day_preserves_locked_stops(
 
     # Day 2 stops must be preserved
     d2_new_slugs = [
-        s["destination_id"]
-        for s in data["days"][1]["stops"]
-        if s["stop_type"] == "attraction"
+        s["destination_id"] for s in data["days"][1]["stops"] if s["stop_type"] == "attraction"
     ]
     assert d2_new_slugs == day2_slugs

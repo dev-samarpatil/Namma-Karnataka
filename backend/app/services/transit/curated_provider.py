@@ -185,26 +185,14 @@ class CuratedTransitProvider(TransitProvider):
             first_legs = [
                 r
                 for r in self._routes
-                if (
-                    r["origin_stop_id"] in origin_stop_ids
-                    and r["destination_stop_id"] in hub_ids
-                )
-                or (
-                    r["destination_stop_id"] in origin_stop_ids
-                    and r["origin_stop_id"] in hub_ids
-                )
+                if (r["origin_stop_id"] in origin_stop_ids and r["destination_stop_id"] in hub_ids)
+                or (r["destination_stop_id"] in origin_stop_ids and r["origin_stop_id"] in hub_ids)
             ]
             second_legs = [
                 r
                 for r in self._routes
-                if (
-                    r["origin_stop_id"] in hub_ids
-                    and r["destination_stop_id"] in dest_stop_ids
-                )
-                or (
-                    r["destination_stop_id"] in hub_ids
-                    and r["origin_stop_id"] in dest_stop_ids
-                )
+                if (r["origin_stop_id"] in hub_ids and r["destination_stop_id"] in dest_stop_ids)
+                or (r["destination_stop_id"] in hub_ids and r["origin_stop_id"] in dest_stop_ids)
             ]
 
             for r1 in first_legs:
@@ -356,10 +344,7 @@ class CuratedTransitProvider(TransitProvider):
                 "Direct scheduled public transit not found within terminal catchment. "
                 "Terrain-adjusted cab/car travel recommended for this route."
             )
-            carbon_kn = (
-                "ಈ ಮಾರ್ಗದಲ್ಲಿ ನೇರ ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ಲಭ್ಯವಿಲ್ಲ. "
-                "ಖಾಸಗಿ ವಾಹನ ಅಥವಾ ಕ್ಯಾಬ್ ಮೂಲಕ ಪ್ರಯಾಣಿಸುವುದು ಸೂಕ್ತ."
-            )
+            carbon_kn = "ಈ ಮಾರ್ಗದಲ್ಲಿ ನೇರ ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ಲಭ್ಯವಿಲ್ಲ. ಖಾಸಗಿ ವಾಹನ ಅಥವಾ ಕ್ಯಾಬ್ ಮೂಲಕ ಪ್ರಯಾಣಿಸುವುದು ಸೂಕ್ತ."
 
         return TransitComparison(
             origin_lat=origin_lat,
@@ -400,4 +385,3 @@ class CuratedTransitProvider(TransitProvider):
             return diff
         except Exception:
             return 30
-

@@ -28,6 +28,8 @@ import {
   DestinationCategory,
   StopRegenerateResponse,
   VisualDiscoveryResponse,
+  DirectionsRequest,
+  DirectionsResponse,
 } from '../types';
 
 
@@ -624,6 +626,18 @@ export async function analyzeVideoVisualDiscovery(
   return fetchApi<VisualDiscoveryResponse>('/visual-discovery/analyze-video', {
     method: 'POST',
     body: formData,
+  });
+}
+
+/**
+ * Fetch authentic road network routing, geometry, leg distances, durations, and turn directions.
+ */
+export async function fetchRoadDirections(
+  request: DirectionsRequest
+): Promise<DirectionsResponse> {
+  return fetchApi<DirectionsResponse>('/routing/directions', {
+    method: 'POST',
+    body: JSON.stringify(request),
   });
 }
 

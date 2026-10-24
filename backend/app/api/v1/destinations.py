@@ -48,7 +48,6 @@ def list_destinations(
         None, pattern="^(free|paid|unknown)$", description="Filter by fee type"
     ),
     min_duration: int | None = Query(None, ge=1, description="Min duration in minutes"),
-
     max_duration: int | None = Query(None, ge=1, description="Max duration in minutes"),
     sort_by: str | None = Query(
         None,
@@ -153,7 +152,6 @@ def get_destination_nearby(
                             f"{s.name} ({s.code}) ~{round(d_km, 1)} km from destination"
                         ),
                     )
-
                 )
         except Exception:
             pass

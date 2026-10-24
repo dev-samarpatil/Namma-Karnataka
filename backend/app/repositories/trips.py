@@ -93,7 +93,6 @@ class TripRepository(Protocol):
         ...
 
 
-
 class InMemoryTripRepository:
     """Thread-safe in-memory trip repository for offline/test environments.
 
@@ -299,7 +298,6 @@ class InMemoryTripRepository:
             if request.idempotency_key:
                 self._idempotency_records[(user_id, request.idempotency_key)] = updated_trip
             return updated_trip
-
 
     def delete_trip(self, user_id: str, trip_id: str) -> bool:
         with self._lock:
@@ -547,7 +545,6 @@ class InMemoryTripRepository:
             else:
                 return None
             return list(self._audit_events.get(trip_id, []))
-
 
 
 class SupabaseTripRepository:
@@ -920,7 +917,6 @@ class SupabaseTripRepository:
         self, trip_id: str, user_id: str | None = None, share_token: str | None = None
     ) -> list[TripAuditEvent] | None:
         return self._fallback_repo.get_trip_history(trip_id, user_id, share_token)
-
 
 
 _trip_repository_instance: TripRepository | None = None

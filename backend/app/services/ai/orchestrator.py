@@ -22,6 +22,8 @@ from app.services.ai.fallback import DeterministicFallbackEngine
 from app.services.ai.gemini_adapter import GeminiAdapter
 from app.services.ai.groq_adapter import GroqAdapter
 from app.services.ai.validator import AIValidationError, parse_and_ground_plan
+from app.services.budget import BudgetCalculator
+from app.services.scheduler import DeterministicScheduler
 
 logger = get_logger("app.services.ai.orchestrator")
 
@@ -123,6 +125,13 @@ class AIOrchestrator:
                     len(grounded_items),
                 )
 
+                days, schedule_warnings, assumptions = DeterministicScheduler.build_schedule(
+                    request=request, destinations=grounded_items
+                )
+                budget = BudgetCalculator.calculate_budget(
+                    request=request, days=days, destinations=grounded_items
+                )
+
                 return PlanningRecommendationResponse(
                     request_id=req_id,
                     language=request.language,
@@ -131,7 +140,11 @@ class AIOrchestrator:
                     items=grounded_items,
                     total_destinations=len(grounded_items),
                     duration_days=request.duration_days,
-                    warnings=[],
+                    days=days,
+                    budget_breakdown=budget,
+                    assumptions=assumptions,
+                    data_limitations=[],
+                    warnings=schedule_warnings,
                 )
 
             except TimeoutError as exc:
@@ -170,6 +183,13 @@ class AIOrchestrator:
             request=request, candidates=candidates
         )
 
+        days, schedule_warnings, assumptions = DeterministicScheduler.build_schedule(
+            request=request, destinations=fallback_items
+        )
+        budget = BudgetCalculator.calculate_budget(
+            request=request, days=days, destinations=fallback_items
+        )
+
         warning_msg = (
             "AI generation was temporarily unavailable. Recommendations curated using "
             "verified regional catalog."
@@ -180,6 +200,8 @@ class AIOrchestrator:
                 "ಕ್ಯಾಟಲಾಗ್‌ನಿಂದ ಪ್ರವಾಸ ಪಟ್ಟಿಯನ್ನು ರೂಪಿಸಲಾಗಿದೆ."
             )
 
+        all_warnings = [warning_msg] + schedule_warnings
+
         return PlanningRecommendationResponse(
             request_id=req_id,
             language=request.language,
@@ -188,5 +210,14 @@ class AIOrchestrator:
             items=fallback_items,
             total_destinations=len(fallback_items),
             duration_days=request.duration_days,
-            warnings=[warning_msg],
+            days=days,
+            budget_breakdown=budget,
+            assumptions=assumptions,
+            data_limitations=[
+                (
+                    "Travel times are straight-line terrain-adjusted estimates; "
+                    "verify local road routes."
+                )
+            ],
+            warnings=all_warnings,
         )

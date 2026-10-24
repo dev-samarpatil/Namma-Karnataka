@@ -7,6 +7,7 @@ or delete User B's private saved trips.
 from __future__ import annotations
 
 import datetime
+import secrets
 import threading
 import time
 import uuid
@@ -21,6 +22,11 @@ from app.schemas.trips import (
     SavedTripDetail,
     SavedTripSummary,
     SaveTripRequest,
+    SharedTripDetail,
+    TripAuditEvent,
+    TripShareInfo,
+    UpdateSharedTripRequest,
+    UpdateTripRequest,
 )
 
 logger = get_logger("app.repositories.trips")
@@ -46,9 +52,46 @@ class TripRepository(Protocol):
         """Fetch trip detail if owned by user_id; returns None if not found or unauthorized."""
         ...
 
+    def update_trip(
+        self, user_id: str, trip_id: str, request: UpdateTripRequest
+    ) -> SavedTripDetail | None:
+        """Update an existing trip if owned by user_id; returns None if unauthorized."""
+        ...
+
     def delete_trip(self, user_id: str, trip_id: str) -> bool:
         """Delete trip if owned by user_id; returns True if deleted, False if not found."""
         ...
+
+    def create_share_link(
+        self, user_id: str, trip_id: str, role: str, expires_in_days: int | None = 30
+    ) -> TripShareInfo | None:
+        """Generate a secure share token for an owned trip."""
+        ...
+
+    def list_shares(self, user_id: str, trip_id: str) -> list[TripShareInfo] | None:
+        """List all share links created for an owned trip."""
+        ...
+
+    def revoke_share(self, user_id: str, trip_id: str, share_id: str) -> bool:
+        """Revoke a previously created share link for an owned trip."""
+        ...
+
+    def get_shared_trip(self, share_token: str) -> tuple[SharedTripDetail | None, str | None]:
+        """Retrieve shared trip by access token. Returns (detail, error_reason)."""
+        ...
+
+    def update_shared_trip(
+        self, share_token: str, request: UpdateSharedTripRequest
+    ) -> tuple[SharedTripDetail | None, str | None]:
+        """Update shared itinerary by authorized collaborator under optimistic concurrency."""
+        ...
+
+    def get_trip_history(
+        self, trip_id: str, user_id: str | None = None, share_token: str | None = None
+    ) -> list[TripAuditEvent] | None:
+        """Retrieve chronological change audit events for a trip."""
+        ...
+
 
 
 class InMemoryTripRepository:
@@ -60,6 +103,8 @@ class InMemoryTripRepository:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._trips: dict[str, SavedTripDetail] = {}
+        self._shares: dict[str, TripShareInfo] = {}
+        self._audit_events: dict[str, list[TripAuditEvent]] = {}
 
     def create_trip(self, user_id: str, request: SaveTripRequest) -> SavedTripDetail:
         now_str = datetime.datetime.now(datetime.UTC).isoformat()
@@ -78,6 +123,8 @@ class InMemoryTripRepository:
             budget_max_inr=request.budget_max_inr,
             currency_code=request.currency_code,
             status="active",
+            version=1,
+            last_modified_by=user_id,
             snapshot=request.itinerary,
             created_at=now_str,
             updated_at=now_str,
@@ -85,6 +132,18 @@ class InMemoryTripRepository:
 
         with self._lock:
             self._trips[trip_id] = detail
+            init_event = TripAuditEvent(
+                id=f"audit-{uuid.uuid4()}",
+                trip_id=trip_id,
+                actor_type="owner",
+                actor_id=user_id,
+                action="created",
+                summary=f"Trip '{request.title}' created",
+                version_before=None,
+                version_after=1,
+                created_at=now_str,
+            )
+            self._audit_events[trip_id] = [init_event]
 
         logger.info("Saved trip created: trip_id=%s, user_id=%s", trip_id, user_id)
         return detail
@@ -117,6 +176,7 @@ class InMemoryTripRepository:
                 budget_max_inr=t.budget_max_inr,
                 currency_code=t.currency_code,
                 total_stops=len(t.snapshot.items),
+                version=t.version,
                 created_at=t.created_at,
                 updated_at=t.updated_at,
             )
@@ -140,6 +200,86 @@ class InMemoryTripRepository:
                 return None
             return trip
 
+    def update_trip(
+        self, user_id: str, trip_id: str, request: UpdateTripRequest
+    ) -> SavedTripDetail | None:
+        with self._lock:
+            trip = self._trips.get(trip_id)
+            if trip is None or trip.user_id != user_id:
+                return None
+
+            if request.expected_version is not None and request.expected_version != trip.version:
+                logger.warning(
+                    "Trip version conflict: trip_id=%s, expected=%s, actual=%s",
+                    trip_id,
+                    request.expected_version,
+                    trip.version,
+                )
+                raise AppError(
+                    code="TRIP_VERSION_CONFLICT",
+                    message=(
+                        f"Trip version conflict: expected v{request.expected_version}, "
+                        f"but current version is v{trip.version}."
+                    ),
+                    status_code=409,
+                )
+
+            now_str = datetime.datetime.now(datetime.UTC).isoformat()
+            updated_title = request.title if request.title is not None else trip.title
+            budget_min = (
+                request.itinerary.budget_breakdown.grand_total_min_inr
+                if request.itinerary.budget_breakdown
+                else trip.budget_min_inr
+            )
+            budget_max = (
+                request.itinerary.budget_breakdown.grand_total_max_inr
+                if request.itinerary.budget_breakdown
+                else trip.budget_max_inr
+            )
+            new_version = trip.version + 1
+            updated_trip = SavedTripDetail(
+                id=trip.id,
+                user_id=trip.user_id,
+                title=updated_title,
+                origin_label=trip.origin_label,
+                duration_days=request.itinerary.duration_days,
+                pace=trip.pace,
+                is_offbeat_preferred=trip.is_offbeat_preferred,
+                preferences=trip.preferences,
+                budget_min_inr=budget_min,
+                budget_max_inr=budget_max,
+                currency_code=trip.currency_code,
+                status=trip.status,
+                version=new_version,
+                last_modified_by=user_id,
+                snapshot=request.itinerary,
+                created_at=trip.created_at,
+                updated_at=now_str,
+            )
+            self._trips[trip_id] = updated_trip
+
+            event = TripAuditEvent(
+                id=f"audit-{uuid.uuid4()}",
+                trip_id=trip_id,
+                actor_type="owner",
+                actor_id=user_id,
+                action="updated",
+                summary=f"Trip updated to version {new_version}",
+                version_before=trip.version,
+                version_after=new_version,
+                created_at=now_str,
+            )
+            self._audit_events.setdefault(trip_id, []).append(event)
+
+            logger.info(
+                "Saved trip updated: trip_id=%s, user_id=%s, version=%s",
+                trip_id,
+                user_id,
+                new_version,
+            )
+            return updated_trip
+
+
     def delete_trip(self, user_id: str, trip_id: str) -> bool:
         with self._lock:
             trip = self._trips.get(trip_id)
@@ -148,6 +288,240 @@ class InMemoryTripRepository:
             del self._trips[trip_id]
             logger.info("Trip deleted: trip_id=%s, user_id=%s", trip_id, user_id)
             return True
+
+    def create_share_link(
+        self, user_id: str, trip_id: str, role: str, expires_in_days: int | None = 30
+    ) -> TripShareInfo | None:
+        with self._lock:
+            trip = self._trips.get(trip_id)
+            if trip is None or trip.user_id != user_id:
+                return None
+            now = datetime.datetime.now(datetime.UTC)
+            now_str = now.isoformat()
+            expires_at = (
+                (now + datetime.timedelta(days=expires_in_days)).isoformat()
+                if expires_in_days
+                else None
+            )
+            token = f"nk_share_{secrets.token_urlsafe(32)}"
+            share_id = f"share-{uuid.uuid4()}"
+            share = TripShareInfo(
+                id=share_id,
+                trip_id=trip_id,
+                created_by=user_id,
+                role=role,
+                share_token=token,
+                expires_at=expires_at,
+                is_revoked=False,
+                created_at=now_str,
+            )
+            self._shares[token] = share
+            event = TripAuditEvent(
+                id=f"audit-{uuid.uuid4()}",
+                trip_id=trip_id,
+                actor_type="owner",
+                actor_id=user_id,
+                action="shared",
+                summary=f"Created {role} share link",
+                version_before=trip.version,
+                version_after=trip.version,
+                created_at=now_str,
+            )
+            self._audit_events.setdefault(trip_id, []).append(event)
+            return share
+
+    def list_shares(self, user_id: str, trip_id: str) -> list[TripShareInfo] | None:
+        with self._lock:
+            trip = self._trips.get(trip_id)
+            if trip is None or trip.user_id != user_id:
+                return None
+            return [s for s in self._shares.values() if s.trip_id == trip_id]
+
+    def revoke_share(self, user_id: str, trip_id: str, share_id: str) -> bool:
+        with self._lock:
+            trip = self._trips.get(trip_id)
+            if trip is None or trip.user_id != user_id:
+                return False
+            found = False
+            for s in list(self._shares.values()):
+                if s.id == share_id and s.trip_id == trip_id:
+                    self._shares[s.share_token] = s.model_copy(update={"is_revoked": True})
+                    found = True
+                    break
+            if found:
+                now_str = datetime.datetime.now(datetime.UTC).isoformat()
+                event = TripAuditEvent(
+                    id=f"audit-{uuid.uuid4()}",
+                    trip_id=trip_id,
+                    actor_type="owner",
+                    actor_id=user_id,
+                    action="revoked",
+                    summary=f"Revoked share link {share_id}",
+                    version_before=trip.version,
+                    version_after=trip.version,
+                    created_at=now_str,
+                )
+                self._audit_events.setdefault(trip_id, []).append(event)
+            return found
+
+    def get_shared_trip(self, share_token: str) -> tuple[SharedTripDetail | None, str | None]:
+        with self._lock:
+            share = self._shares.get(share_token)
+            if share is None:
+                return None, "not_found"
+            if share.is_revoked:
+                return None, "revoked"
+            if share.expires_at:
+                exp = datetime.datetime.fromisoformat(share.expires_at)
+                if datetime.datetime.now(datetime.UTC) > exp:
+                    return None, "expired"
+            trip = self._trips.get(share.trip_id)
+            if trip is None or trip.status != "active":
+                return None, "not_found"
+            return (
+                SharedTripDetail(
+                    id=trip.id,
+                    title=trip.title,
+                    origin_label=trip.origin_label,
+                    duration_days=trip.duration_days,
+                    pace=trip.pace,
+                    is_offbeat_preferred=trip.is_offbeat_preferred,
+                    budget_min_inr=trip.budget_min_inr,
+                    budget_max_inr=trip.budget_max_inr,
+                    currency_code=trip.currency_code,
+                    version=trip.version,
+                    role=share.role,
+                    snapshot=trip.snapshot,
+                    created_at=trip.created_at,
+                    updated_at=trip.updated_at,
+                ),
+                None,
+            )
+
+    def update_shared_trip(
+        self, share_token: str, request: UpdateSharedTripRequest
+    ) -> tuple[SharedTripDetail | None, str | None]:
+        with self._lock:
+            share = self._shares.get(share_token)
+            if share is None:
+                return None, "not_found"
+            if share.is_revoked:
+                return None, "revoked"
+            if share.expires_at:
+                exp = datetime.datetime.fromisoformat(share.expires_at)
+                if datetime.datetime.now(datetime.UTC) > exp:
+                    return None, "expired"
+            if share.role != "editor":
+                return None, "forbidden"
+
+            trip = self._trips.get(share.trip_id)
+            if trip is None or trip.status != "active":
+                return None, "not_found"
+
+            now_str = datetime.datetime.now(datetime.UTC).isoformat()
+            if request.expected_version != trip.version:
+                event = TripAuditEvent(
+                    id=f"audit-{uuid.uuid4()}",
+                    trip_id=trip.id,
+                    actor_type="editor",
+                    actor_id=f"share:{share.id}",
+                    action="conflict_detected",
+                    summary=(
+                        f"Stale update rejected. Expected v{request.expected_version}, "
+                        f"current v{trip.version}."
+                    ),
+                    version_before=trip.version,
+                    version_after=trip.version,
+                    created_at=now_str,
+                )
+
+                self._audit_events.setdefault(trip.id, []).append(event)
+                return None, "conflict"
+
+            new_version = trip.version + 1
+            updated_title = request.title if request.title is not None else trip.title
+            budget_min = (
+                request.itinerary.budget_breakdown.grand_total_min_inr
+                if request.itinerary.budget_breakdown
+                else trip.budget_min_inr
+            )
+            budget_max = (
+                request.itinerary.budget_breakdown.grand_total_max_inr
+                if request.itinerary.budget_breakdown
+                else trip.budget_max_inr
+            )
+            updated_trip = SavedTripDetail(
+                id=trip.id,
+                user_id=trip.user_id,
+                title=updated_title,
+                origin_label=trip.origin_label,
+                duration_days=request.itinerary.duration_days,
+                pace=trip.pace,
+                is_offbeat_preferred=trip.is_offbeat_preferred,
+                preferences=trip.preferences,
+                budget_min_inr=budget_min,
+                budget_max_inr=budget_max,
+                currency_code=trip.currency_code,
+                status=trip.status,
+                version=new_version,
+                last_modified_by=f"editor:{share.id}",
+                snapshot=request.itinerary,
+                created_at=trip.created_at,
+                updated_at=now_str,
+            )
+            self._trips[trip.id] = updated_trip
+
+            event = TripAuditEvent(
+                id=f"audit-{uuid.uuid4()}",
+                trip_id=trip.id,
+                actor_type="editor",
+                actor_id=f"share:{share.id}",
+                action="updated",
+                summary=f"Itinerary updated by collaborator to version {new_version}",
+                version_before=trip.version,
+                version_after=new_version,
+                created_at=now_str,
+            )
+            self._audit_events.setdefault(trip.id, []).append(event)
+
+            return (
+                SharedTripDetail(
+                    id=updated_trip.id,
+                    title=updated_trip.title,
+                    origin_label=updated_trip.origin_label,
+                    duration_days=updated_trip.duration_days,
+                    pace=updated_trip.pace,
+                    is_offbeat_preferred=updated_trip.is_offbeat_preferred,
+                    budget_min_inr=updated_trip.budget_min_inr,
+                    budget_max_inr=updated_trip.budget_max_inr,
+                    currency_code=updated_trip.currency_code,
+                    version=new_version,
+                    role=share.role,
+                    snapshot=updated_trip.snapshot,
+                    created_at=updated_trip.created_at,
+                    updated_at=updated_trip.updated_at,
+                ),
+                None,
+            )
+
+    def get_trip_history(
+        self, trip_id: str, user_id: str | None = None, share_token: str | None = None
+    ) -> list[TripAuditEvent] | None:
+        with self._lock:
+            trip = self._trips.get(trip_id)
+            if trip is None:
+                return None
+            if user_id is not None:
+                if trip.user_id != user_id:
+                    return None
+            elif share_token is not None:
+                share = self._shares.get(share_token)
+                if share is None or share.trip_id != trip_id or share.is_revoked:
+                    return None
+            else:
+                return None
+            return list(self._audit_events.get(trip_id, []))
+
 
 
 class SupabaseTripRepository:
@@ -397,6 +771,81 @@ class SupabaseTripRepository:
         except httpx.RequestError:
             return self._fallback_repo.get_trip(user_id, trip_id)
 
+    def update_trip(
+        self, user_id: str, trip_id: str, request: UpdateTripRequest
+    ) -> SavedTripDetail | None:
+        if self._is_schema_unmigrated():
+            return self._fallback_repo.update_trip(user_id, trip_id, request)
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                now_str = datetime.datetime.now(datetime.UTC).isoformat()
+                update_body: dict[str, str | float | int] = {
+                    "updated_at": now_str,
+                    "duration_days": request.itinerary.duration_days,
+                }
+                if request.title:
+                    update_body["title"] = request.title
+                if request.itinerary.budget_breakdown:
+                    if request.itinerary.budget_breakdown.grand_total_min_inr is not None:
+                        update_body["budget_min_inr"] = (
+                            request.itinerary.budget_breakdown.grand_total_min_inr
+                        )
+                    if request.itinerary.budget_breakdown.grand_total_max_inr is not None:
+                        update_body["budget_max_inr"] = (
+                            request.itinerary.budget_breakdown.grand_total_max_inr
+                        )
+
+                res = client.patch(
+                    f"{self._base_url}/rest/v1/trips",
+                    headers={**self._headers, "Prefer": "return=representation"},
+                    params={"id": f"eq.{trip_id}", "user_id": f"eq.{user_id}"},
+                    json=update_body,
+                )
+                if res.status_code == 404 and "PGRST205" in res.text:
+                    self._mark_schema_unmigrated()
+                    return self._fallback_repo.update_trip(user_id, trip_id, request)
+                if res.status_code != 200 or not res.json():
+                    return None
+
+                self._mark_schema_migrated()
+                trip_record = res.json()[0]
+
+                # Insert updated snapshot
+                snapshot_payload = {
+                    "trip_id": trip_id,
+                    "user_id": user_id,
+                    "schema_version": "1.0",
+                    "generation_mode": request.itinerary.generation_mode,
+                    "provider_used": request.itinerary.provider_used,
+                    "items": [item.model_dump() for item in request.itinerary.items],
+                    "total_destinations": request.itinerary.total_destinations,
+                }
+                client.post(
+                    f"{self._base_url}/rest/v1/itinerary_snapshots",
+                    headers=self._headers,
+                    json=snapshot_payload,
+                )
+
+                return SavedTripDetail(
+                    id=trip_id,
+                    user_id=user_id,
+                    title=trip_record["title"],
+                    origin_label=trip_record["origin_label"],
+                    duration_days=trip_record["duration_days"],
+                    pace=trip_record["pace"],
+                    is_offbeat_preferred=trip_record.get("is_offbeat_preferred", False),
+                    preferences=trip_record.get("preferences", {}),
+                    budget_min_inr=trip_record.get("budget_min_inr"),
+                    budget_max_inr=trip_record.get("budget_max_inr"),
+                    currency_code=trip_record.get("currency_code", "INR"),
+                    status=trip_record.get("status", "active"),
+                    snapshot=request.itinerary,
+                    created_at=trip_record["created_at"],
+                    updated_at=trip_record["updated_at"],
+                )
+        except httpx.RequestError:
+            return self._fallback_repo.update_trip(user_id, trip_id, request)
+
     def delete_trip(self, user_id: str, trip_id: str) -> bool:
         if self._is_schema_unmigrated():
             return self._fallback_repo.delete_trip(user_id, trip_id)
@@ -421,6 +870,31 @@ class SupabaseTripRepository:
                 return res.status_code in (200, 204)
         except httpx.RequestError:
             return self._fallback_repo.delete_trip(user_id, trip_id)
+
+    def create_share_link(
+        self, user_id: str, trip_id: str, role: str, expires_in_days: int | None = 30
+    ) -> TripShareInfo | None:
+        return self._fallback_repo.create_share_link(user_id, trip_id, role, expires_in_days)
+
+    def list_shares(self, user_id: str, trip_id: str) -> list[TripShareInfo] | None:
+        return self._fallback_repo.list_shares(user_id, trip_id)
+
+    def revoke_share(self, user_id: str, trip_id: str, share_id: str) -> bool:
+        return self._fallback_repo.revoke_share(user_id, trip_id, share_id)
+
+    def get_shared_trip(self, share_token: str) -> tuple[SharedTripDetail | None, str | None]:
+        return self._fallback_repo.get_shared_trip(share_token)
+
+    def update_shared_trip(
+        self, share_token: str, request: UpdateSharedTripRequest
+    ) -> tuple[SharedTripDetail | None, str | None]:
+        return self._fallback_repo.update_shared_trip(share_token, request)
+
+    def get_trip_history(
+        self, trip_id: str, user_id: str | None = None, share_token: str | None = None
+    ) -> list[TripAuditEvent] | None:
+        return self._fallback_repo.get_trip_history(trip_id, user_id, share_token)
+
 
 
 _trip_repository_instance: TripRepository | None = None

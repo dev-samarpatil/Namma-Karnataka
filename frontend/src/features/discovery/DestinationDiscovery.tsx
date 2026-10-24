@@ -7,6 +7,12 @@ import {
 } from '../../types';
 import { listDestinations, ApiClientError } from '../../lib/api';
 import { useTranslation, TranslationKey } from '../../lib/i18n';
+import {
+  saveOfflineDestinations,
+  getOfflineDestinations,
+  getOfflineCatalogueMetadata,
+  filterOfflineDestinations,
+} from '../../services/offlineStorage';
 import { DestinationCard } from './DestinationCard';
 import { DestinationModal } from './DestinationModal';
 
@@ -40,11 +46,16 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isOfflineData, setIsOfflineData] = useState<boolean>(false);
+  const [cachedTime, setCachedTime] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [feeType, setFeeType] = useState<string>('');
+  const [durationFilter, setDurationFilter] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('');
   const [isOffbeatOnly, setIsOffbeatOnly] = useState<boolean>(false);
 
   // Modal
@@ -54,25 +65,56 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
     setLoading(true);
     setErrorMessage(null);
 
-    try {
-      const response = await listDestinations(
-        {
-          q: searchQuery.trim() || undefined,
-          district: selectedDistrict || undefined,
-          category: (selectedCategory as DestinationCategory) || undefined,
-          is_offbeat: isOffbeatOnly ? true : undefined,
-          lang: language,
-          limit: 50,
-          offset: 0,
-        },
-        signal
-      );
+    let minDur: number | undefined;
+    let maxDur: number | undefined;
+    if (durationFilter === 'under_1h') {
+      maxDur = 59;
+    } else if (durationFilter === '1_to_2h') {
+      minDur = 60;
+      maxDur = 120;
+    } else if (durationFilter === 'over_2h') {
+      minDur = 121;
+    }
 
+    const filterParams = {
+      q: searchQuery.trim() || undefined,
+      district: selectedDistrict || undefined,
+      category: (selectedCategory as DestinationCategory) || undefined,
+      fee_type: (feeType as 'free' | 'paid' | 'unknown') || undefined,
+      min_duration: minDur,
+      max_duration: maxDur,
+      sort_by: (sortBy as 'name' | 'district' | 'duration_asc' | 'duration_desc') || undefined,
+      is_offbeat: isOffbeatOnly ? true : undefined,
+      lang: language,
+      limit: 100,
+      offset: 0,
+    };
+
+    try {
+      const response = await listDestinations(filterParams, signal);
       setDestinations(response.items);
       setTotalCount(response.total);
+      setIsOfflineData(false);
+
+      // Cache catalogue for offline PWA availability
+      if (!searchQuery && !selectedDistrict && !selectedCategory && !isOffbeatOnly && !feeType && !durationFilter && !sortBy) {
+        saveOfflineDestinations(response.items, response.has_more);
+      }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      if (err instanceof ApiClientError) {
+
+      // Resilient Offline Fallback from local device cache
+      const cached = getOfflineDestinations();
+      if (cached && cached.length > 0) {
+        const filtered = filterOfflineDestinations(cached, filterParams);
+        setDestinations(filtered);
+        setTotalCount(filtered.length);
+        setIsOfflineData(true);
+        const meta = getOfflineCatalogueMetadata();
+        if (meta?.cached_at) {
+          setCachedTime(new Date(meta.cached_at).toLocaleTimeString());
+        }
+      } else if (err instanceof ApiClientError) {
         setErrorMessage(err.message);
       } else {
         setErrorMessage(t('networkError'));
@@ -80,7 +122,7 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedDistrict, selectedCategory, isOffbeatOnly, language, t]);
+  }, [searchQuery, selectedDistrict, selectedCategory, feeType, durationFilter, sortBy, isOffbeatOnly, language, t]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,11 +134,14 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
     setSearchQuery('');
     setSelectedDistrict('');
     setSelectedCategory('');
+    setFeeType('');
+    setDurationFilter('');
+    setSortBy('');
     setIsOffbeatOnly(false);
   };
 
   const hasActiveFilters = Boolean(
-    searchQuery || selectedDistrict || selectedCategory || isOffbeatOnly
+    searchQuery || selectedDistrict || selectedCategory || feeType || durationFilter || sortBy || isOffbeatOnly
   );
 
   return (
@@ -168,6 +213,61 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
             </select>
           </div>
 
+          <div className="filter-group">
+            <label htmlFor="fee-select" className="visually-hidden">
+              {t('feeTypeFilter')}
+            </label>
+            <select
+              id="fee-select"
+              value={feeType}
+              onChange={(e) => setFeeType(e.target.value)}
+              className="filter-select"
+              data-testid="fee-filter-select"
+            >
+              <option value="">{t('feeAll')}</option>
+              <option value="free">{t('feeFreeOnly')}</option>
+              <option value="paid">{t('feePaidOnly')}</option>
+              <option value="unknown">{t('feeUnknownOnly')}</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="duration-select" className="visually-hidden">
+              {t('durationFilter')}
+            </label>
+            <select
+              id="duration-select"
+              value={durationFilter}
+              onChange={(e) => setDurationFilter(e.target.value)}
+              className="filter-select"
+              data-testid="duration-filter-select"
+            >
+              <option value="">{t('durationAll')}</option>
+              <option value="under_1h">{t('durationUnder1h')}</option>
+              <option value="1_to_2h">{t('duration1to2h')}</option>
+              <option value="over_2h">{t('durationOver2h')}</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="sort-select" className="visually-hidden">
+              {t('sortBy')}
+            </label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+              data-testid="sort-filter-select"
+            >
+              <option value="">{t('sortBy')}</option>
+              <option value="name">{t('sortName')}</option>
+              <option value="district">{t('sortDistrict')}</option>
+              <option value="duration_asc">{t('sortDurationAsc')}</option>
+              <option value="duration_desc">{t('sortDurationDesc')}</option>
+            </select>
+          </div>
+
           <label className="checkbox-label" htmlFor="offbeat-toggle">
             <input
               id="offbeat-toggle"
@@ -186,16 +286,64 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
               onClick={resetFilters}
               data-testid="reset-filters-btn"
             >
-              ✕ {t('filterReset')}
+              ✕ {t('clearAll')}
             </button>
           )}
         </div>
+
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="active-filter-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 600 }}>{t('activeFilters')}:</span>
+            {searchQuery && (
+              <span className="filter-chip" style={{ background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                "{searchQuery}" <button type="button" onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+            {selectedDistrict && (
+              <span className="filter-chip" style={{ background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {KARNATAKA_DISTRICTS.find(d => d.code === selectedDistrict)?.name_en} <button type="button" onClick={() => setSelectedDistrict('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+            {selectedCategory && (
+              <span className="filter-chip" style={{ background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {t(`cat_${selectedCategory}` as TranslationKey)} <button type="button" onClick={() => setSelectedCategory('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+            {feeType && (
+              <span className="filter-chip" style={{ background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {feeType === 'free' ? t('feeFreeOnly') : feeType === 'paid' ? t('feePaidOnly') : t('feeUnknownOnly')} <button type="button" onClick={() => setFeeType('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+            {durationFilter && (
+              <span className="filter-chip" style={{ background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {durationFilter === 'under_1h' ? t('durationUnder1h') : durationFilter === '1_to_2h' ? t('duration1to2h') : t('durationOver2h')} <button type="button" onClick={() => setDurationFilter('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+            {sortBy && (
+              <span className="filter-chip" style={{ background: '#fef3c7', color: '#92400e', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {sortBy === 'name' ? t('sortName') : sortBy === 'district' ? t('sortDistrict') : sortBy === 'duration_asc' ? t('sortDurationAsc') : t('sortDurationDesc')} <button type="button" onClick={() => setSortBy('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+            {isOffbeatOnly && (
+              <span className="filter-chip" style={{ background: '#fef3c7', color: '#92400e', padding: '3px 8px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                ⭐ {t('offbeatBadge')} <button type="button" onClick={() => setIsOffbeatOnly(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
+
 
       <div className="results-header">
         <span className="results-counter" data-testid="results-counter">
           {totalCount} {t('destinationsFound')}
         </span>
+        {isOfflineData && (
+          <span className="badge badge-cached" data-testid="offline-cached-badge" style={{ marginLeft: '12px', fontSize: '0.85rem', color: '#b45309', background: '#fef3c7', padding: '4px 8px', borderRadius: '4px' }}>
+            ⚡ {t('cachedBadge')} {cachedTime ? `(${t('cachedAt')} ${cachedTime})` : ''}
+          </span>
+        )}
       </div>
 
       {loading && (

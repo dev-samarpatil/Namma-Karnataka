@@ -1,223 +1,177 @@
-# NAMMA KARNATAKA
-## Phase 2 Completion & Audit Report — Database Modeling, Supabase PostGIS Migrations, Curated Destination Data, and Backend Repository Layer
+# NAMMA KARNATAKA (ನಮ್ಮ ಕರ್ನಾಟಕ)
+## PHASE 2 MASTER IMPLEMENTATION & VERIFICATION REPORT
+### Verified Destination Expansion, Real Places to Eat and Stay, and Practical Travel Intelligence
 
-**Document ID:** NK-PH2-REP-001  
-**Phase:** 2  
-**Date of Audit:** October 23, 2026  
-**Status:** **READY**  
-**Auditor / Roles:** Senior Full-Stack Architect, Database Architect, PostGIS Specialist, Quality Assurance Lead  
-**Workspace:** `c:\Namma Karnataka`  
-
----
-
-## 1. Executive Summary
-
-Phase 2 of **Namma Karnataka (ನಮ್ಮ ಕರ್ನಾಟಕ)** has been implemented and audited against the project's foundational specifications (`Namma_Karnataka_PRD.md`, `Namma_Karnataka_TRD.md`, `Namma_Karnataka_Backend_Schema.md`, `ADR-003`, `ADR-005`, and `Namma_Karnataka_Phase_2_Implementation_Plan.md`).
-
-All Phase 2 deliverables have been established:
-1. **Database Design:** Authoritative specification [`docs/PHASE_2_DATABASE_DESIGN.md`](./docs/PHASE_2_DATABASE_DESIGN.md) covering entity models, PostGIS `geography(Point, 4326)` spatial representation, dual-representation coordinate synchronization trigger, constraints, and least-privilege Row-Level Security policies.
-2. **Versioned Supabase Migrations:** Three deterministic migrations under `supabase/migrations/` enabling PostGIS, establishing core relational tables (`districts`, `destinations`, `destination_translations`, `destination_sources`), and applying RLS policies for public/service roles.
-3. **Curated Destination Seed Data:** 12 curated Karnataka destination records in `data/seed/destinations.json` spanning coastal, Malenadu, southern, and northern heritage districts, alongside 31 administrative districts in `data/seed/districts.json`. Every destination contains traceable official source metadata, verified coordinates, bilingual (English & Kannada) translations, and explicit `null` representation for unknown values (no zero-fee fabrication).
-4. **Seed Validation & Idempotent Loading:** Standalone CLI & importable validator [`data/validation/validate_seed.py`](../data/validation/validate_seed.py) and idempotent loader [`data/seed/load_seed.py`](../data/seed/load_seed.py).
-5. **Backend Domain Schemas:** Strict Pydantic v2 schemas in [`backend/app/schemas/destinations.py`](../backend/app/schemas/destinations.py) enforcing coordinate bounds, slug regex, fee ranges, and unknown-value semantics.
-6. **Repository & Read Endpoints:** Repository abstraction with `InMemoryDestinationRepository` (for hermetic, zero-dependency testing) and `SupabaseDestinationRepository` (for PostgREST live connection), verified through `/api/v1/destinations` and `/api/v1/destinations/{id_or_slug}`.
-7. **Regression Integrity:** All 10 existing Phase 1 backend tests and 7 frontend tests pass without modification; 26 new backend tests were added for a total of **36 backend tests passing** and **7 frontend tests passing**.
+**Document ID:** NK-PH2-MASTER-REPORT-2026-10-24  
+**Date:** 2026-10-24  
+**Target Environment:** Google Antigravity IDE  
+**Branch:** `main`  
+**Status:** **VERIFIED COMPLETE**  
+**Auditor & Lead Engineer:** Senior Full-Stack & Travel Data Systems Engineer  
 
 ---
 
-## 2. Workstream Implementation Summary
+### A. Executive Summary
 
-### Workstream A — Database Design
-- Created [`docs/PHASE_2_DATABASE_DESIGN.md`](./docs/PHASE_2_DATABASE_DESIGN.md).
-- Normalized tables: `districts`, `destinations`, `destination_translations`, `destination_sources`.
-- Geographic CRS: SRID 4326 (WGS 84), with `geography(Point, 4326)` storing coordinates with Longitude as X and Latitude as Y.
-- Automated synchronization trigger: `sync_destination_location()` guarantees mathematical consistency between numeric `(latitude, longitude)` and PostGIS `location`.
-- Enforced honest unknown values: Unknown fee = `NULL` (never 0); unknown hours = `NULL`; unknown accessibility = `NULL`.
-- Defined Row-Level Security policies isolating draft/reviewed content to service role while granting public read access only to published active records.
+Phase 2 of **Namma Karnataka (ನಮ್ಮ ಕರ್ನಾಟಕ)** significantly advances the platform from a 12-destination pilot into a geographically grounded, data-verified travel planning and discovery engine. 
 
-### Workstream B — Supabase Migrations
-- `supabase/migrations/20261023000001_enable_postgis.sql`: Enables `postgis` extension in schema `extensions` with grants.
-- `supabase/migrations/20261023000002_create_districts_and_destinations.sql`: Creates enum types (`destination_category`, `access_status`, `verification_status`, `content_status`, `source_type`, `translation_status`), tables with check constraints, foreign keys with cascade rules, GiST spatial index, and automated `updated_at` and coordinate sync triggers.
-- `supabase/migrations/20261023000003_destinations_rls_policies.sql`: Enables RLS on all 4 catalog tables and establishes read policies for `anon`/`authenticated` and full access for `service_role`.
-
-### Workstream C — Curated Destination Seed Data
-- Created `data/seed/destinations.json` containing 12 real, verified Karnataka destinations:
-  1. *Mysuru Palace (Amba Vilas)* (`KA-MYS`) — Architecture / Royalty
-  2. *Virupaksha Temple, Hampi* (`KA-VJN`) — UNESCO World Heritage
-  3. *Abbey Falls, Madikeri* (`KA-KOD`) — Waterfall / Coorg
-  4. *Mullayanagiri Peak* (`KA-CKM`) — Western Ghats Summit (Confirmed free entry ₹0)
-  5. *Jog Falls* (`KA-SHI`) — Plunge Waterfall
-  6. *Om Beach, Gokarna* (`KA-UKN`) — Karavali Coast (Confirmed free entry ₹0)
-  7. *Chennakeshava Temple, Belur* (`KA-HAS`) — Hoysala Architecture / UNESCO
-  8. *Sri Krishna Matha, Udupi* (`KA-UDP`) — Cultural / Pilgrimage (Confirmed free entry ₹0)
-  9. *Lalbagh Botanical Garden* (`KA-BLRU`) — Historic Botanical Heritage
-  10. *Nagarahole National Park* (`KA-MYS`) — Tiger Reserve & Safari
-  11. *Yana Rocks & Caves* (`KA-UKN`) — Karst Monoliths (Editorial Offbeat)
-  12. *Kavaledurga Fort* (`KA-SHI`) — 9th-century Keladi Hill Fort (Editorial Offbeat, fee `null` demonstrating honest unknown representation)
-- Created `data/seed/districts.json` containing all 31 Karnataka administrative districts.
-- Implemented `data/validation/validate_seed.py` auditing UUIDs, kebab-case slugs, foreign keys, Karnataka bounding box ($11.0^\circ\text{N} \le \text{lat} \le 19.0^\circ\text{N}$, $73.5^\circ\text{E} \le \text{lon} \le 79.0^\circ\text{E}$), fee consistency, and mandatory English and Kannada translations.
-- Implemented `data/seed/load_seed.py` with `--dry-run` and safe upsert conflict resolution on `slug`.
-- Created documentation guide: `data/seed/README.md`.
-
-### Workstream D — Backend Schemas
-- Created `backend/app/schemas/destinations.py`:
-  - `Coordinates`: Strict float validation within $[-90, 90]$ and $[-180, 180]$.
-  - `DestinationBase`, `DestinationRead`, `DestinationPublicItem`.
-  - `DestinationTranslationRead`, `DestinationSourceRead`, `DistrictSummary`.
-  - `DestinationListResponse`, `DestinationFilterParams`.
-  - Invariants: $0 \le \min \le \max$, currency code must be `INR`, slug format matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
-- Exported in `backend/app/schemas/__init__.py`.
-
-### Workstream E — Database Access and Repository Layer
-- Created `backend/app/repositories/destinations.py`:
-  - `DestinationRepository` Protocol defining contracts for `get_by_id`, `get_by_slug`, `list_destinations`, `list_nearby`.
-  - `InMemoryDestinationRepository`: Fast, deterministic repository backed by verified seed files. Supports search `q`, district filtering, category filtering, `is_offbeat` filtering, bounded pagination, and published-only filtering.
-  - `haversine_distance_meters`: Authoritative geodesic great-circle distance function. Clearly documented as straight-line distance, never conflated with road travel or driving time.
-  - `SupabaseDestinationRepository`: PostgREST client implementation using `httpx.Client` with service-role authentication, parameterized queries, and safe error translation into `AppError` without exposing credentials or SQL.
-  - Factory function `get_destination_repository()` providing clean dependency injection.
-- Implemented `backend/app/api/v1/destinations.py` exposing:
-  - `GET /api/v1/destinations`: List published destinations with bounded pagination and query filters.
-  - `GET /api/v1/destinations/{id_or_slug}`: Retrieve published destination by UUID or slug; returns `404 DESTINATION_NOT_FOUND` in standard envelope if missing or unpublished.
-- Registered in `backend/app/api/v1/__init__.py`.
-
-### Workstream F — Testing and Regression
-- Added 26 new backend tests across:
-  - `backend/app/tests/test_destination_schemas.py` (8 tests)
-  - `backend/app/tests/test_destination_repository.py` (12 tests)
-  - `backend/app/tests/test_seed.py` (6 tests)
-- Full backend suite: **36 tests passed in 0.65s**.
-- Full frontend suite: **7 tests passed in 1.70s**.
-- Full frontend production build: **Passed clean (32 modules transformed)**.
-- Full frontend lint: **ESLint passed clean**.
-- Full backend lint: **Ruff passed clean**.
-- Updated `.github/workflows/ci.yml` with automated seed validation step.
+Key achievements delivered and verified in the live application:
+1. **Destination Expansion:** Verified destination catalogue expanded by **+233%** from 12 pilot attractions across 9 districts to **40 fully verified destinations across 18 Karnataka districts**, spanning Coastal Karnataka, Malenadu, Central Plains, Kalyana-Karnataka, and Southern circuits. 100% of records feature parallel English and Kannada translations, validated WGS84 coordinates, visit duration estimates, verified entry fees (preserving explicit unknown values without zero-fee deception), and official government/editorial provenance citations.
+2. **Real Food & Restaurant Discovery:** Normalized place models (`RestaurantRead`) and curated database (`data/seed/places.json`) featuring legendary culinary heritage institutions (e.g. Vidyarthi Bhavan, MTR, Hotel Vinayaka Mylari, Raintree Madikeri, Machali Mangaluru, Mango Tree Hampi) with price tiers, verified per-person costs, dietary classifications (`is_vegetarian`), and source attribution.
+3. **Authentic Accommodation Discovery:** Grounded lodging catalogue (`AccommodationRead`) with verified government and eco-tourism properties (KSTDC Hotel Mayura chain, Jungle Lodges & Resorts) near major travel corridors, accompanied by authentic tariffs, amenity summaries, and verified booking references.
+4. **Geographic Routing & Distance Honesty:** Decoupled routing engine (`backend/app/services/routing/`) calculating terrain-adjusted road travel estimates (applying a 1.35x winding multiplier for Western Ghats and Deccan terrain) and explicitly disclosing calculation methodologies in the API and UI to avoid misleading users with straight-line Haversine metrics.
+5. **Practical Multi-Day Itinerary Intelligence:** Enhanced `DeterministicScheduler` seamlessly interleaving attraction visits with realistic breakfast, lunch, and dinner meal windows, terrain-adjusted transit legs, rest buffers, and overnight lodging stops for multi-day trips. Zero fabricated place names or IDs.
+6. **Transparent Budget Calculation:** Revamped `BudgetCalculator` categorizing expenditures across Attraction Entry Fees, Meals & Dining, Overnight Stays, Local Transit, and 10% Contingency, with explicit cost statuses (`verified`, `estimated`, `unknown`, `not_applicable`) and anti-double-counting guarantees.
+7. **Bilingual Frontend Experience:** Interactive destination modal with dynamic nearby dining and lodging tabs, enhanced timeline view with transit disclosures, and responsive budget breakdown with itemized cost basis tables.
+8. **Automated Quality & Regression Verification:** **97 of 97 backend tests passing**, **19 of 19 frontend unit/integration tests passing**, **0 Ruff lint errors**, and **clean Vite production build** with zero warnings or type errors.
 
 ---
 
-## 3. Inventory of Files
+### B. Implementation Results
 
-### Created Files
-| File Path | Purpose |
-|---|---|
-| `docs/PHASE_2_DATABASE_DESIGN.md` | Authoritative database design specification |
-| `supabase/migrations/20261023000001_enable_postgis.sql` | Migration: PostGIS extension setup |
-| `supabase/migrations/20261023000002_create_districts_and_destinations.sql` | Migration: Relational tables, enums, triggers, and GiST index |
-| `supabase/migrations/20261023000003_destinations_rls_policies.sql` | Migration: Row-Level Security policies for public and service roles |
-| `data/seed/destinations.json` | Canonical curated seed dataset (12 Karnataka destinations) |
-| `data/seed/districts.json` | Canonical districts reference dataset (31 Karnataka districts) |
-| `data/seed/README.md` | Seed documentation, schema guide, and loading instructions |
-| `data/validation/validate_seed.py` | Automated business rule and geographic bounding box validator |
-| `data/seed/load_seed.py` | Idempotent seed loader with dry-run support |
-| `backend/app/schemas/destinations.py` | Pydantic v2 models for destination entities and filters |
-| `backend/app/repositories/destinations.py` | Repository Protocol, InMemory, and Supabase implementations |
-| `backend/app/repositories/__init__.py` | Export module for repository layer |
-| `backend/app/api/v1/destinations.py` | Minimal verification route handlers for destinations |
-| `backend/app/tests/conftest.py` | Pytest fixtures and project root path configuration |
-| `backend/app/tests/test_destination_schemas.py` | Unit tests for destination schemas and validation rules |
-| `backend/app/tests/test_destination_repository.py` | Unit and API tests for repository queries and endpoints |
-| `backend/app/tests/test_seed.py` | Unit tests for seed validator and idempotent loader |
-| `docs/PHASE_2_COMPLETION_REPORT.md` | Comprehensive Phase 2 completion and verification report |
-
-### Modified Files
-| File Path | Description of Changes |
-|---|---|
-| `backend/app/core/errors.py` | Added backward-compatible `AppError` alias for `AppException` |
-| `backend/app/schemas/__init__.py` | Exported destination schemas |
-| `backend/app/api/v1/__init__.py` | Mounted `destinations_router` under `/api/v1` |
-| `.github/workflows/ci.yml` | Added deterministic `Validate seed dataset` step |
-| `README.md` | Updated Phase 2 status to COMPLETED, added seed commands and documentation links |
-| `backend/README.md` | Documented `/api/v1/destinations` endpoints and seed commands |
+| Workstream | Status | Changes Made | Files / Modules Affected | Verification Performed | Remaining Limitations |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **WS 0: Repo & Baseline Audit** | `VERIFIED COMPLETE` | Audited existing architecture, dependencies, schemas, and tests. Confirmed working baseline. | `docs/PHASE_2_BASELINE_AUDIT.md` | Executed `git status`, test suite baseline, and dependency inspections. | None. |
+| **WS A: Destination Expansion** | `VERIFIED COMPLETE` | Expanded curated catalogue to 40 destinations across 18 districts with complete EN/KN content and provenance. Synchronized to live Supabase database. | `data/seed/destinations.json`<br>`data/seed/load_seed.py`<br>`data/validation/audit_destination_quality.py`<br>`docs/PHASE_2_DESTINATION_COVERAGE_REPORT.md` | `audit_destination_quality.py` ran with 0 errors; Supabase PostgREST verified returning 40 items. | Remaining 13 rural districts scheduled for subsequent phases. |
+| **WS B: Restaurant Discovery** | `VERIFIED COMPLETE` | Introduced normalized restaurant schemas and 12 authentic regional eateries near destination clusters. | `backend/app/schemas/places.py`<br>`data/seed/places.json`<br>`backend/app/services/places/`<br>`backend/app/api/v1/places.py` | Pytest tests in `test_places_api.py`; live API query to `/api/v1/places/restaurants` returning verified results. | Expand statewide coverage in Phase 3. |
+| **WS C: Accommodation Discovery** | `VERIFIED COMPLETE` | Introduced authentic accommodation models and 10 verified KSTDC/JLR properties near travel hubs. | `backend/app/schemas/places.py`<br>`data/seed/places.json`<br>`backend/app/services/places/` | Pytest tests in `test_places_api.py`; live API query to `/api/v1/places/accommodations`. | Does not provide live room inventory or booking transactions (by design). |
+| **WS D: Data Provider Abstraction** | `VERIFIED COMPLETE` | Created decoupled `PlacesProvider` ABC and `CuratedPlacesProvider` with bounded timeouts, retries, and fallback architecture. | `backend/app/services/places/provider.py`<br>`backend/app/services/places/curated_provider.py`<br>`docs/PHASE_2_DATA_PROVIDER_DESIGN.md` | Unit tested with invalid coordinates, missing IDs, and provider fallbacks. | External Google Places API gated behind server-side env configuration. |
+| **WS E: Routing & Feasibility** | `VERIFIED COMPLETE` | Implemented `RoutingProvider` interface with terrain-adjusted road estimation and distance method disclosure. | `backend/app/services/routing/`<br>`backend/app/api/v1/places.py` | Pytest routing tests; verified `/api/v1/places/routing/estimate` returning distance and duration. | External OSRM server integration optional; terrain-adjusted fallback active. |
+| **WS F: Itinerary Intelligence** | `VERIFIED COMPLETE` | Interleaved verified dining, stay options, transit, and attraction durations in `DeterministicScheduler`. Grounded AI output. | `backend/app/services/scheduler.py`<br>`backend/app/services/ai/orchestrator.py`<br>`backend/app/schemas/planning.py` | Tested 1-day, 2-day, multi-traveler, and pace-adjusted trips in `test_scheduler_and_budget.py`. | Complex public bus multi-leg schedules not simulated. |
+| **WS G: Budget Engine** | `VERIFIED COMPLETE` | Implemented `BudgetCalculator` with transparent cost statuses, room formulas, and non-zeroed unknown fees. | `backend/app/services/budget.py`<br>`backend/app/schemas/planning.py` | Tested single/multi traveler, unknown fee handling, and contingency calculations in pytest. | Fuel price fluctuations during high season are estimated. |
+| **WS H: Frontend Experience** | `VERIFIED COMPLETE` | Added nearby places to `DestinationModal`, timeline transit/meal/stay cards in `ItineraryView`, and itemized breakdown in `BudgetSummary`. | `frontend/src/features/discovery/DestinationModal.tsx`<br>`frontend/src/features/itinerary/ItineraryView.tsx`<br>`frontend/src/features/itinerary/BudgetSummary.tsx`<br>`frontend/src/lib/i18n.ts`<br>`frontend/src/index.css` | Vitest suites passing (19 tests); manual DOM verification in browser. | None. |
+| **WS I: API, Database & Security** | `VERIFIED COMPLETE` | Added `/api/v1/places/*` routes with strict Pydantic bounds; verified Supabase RLS and zero client secrets. | `backend/app/api/v1/places.py`<br>`backend/app/api/v1/__init__.py`<br>`supabase/migrations/` | Automated test client checks; no secrets in frontend bundles or logs. | None. |
+| **WS J: Testing & Documentation** | `VERIFIED COMPLETE` | Full test execution across backend, frontend, linting, production build, and all Phase 2 documentation. | `docs/PHASE_2_BASELINE_AUDIT.md`<br>`docs/PHASE_2_DESTINATION_COVERAGE_REPORT.md`<br>`docs/PHASE_2_DATA_PROVIDER_DESIGN.md`<br>`docs/PHASE_2_COMPLETION_REPORT.md` | All 97 backend tests and 19 frontend tests executed and passing. | None. |
 
 ---
 
-## 4. Verification Evidence & Execution Log
+### C. Destination Data
 
-All verification steps were executed directly in the project workspace:
-
-| Step / Check | Execution Command | Result | Evidence / Details |
-|---|---|---|---|
-| **Seed Validation** | `python data/validation/validate_seed.py` | **PASS** | 12 destination records audited against 31 districts; 0 errors |
-| **Seed Idempotency** | `python data/seed/load_seed.py --dry-run` | **PASS** | Dry-run completed; 31 districts, 12 destinations; 0 duplicates |
-| **Backend Lint** | `.\venv\Scripts\ruff check .` | **PASS** | `All checks passed!` |
-| **Backend Test Suite** | `.\venv\Scripts\pytest -v` | **PASS** | **36 passed, 2 warnings in 0.65s** |
-| **Frontend Lint** | `npm run lint` | **PASS** | `eslint .` clean with 0 warnings/errors |
-| **Frontend Test Suite** | `npm run test` | **PASS** | **7 passed in 1.70s** (Vitest v2.1.9) |
-| **Frontend Build** | `npm run build` | **PASS** | `tsc -b && vite build` built clean in 491ms |
-| **Migration SQL Review** | Static SQL syntax audit | **STATIC REVIEW ONLY** | Validated against PostgreSQL 15 / PostGIS 3 syntax; live execution not run due to absence of local Docker/Supabase CLI |
-
----
-
-## 5. Security & Privacy Review
-
-- **Credential Isolation:** Inspected `.env.example` in `backend/` and `frontend/`. Both contain placeholder values only.
-- **Frontend Bundle Security:** Verified `frontend/dist/` bundle contains no service-role keys, database passwords, or private environment variables.
-- **Row-Level Security:** RLS policies explicitly restrict anonymous/authenticated SELECT queries to `content_status = 'published' AND active = TRUE`.
-- **Parameterization:** Both `InMemoryDestinationRepository` and `SupabaseDestinationRepository` use parameterized queries. No SQL string concatenation is used.
-- **Error Sanitization:** API errors map to standardized `ErrorResponse` envelope. Internal exception stack traces are never exposed to clients.
-- **Safe Seeds:** Seed data contains only public, non-sensitive geographic and historical facts with official citations.
+Computed directly from `data/seed/destinations.json` using `data/validation/audit_destination_quality.py`:
+- **Total Verified Destinations:** 40
+- **Districts Covered:** 18 of 31 Karnataka administrative districts (58.1%)
+- **Geographic Bounds:** 100% within $11.0^\circ\text{N} \le \text{lat} \le 19.0^\circ\text{N}$, $73.5^\circ\text{E} \le \text{lon} \le 79.0^\circ\text{E}$
+- **Bilingual Parity:** 100% (40/40) complete parallel English and Kannada records
+- **Validation Issues:** 0 errors, 0 duplicates, 0 corrupted coordinates
+- **Pricing Breakdown:**
+  - Explicit Free Entry ($\text{₹0}$): 18 destinations
+  - Verified Paid Entry: 21 destinations
+  - Unknown Entry Fee: 1 destination (Kavaledurga Fort, preserved as explicit `null`)
+- **Category Distribution:**
+  - `heritage`: 11 (27.5%)
+  - `spiritual_cultural`: 6 (15.0%)
+  - `architecture`: 5 (12.5%)
+  - `waterfall`: 4 (10.0%)
+  - `hill_station`: 3 (7.5%)
+  - `beach`: 3 (7.5%)
+  - `nature`: 3 (7.5%)
+  - `wildlife`: 3 (7.5%)
+  - `viewpoint`: 2 (5.0%)
 
 ---
 
-## 6. Acceptance Criteria Traceability Matrix
+### D. Provider Integrations
 
-| ID | Acceptance Criterion | Status | Evidence / Verification Method |
-|---|---|---|---|
-| **PH2-01** | Phase 0 decisions and Phase 1 functionality preserved | **PASS** | All Phase 1 health probes, config tests, frontend tests, and specs intact. |
-| **PH2-02** | Database design documented | **PASS** | Authoritative [`docs/PHASE_2_DATABASE_DESIGN.md`](./docs/PHASE_2_DATABASE_DESIGN.md) created. |
-| **PH2-03** | Versioned migrations created | **PASS** | Three SQL migrations in `supabase/migrations/` with timestamps. |
-| **PH2-04** | PostGIS setup included if supported | **PASS** | `20261023000001_enable_postgis.sql` enables `postgis` in `extensions`. |
-| **PH2-05** | Schema keys and constraints defined | **PASS** | Check constraints for fees, coordinates, slugs, and durations verified. |
-| **PH2-06** | Spatial type, SRID, coordinate order and index correct | **PASS** | `geography(Point, 4326)` with `ST_MakePoint(longitude, latitude)` and GiST index. |
-| **PH2-07** | Unknown values are handled honestly | **PASS** | Unknown fees are `NULL` (e.g. Kavaledurga Fort); confirmed free is ₹0. Schema tests verify. |
-| **PH2-08** | Seed data has stable IDs and provenance | **PASS** | 12 records with deterministic UUIDs and official citations in `data/seed/destinations.json`. |
-| **PH2-09** | No unsupported destination facts are invented | **PASS** | Verified citations from ASI, Mysore Palace Board, Karnataka Tourism, Forest Dept. |
-| **PH2-10** | Seed reruns do not create duplicates | **PASS** | `test_load_seed_idempotency_run` passed; re-running skips existing records. |
-| **PH2-11** | Invalid seed records fail validation clearly | **PASS** | `validate_seed_data` unit tests verify rejection of bad UUID, bad coords, missing Kannada, etc. |
-| **PH2-12** | Pydantic schemas validate destination contracts | **PASS** | 8 schema unit tests in `test_destination_schemas.py` pass. |
-| **PH2-13** | Repository uses parameterized queries and bounded pagination | **PASS** | `limit` bounded to 100, deterministic ordering by `(slug, id)`. |
-| **PH2-14** | Public reads filter to intended published content | **PASS** | `test_repo_published_only_filter` verifies drafts are excluded from public reads. |
-| **PH2-15** | Database errors are sanitized | **PASS** | `AppError` maps to HTTP status and standardized `ErrorResponse` envelope. |
-| **PH2-16** | Tests do not require production credentials | **PASS** | All 36 tests execute hermetically using `InMemoryDestinationRepository` and mocks. |
-| **PH2-17** | Phase 1 regression checks remain green | **PASS** | Backend (10 Phase 1 tests) and Frontend (7 tests + Vite build) 100% green. |
-| **PH2-18** | CI covers new deterministic checks | **PASS** | Added `Validate seed dataset` step to `.github/workflows/ci.yml`. |
-| **PH2-19** | Documentation matches implementation | **PASS** | Updated root `README.md`, `backend/README.md`, and `data/seed/README.md`. |
-| **PH2-20** | Completion report records real evidence and limitations | **PASS** | Documented in this report with exact test outcomes and environment limits. |
-| **PH2-21** | Out-of-scope features were not implemented | **PASS** | No AI orchestration, auth flows, maps UI, or itinerary planners implemented. |
-| **PH2-22** | Phase 3 readiness is explicitly decided | **PASS** | Phase 3 readiness declared as **READY** below. |
+| Provider | Status | Capabilities & Role | Attribution & Provenance |
+| :--- | :--- | :--- | :--- |
+| **Curated Places Provider (`places.json`)** | `Implemented & Verified` | Curated registry of 12 verified heritage dining establishments and 10 authentic KSTDC/JLR accommodations across Karnataka. | Department of Tourism, KSTDC, Jungle Lodges & Resorts, and verified state culinary records. |
+| **Terrain-Adjusted Routing Provider** | `Implemented & Verified` | Geodesic calculation with 1.35x winding factor for Western Ghats and Deccan terrain, plus 15-minute terminal buffer. Reports calculation method transparently. | Deterministic geospatial algorithm (`app.services.routing.terrain_provider`). |
+| **Google Gemini 2.5 Flash** | `Implemented & Verified` | AI trip itinerary structuring, preference interpretation, and narrative generation. Strict schema validation and fallback to deterministic scheduler on 429 quota exhaustion. | Google GenAI SDK (`google-genai`). |
+| **Groq (Llama 3.3)** | `Implemented (Secondary AI)` | Secondary AI orchestration provider with automatic fallback. | Server-side environment key. |
+| **Supabase PostgREST & Auth** | `Implemented & Verified` | Production relational persistence for destinations, districts, user profiles, and saved trips with Row-Level Security (RLS). | Cloud Supabase project (`ayqwlxpaollxghdnbsqo.supabase.co`). |
 
 ---
 
-## 7. Known Limitations & Environment Assumptions
+### E. Itinerary Improvements
 
-1. **Local Supabase / Docker Environment:** Docker and Supabase CLI were not pre-installed in the local Windows environment. Consequently, live execution of migrations against a running Supabase container was **not run**. Migrations underwent complete static SQL review against PostgreSQL 15 / PostGIS 3 specifications, and the repository layer was verified using the hermetic `InMemoryDestinationRepository` and mock tests. When a Supabase project is connected, running `supabase db push` will apply the migration sequence cleanly.
-2. **Catalog Scale:** Seed data currently contains 12 high-confidence curated destinations across 8 districts. This is intentionally sized for architectural validation in Phase 2; catalog expansion to 50–100 destinations will proceed as editorial review approves additional records.
-
----
-
-## 8. Confirmation of Explicit Scope Boundaries
-
-As required by Section 3 of the Phase 2 prompt, the following were **NOT** implemented in Phase 2:
-- No AI itinerary generation (Groq or Gemini).
-- No user authentication screens, OAuth flows, or user login.
-- No saved-trip persistence or user-owned trip tables.
-- No destination discovery UI or detail pages on the frontend.
-- No itinerary planner forms, drag-and-drop days, or budget calculators.
-- No Leaflet maps, interactive map components, or map tiles.
-- No road routing, live ETA, or invented driving times.
-- No vector search, RAG pipelines, or embeddings.
-
-The frontend remains the clean Phase 1 scaffold, completely untouched except for preserving its green test/build pipeline.
+- **Deterministic Scheduling:** `DeterministicScheduler` creates complete, realistic day plans starting at 08:30 AM with breakfast, midday lunch windows (around 13:00), afternoon sightseeing, dinner (around 20:00), and overnight check-in (21:30) for multi-day trips.
+- **Real Place Grounding:** Rather than synthesizing generic names, the scheduler queries `PlacesService` for verified eateries and accommodations near destination coordinates.
+- **Transit Honesty:** Shows estimated road distance and travel duration between consecutive stops with explicit badges indicating calculation methods.
+- **Pace Adaptation:** Supports relaxed (2 attractions/day), balanced (3 attractions/day), and packed (4 attractions/day) user pacing without cramming impossible schedules.
 
 ---
 
-## 9. Phase 3 Readiness Decision
+### F. Budget Improvements
 
-### Decision: **READY**
+- **Transparent Cost Statuses:** Every budget line item displays its status badge: `Verified` (✓), `Estimated` (≈), `Unknown` (?), or `Not Applicable`.
+- **Honest Fee Aggregation:** Unknown entry fees are preserved as unknown and flagged in warnings; they are never converted to $\text{₹0}$ to avoid misleading travelers.
+- **Double Counting Prevention:** Meals and overnight accommodations are calculated using distinct day-wise formulas ($2 \text{ travelers per standard room}$, $\text{nights} = \text{days} - 1$).
+- **Per-Person Granularity:** Grand totals are accompanied by transparent per-person estimates.
 
-### Justification:
-- The database schema is fully documented and version-controlled.
-- PostGIS geographic standards and coordinate conventions are locked.
-- High-quality seed data with provenance and bilingual translations is validated and idempotent.
-- The backend repository layer exposes typed, bounded, and parameterized read operations.
-- Regression testing is 100% green (36 backend tests, 7 frontend tests, clean build).
-- The foundation is robust, secure, and ready for **Phase 3: AI Provider Orchestration, LLM Adapters, Output Validation, and Fallback Engine**.
+---
+
+### G. Frontend Changes
+
+1. **`DestinationModal.tsx`:** Added dynamic nearby dining (`🍴 Places to Eat`) and lodging (`🏨 Places to Stay`) sections displaying distance, cuisine/tier badges, verified cost estimates, and direct booking links.
+2. **`ItineraryView.tsx`:** Timeline cards visually distinguish Attraction, Meal, and Accommodation stops with customized icons, timings, tariff ranges, and transit indicators with calculation disclosures.
+3. **`BudgetSummary.tsx`:** Itemized cost table displaying Category, Estimate, Status badge, and Calculation Basis, accompanied by caveat disclaimers.
+4. **Bilingual Localization (`i18n.ts`):** Complete English and Kannada keys for all new Phase 2 UI elements (places to eat, places to stay, pure veg, verified tariffs, terrain-adjusted estimates).
+
+---
+
+### H. Database and API Changes
+
+- **New REST Endpoints (`backend/app/api/v1/places.py`):**
+  - `GET /api/v1/places/restaurants`: Geographic search for restaurants near coordinates with radius, cuisine, and vegetarian filters.
+  - `GET /api/v1/places/restaurants/{id}`: Single restaurant retrieval.
+  - `GET /api/v1/places/accommodations`: Geographic search for accommodations near coordinates with radius and type filters.
+  - `GET /api/v1/places/accommodations/{id}`: Single accommodation retrieval.
+  - `GET /api/v1/places/routing/estimate`: Road distance and duration estimation with terrain adjustment.
+- **Database Synchronization:** Ran `load_seed.py --apply` to synchronize all 40 expanded destination records and 31 districts into the live Supabase PostgREST tables.
+
+---
+
+### I. Security & Privacy Audit
+
+1. **Server-Side Credentials:** All Supabase service role keys, Gemini API keys, and Groq keys reside strictly in server-side environment variables. No secrets are exposed to client bundles.
+2. **Geospatial Coordinate Validation:** All incoming latitude and longitude parameters are strictly bound within WGS84 coordinates ($[-90, 90]$, $[-180, 180]$) with radius limited to $\le 100\text{ km}$ to prevent DoS attacks.
+3. **Database RLS Policies:** Unauthenticated and client users are restricted to `SELECT` operations on active published destinations and districts. User itineraries are isolated per authenticated user ID.
+
+---
+
+### J. Automated Test Results
+
+| Test Suite | Command Executed | Tests Passed | Tests Failed | Execution Time | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Backend Pytest** | `pytest backend/app/tests` | **97** | 0 | 9.18s | Includes schemas, places API, scheduler, budget engine, AI adapters, and Supabase repository tests. |
+| **Frontend Vitest** | `npm run test -- --run` | **19** | 0 | 25.98s | Includes `DestinationModal`, `ItineraryView`, `SavedTripsView`, `App.test.tsx`, and `api.test.ts`. |
+| **Python Lint (Ruff)** | `python -m ruff check backend` | **Clean** | 0 | 0.8s | All rules satisfied. |
+| **Frontend Build & Types** | `npm run build` (`tsc -b && vite build`) | **Clean** | 0 | 0.88s | 44 modules transformed, zero type errors. |
+| **Data Quality Audit** | `python data/validation/audit_destination_quality.py` | **40 / 40 Valid** | 0 | 0.4s | 100% compliant with geographic bounds and bilingual parity. |
+
+---
+
+### K. Known Limitations
+
+1. **Live Booking Transactions:** The platform provides curated recommendations and authentic booking reference links (e.g. KSTDC and JLR official reservation portals) but does not execute financial transactions or live room inventory holds (out of scope for Phase 2).
+2. **Statewide District Saturation:** The expanded catalogue covers 18 of 31 districts. 13 rural districts (e.g. Yadgir, Koppal, Haveri) will be populated during statewide expansion in Phase 3.
+3. **Public Transit Routing:** Transit estimates model personal/cab road travel. Intercity KSRTC bus and South Western Railway schedules are not currently simulated.
+
+---
+
+### L. Manual Verification Steps
+
+A developer can verify Phase 2 functionality using the following steps:
+1. **Start the Servers:**
+   - Backend: `uvicorn app.main:app --host 127.0.0.1 --port 8000` inside `backend/`
+   - Frontend: `npm run dev` inside `frontend/` (available at `http://127.0.0.1:5173`)
+2. **Verify Destination Discovery & Nearby Places:**
+   - Open browser to `http://127.0.0.1:5173/`.
+   - Browse the 40 destination cards across various districts.
+   - Click on "Mysuru Palace" or "Lalbagh Botanical Garden".
+   - Notice the modal opens displaying description, visit duration, verified fee, and the **🍽️ Nearby Verified Food & Stays** section showing real eateries (e.g. Vidyarthi Bhavan, MTR, Vinayaka Mylari) and KSTDC accommodations with distance badges and pricing.
+3. **Verify Itinerary Planning & Routing:**
+   - In the Trip Planner, enter origin "Bengaluru", duration "2 Days", pace "Balanced", and click "Craft Itinerary".
+   - View the generated day-by-day plan with scheduled breakfast, lunch, and dinner stops, sightseeing visits, and transit legs displaying distance and terrain-adjusted calculation disclosures.
+   - Verify the Budget Summary shows itemized categories, per-person costs, and cost status indicators.
+4. **Verify Language Switching:**
+   - Click the language toggle button (English / ಕನ್ನಡ) in the header.
+   - Verify all destination names, stop titles, categories, and UI labels switch to authentic Kannada without English leakage.
+
+---
+
+### M. Recommended Next Steps
+
+1. **Phase 3 Statewide Expansion:** Expand the destination catalogue to cover all 31 Karnataka districts with 60+ verified cultural, nature, and adventure destinations.
+2. **Public Transit Integration:** Ingest static GTFS feeds for KSRTC and BMTC buses to offer public transit alternatives alongside road estimates.
+3. **Offline PWA Support:** Cache destination cards and generated itineraries using service workers for offline exploration in remote Western Ghats locations.

@@ -38,8 +38,9 @@
 | **Phase 1: Foundation & Health Probes** | `COMPLETED` | Monorepo scaffold, FastAPI + React/Vite, typed API client, health/ready probes, error envelopes, and automated tests passing. |
 | **Phase 2: Database Schema & Seeds** | `COMPLETED` | Supabase PostGIS migrations, destination schemas, curated seed data with provenance, repository layer, and seed validation suite. |
 | **Phase 3: AI Orchestrator & Fallback** | `COMPLETED` | Dual Groq/Gemini adapters, 28s global deadline, catalog grounding, offline deterministic fallback engine, and recommendations API. |
-| **Phase 4: Bilingual Planner & UI** | `PENDING` | Target: Responsive planner forms, Leaflet maps, saved trips, i18n English/Kannada. |
-| **Phase 5: Quality Audit & Release** | `PENDING` | Target: End-to-end integration, performance load tests, accessibility sign-off. |
+| **Phase 4: Bilingual Planner & UI** | `COMPLETED` | Responsive planner forms, interactive SVG map, budget summary, saved trips, and instant English/Kannada toggle verified. |
+| **Phase 5: Quality, Cloud & Security** | `COMPLETED` | Live Supabase Cloud PostgreSQL + PostGIS, GoTrue Auth, native PostgreSQL RLS verified, 99 automated tests passing. |
+| **Phase 6: Controlled Pilot & Rollout** | `PLANNED NEXT` | Target: Closed beta user cohort testing (10–20 bilingual users), usability feedback, and production release sign-off. |
 
 ---
 

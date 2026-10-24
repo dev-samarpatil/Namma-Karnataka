@@ -41,6 +41,10 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
 
   const [origin, setOrigin] = useState<string>('Bengaluru');
   const [duration, setDuration] = useState<number>(2);
+  const [travelers, setTravelers] = useState<number>(2);
+  const [travelMode, setTravelMode] = useState<'driving_car' | 'cab_taxi' | 'public_transit' | 'mixed'>('driving_car');
+  const [budgetScenario, setBudgetScenario] = useState<'budget' | 'standard' | 'comfort'>('standard');
+  const [isReturnTrip, setIsReturnTrip] = useState<boolean>(true);
   const [pace, setPace] = useState<'relaxed' | 'balanced' | 'packed'>('balanced');
   const [selectedCategories, setSelectedCategories] = useState<DestinationCategory[]>(
     preselectedDestination ? [preselectedDestination.category] : ['heritage', 'nature']
@@ -98,10 +102,14 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
       language,
       origin_label: origin.trim(),
       duration_days: duration,
+      travelers_count: travelers,
       preferred_districts: selectedDistricts.length > 0 ? selectedDistricts : undefined,
       categories: selectedCategories.length > 0 ? selectedCategories : undefined,
       pace,
       is_offbeat_preferred: isOffbeatPreferred,
+      travel_mode: travelMode,
+      budget_scenario: budgetScenario,
+      is_return_trip: isReturnTrip,
       notes: notes.trim() ? notes.trim() : undefined,
     };
 
@@ -220,6 +228,79 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                 className="visually-hidden"
               />
               <span className="pace-title">🚀 {t('pacePacked')}</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Phase 4: Travelers Count & Budget Scenario */}
+        <div className="form-row two-col">
+          <div className="form-field">
+            <label className="form-label">
+              👥 {language === 'kn' ? 'ಪ್ರಯಾಣಿಕರ ಸಂಖ್ಯೆ' : 'Travelers Count'}: <strong>{travelers}</strong>
+            </label>
+            <div className="duration-selector">
+              {[1, 2, 4, 6, 8].map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  className={`btn-duration ${travelers === count ? 'active' : ''}`}
+                  onClick={() => setTravelers(count)}
+                  data-testid={`travelers-btn-${count}`}
+                >
+                  {count}p
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="planner-scenario" className="form-label">
+              🏷️ {t('budgetScenarioLabel')}
+            </label>
+            <select
+              id="planner-scenario"
+              value={budgetScenario}
+              onChange={(e) => setBudgetScenario(e.target.value as 'budget' | 'standard' | 'comfort')}
+              className="form-input"
+              data-testid="planner-budget-scenario"
+            >
+              <option value="budget">{t('scenarioBudget')}</option>
+              <option value="standard">{t('scenarioStandard')}</option>
+              <option value="comfort">{t('scenarioComfort')}</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Phase 4: Travel Mode & Return Trip */}
+        <div className="form-row two-col">
+          <div className="form-field">
+            <label htmlFor="planner-transport-mode" className="form-label">
+              🚗 {t('travelModeLabel')}
+            </label>
+            <select
+              id="planner-transport-mode"
+              value={travelMode}
+              onChange={(e) => setTravelMode(e.target.value as 'driving_car' | 'cab_taxi' | 'public_transit' | 'mixed')}
+              className="form-input"
+              data-testid="planner-travel-mode"
+            >
+              <option value="driving_car">{t('modeDrivingCar')}</option>
+              <option value="cab_taxi">{t('modeCabTaxi')}</option>
+              <option value="public_transit">{t('modePublicTransit')}</option>
+              <option value="mixed">{t('modeMixed')}</option>
+            </select>
+          </div>
+
+          <div className="form-field checkbox-field" style={{ alignSelf: 'center', marginTop: '16px' }}>
+            <label className="checkbox-label" htmlFor="planner-return-trip">
+              <input
+                id="planner-return-trip"
+                type="checkbox"
+                checked={isReturnTrip}
+                onChange={(e) => setIsReturnTrip(e.target.checked)}
+                data-testid="planner-return-trip-checkbox"
+              />
+              <span>🔄 {t('returnTripLabel')}</span>
             </label>
           </div>
         </div>

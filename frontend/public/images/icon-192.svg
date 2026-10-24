@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="nk-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#042f2e"/>
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#nk-grad)"/>
+  <!-- Karnataka Emblem Heritage Arch Motif -->
+  <path d="M 46 142 C 46 82, 146 82, 146 142" fill="none" stroke="url(#gold-grad)" stroke-width="8" stroke-linecap="round"/>
+  <!-- Central Pin / Stupa Silhouette -->
+  <circle cx="96" cy="74" r="22" fill="url(#gold-grad)"/>
+  <circle cx="96" cy="74" r="10" fill="#0f766e"/>
+  <path d="M 96 96 L 96 136" stroke="url(#gold-grad)" stroke-width="6" stroke-linecap="round"/>
+  <!-- Bilingual Initial Accent -->
+  <text x="96" y="166" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#fef3c7" text-anchor="middle">ನಮ್ಮ NK</text>
+</svg>

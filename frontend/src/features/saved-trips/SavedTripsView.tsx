@@ -53,7 +53,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
             if (err instanceof ApiClientError) {
               setCloudError(
                 err.status === 401
-                  ? t('validationError')
+                  ? t('formValidationError')
                   : `${err.message} (Using local fallback)`
               );
             } else {
@@ -282,6 +282,9 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
                 <div className="saved-trip-header">
                   <span className="badge badge-neutral">
                     📅 {trip.plan.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.plan.items.length} stops
+                  </span>
+                  <span className="badge badge-cached" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px' }}>
+                    ⚡ {t('cachedBadge')}
                   </span>
                   <span className="saved-trip-date">
                     {t('savedOn')} {new Date(trip.saved_at).toLocaleDateString()}

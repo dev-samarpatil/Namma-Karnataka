@@ -91,6 +91,22 @@ export interface DestinationSource {
   url?: string;
 }
 
+export interface DestinationMedia {
+  id: string;
+  destination_id: string;
+  url: string;
+  thumbnail_url?: string;
+  caption_en?: string;
+  caption_kn?: string;
+  alt_en?: string;
+  alt_kn?: string;
+  source_name: string;
+  source_url?: string;
+  license_type: string;
+  attribution: string;
+  is_primary: boolean;
+}
+
 export interface DestinationRead {
   id: string;
   slug: string;
@@ -118,6 +134,8 @@ export interface DestinationRead {
   entry_fee_max_inr?: number;
   currency_code: string;
   sources?: DestinationSource[];
+  media?: DestinationMedia[];
+  primary_image_url?: string;
 }
 
 export interface DestinationListResponse {
@@ -133,19 +151,46 @@ export interface DestinationFilterParams {
   district?: string;
   category?: DestinationCategory;
   is_offbeat?: boolean;
+  fee_type?: 'free' | 'paid' | 'unknown';
+  min_duration?: number;
+  max_duration?: number;
+  sort_by?: 'name' | 'district' | 'duration_asc' | 'duration_desc';
   lang?: Language;
   limit?: number;
   offset?: number;
 }
 
+
+export type StopType =
+  | 'attraction'
+  | 'activity'
+  | 'meal'
+  | 'accommodation'
+  | 'transport'
+  | 'break';
+
+export type CostStatus =
+  | 'verified'
+  | 'estimated'
+  | 'user_provided'
+  | 'unknown'
+  | 'not_applicable';
+
 export interface PlanningRequest {
   language: Language;
   origin_label: string;
   duration_days: number;
+  travelers_count?: number;
+  start_date?: string;
   preferred_districts?: string[];
   categories?: DestinationCategory[];
   pace: 'relaxed' | 'balanced' | 'packed';
   is_offbeat_preferred: boolean;
+  travel_mode?: 'driving_car' | 'cab_taxi' | 'public_transit' | 'mixed';
+  budget_scenario?: 'budget' | 'standard' | 'comfort';
+  fuel_efficiency_km_per_litre?: number;
+  fuel_price_per_litre?: number;
+  is_return_trip?: boolean;
   notes?: string;
 }
 
@@ -169,6 +214,73 @@ export interface RecommendedDestination {
   sources?: DestinationSource[];
 }
 
+export interface ItineraryStop {
+  stop_id: string;
+  destination_id?: string | null;
+  stop_type: StopType;
+  name: string;
+  description?: string | null;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  coordinates?: Coordinates | null;
+  distance_from_prev_km?: number | null;
+  transit_from_prev_minutes?: number | null;
+  transit_method?: string | null;
+  cost_min_inr?: number | null;
+  cost_max_inr?: number | null;
+  currency: string;
+  cost_status: CostStatus;
+  source_reference?: string | null;
+  rationale?: string | null;
+  notes?: string | null;
+  user_modified?: boolean;
+  locked?: boolean;
+}
+
+export interface DayPlan {
+  day_number: number;
+  date?: string | null;
+  theme: string;
+  stops: ItineraryStop[];
+  total_duration_minutes: number;
+  transit_minutes: number;
+  meals_covered: string[];
+  daily_cost_min_inr?: number | null;
+  daily_cost_max_inr?: number | null;
+  warnings: string[];
+}
+
+export interface BudgetCategoryItem {
+  category_name: string;
+  estimated_min_inr?: number | null;
+  estimated_max_inr?: number | null;
+  cost_status: CostStatus;
+  calculation_basis: string;
+  notes?: string | null;
+  basis_type?: string;
+  subtotal_type?: string;
+}
+
+export interface CompleteBudgetBreakdown {
+  grand_total_min_inr?: number | null;
+  grand_total_max_inr?: number | null;
+  per_person_min_inr?: number | null;
+  per_person_max_inr?: number | null;
+  verified_subtotal_inr?: number;
+  estimated_subtotal_min_inr?: number;
+  estimated_subtotal_max_inr?: number;
+  currency: string;
+  traveler_count: number;
+  travel_mode_used?: string;
+  budget_scenario_used?: string;
+  is_return_trip?: boolean;
+  categories: BudgetCategoryItem[];
+  has_unknown_costs: boolean;
+  calculation_notes?: string[];
+  warnings: string[];
+}
+
 export interface PlanningRecommendationResponse {
   request_id?: string;
   language: Language;
@@ -177,6 +289,10 @@ export interface PlanningRecommendationResponse {
   items: RecommendedDestination[];
   total_destinations: number;
   duration_days: number;
+  days?: DayPlan[];
+  budget_breakdown?: CompleteBudgetBreakdown;
+  assumptions?: string[];
+  data_limitations?: string[];
   warnings?: string[];
 }
 
@@ -201,6 +317,74 @@ export interface SaveCloudTripPayload {
   itinerary: PlanningRecommendationResponse;
 }
 
+export interface UpdateCloudTripPayload {
+  title?: string;
+  itinerary: PlanningRecommendationResponse;
+}
+
+export interface StopRegenerateCandidate {
+  destination_id: string;
+  slug: string;
+  name: string;
+  summary?: string | null;
+  category: DestinationCategory;
+  district_code: string;
+  district_name?: string | null;
+  coordinates?: Coordinates | null;
+  estimated_visit_minutes: number;
+  entry_fee_min_inr?: number | null;
+  entry_fee_max_inr?: number | null;
+  cost_status: CostStatus;
+  distance_delta_km?: number | null;
+  transit_delta_minutes?: number | null;
+  fee_difference_inr?: number | null;
+  rationale: string;
+}
+
+export interface StopRegenerateResponse {
+  original_stop_id: string;
+  day_number: number;
+  candidates: StopRegenerateCandidate[];
+}
+
+export interface ItineraryRecalculateRequest {
+  request: PlanningRequest;
+  days: DayPlan[];
+  generation_mode?: string;
+  provider_used?: string;
+}
+
+export interface NearbyAttractionItem {
+  id: string;
+  slug: string;
+  name: string;
+  category: DestinationCategory;
+  district_code: string;
+  distance_km: number;
+  entry_fee_min_inr?: number;
+  entry_fee_max_inr?: number;
+  estimated_visit_minutes?: number;
+  primary_image_url?: string;
+}
+
+export interface NearbyTransitItem {
+  hub_id: string;
+  name: string;
+  hub_type: string;
+  distance_km: number;
+  connectivity_summary: string;
+}
+
+export interface DestinationNearbyResponse {
+  destination_id: string;
+  destination_slug: string;
+  radius_km: number;
+  nearby_attractions: NearbyAttractionItem[];
+  nearby_transit: NearbyTransitItem[];
+  nearby_restaurants: any[];
+  nearby_accommodations: any[];
+}
+
 export interface SavedTripSummary {
   id: string;
   title: string;
@@ -211,6 +395,7 @@ export interface SavedTripSummary {
   budget_max_inr?: number;
   currency_code: string;
   total_stops: number;
+  version?: number;
   created_at: string;
   updated_at: string;
 }
@@ -228,6 +413,8 @@ export interface SavedTripDetail {
   budget_max_inr?: number;
   currency_code: string;
   status: string;
+  version?: number;
+  last_modified_by?: string;
   snapshot: PlanningRecommendationResponse;
   created_at: string;
   updated_at: string;
@@ -239,3 +426,181 @@ export interface CloudTripListResponse {
   limit: number;
   offset: number;
 }
+
+export interface CreateTripShareRequest {
+  role: 'viewer' | 'editor';
+  expires_in_days?: number | null;
+}
+
+export interface TripShareInfo {
+  id: string;
+  trip_id: string;
+  created_by: string;
+  role: 'viewer' | 'editor';
+  share_token: string;
+  expires_at?: string | null;
+  is_revoked: boolean;
+  created_at: string;
+}
+
+export interface TripShareListResponse {
+  items: TripShareInfo[];
+  total: number;
+}
+
+export interface SharedTripDetail {
+  id: string;
+  title: string;
+  origin_label: string;
+  duration_days: number;
+  pace: string;
+  is_offbeat_preferred: boolean;
+  budget_min_inr?: number;
+  budget_max_inr?: number;
+  currency_code: string;
+  version: number;
+  role: 'viewer' | 'editor';
+  snapshot: PlanningRecommendationResponse;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateSharedTripRequest {
+  expected_version: number;
+  title?: string;
+  itinerary: PlanningRecommendationResponse;
+}
+
+export interface TripAuditEvent {
+  id: string;
+  trip_id: string;
+  actor_type: 'owner' | 'editor' | 'guest';
+  actor_id?: string;
+  action: string;
+  summary: string;
+  version_before?: number;
+  version_after?: number;
+  created_at: string;
+}
+
+export interface TripAuditHistoryResponse {
+  items: TripAuditEvent[];
+  total: number;
+}
+
+
+export interface RestaurantRead {
+  id: string;
+  name_en: string;
+  name_kn: string;
+  place_type: 'restaurant';
+  district_code: string;
+  nearby_destination_slug: string;
+  latitude: number;
+  longitude: number;
+  address_en: string;
+  address_kn?: string;
+  cuisines: string[];
+  is_vegetarian: boolean;
+  price_tier: 'budget' | 'mid_range' | 'premium';
+  estimated_cost_per_person_inr?: number;
+  price_status: 'verified' | 'estimated' | 'unknown';
+  opening_hours?: string;
+  source_name: string;
+  source_type: string;
+  verified_at: string;
+  user_notes_en?: string;
+  user_notes_kn?: string;
+  distance_km?: number;
+}
+
+export interface AccommodationRead {
+  id: string;
+  name_en: string;
+  name_kn: string;
+  place_type: 'accommodation';
+  accommodation_type: 'hotel' | 'resort' | 'homestay' | 'lodge' | 'heritage';
+  district_code: string;
+  nearby_destination_slug: string;
+  latitude: number;
+  longitude: number;
+  address_en: string;
+  address_kn?: string;
+  price_tier: 'budget' | 'mid_range' | 'premium';
+  estimated_cost_per_night_inr?: number;
+  price_status: 'verified' | 'estimated' | 'unknown';
+  amenities: string[];
+  booking_reference_url?: string;
+  source_name: string;
+  source_type: string;
+  verified_at: string;
+  user_notes_en?: string;
+  user_notes_kn?: string;
+  distance_km?: number;
+}
+
+export interface TransitStop {
+  stop_id: string;
+  name_en: string;
+  name_kn: string;
+  district_code: string;
+  station_type: 'bus_terminal' | 'railway_station' | 'metro_station' | 'bus_stop';
+  latitude: number;
+  longitude: number;
+  address_en: string;
+  address_kn: string;
+  operator: string;
+  distance_km?: number;
+}
+
+export interface TransitLeg {
+  leg_id: string;
+  origin_stop: TransitStop;
+  destination_stop: TransitStop;
+  transit_mode: 'ksrtc_express_bus' | 'bmtc_city_bus' | 'swr_railway' | 'namma_metro';
+  line_name: string;
+  route_number: string;
+  departure_time: string;
+  arrival_time: string;
+  duration_minutes: number;
+  distance_km: number;
+  fare_inr: number;
+  fare_status: string;
+  frequency_summary: string;
+  operator_name: string;
+  source_name: string;
+  source_url?: string;
+}
+
+export interface TransitJourneyOption {
+  journey_id: string;
+  origin_label: string;
+  destination_label: string;
+  total_duration_minutes: number;
+  transfers_count: number;
+  legs: TransitLeg[];
+  total_fare_min_inr: number;
+  total_fare_max_inr: number;
+  fare_status: string;
+  calculation_basis: string;
+  operator_name: string;
+  feed_version: string;
+  disclaimer: string;
+  is_realtime: boolean;
+}
+
+export interface TransitComparison {
+  origin_lat: number;
+  origin_lon: number;
+  dest_lat: number;
+  dest_lon: number;
+  road_distance_km: number;
+  road_duration_minutes: number;
+  road_method: string;
+  road_estimated_cab_cost_inr: number;
+  transit_options: TransitJourneyOption[];
+  transit_available: boolean;
+  carbon_comparison_note_en: string;
+  carbon_comparison_note_kn: string;
+}
+

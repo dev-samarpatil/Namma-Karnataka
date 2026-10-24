@@ -220,3 +220,35 @@ def test_trip_input_validation(client: TestClient):
     payload["pace"] = "hypersonic"
     res = client.post("/api/v1/trips", json=payload, headers=user_a_headers)
     assert res.status_code == 422
+
+
+def test_user_a_update_trip_and_multi_tenant_protection(client: TestClient):
+    """User A can update their trip; User B cannot update User A's trip."""
+    user_a_headers = {"Authorization": "Bearer test-token-user-1"}
+    user_b_headers = {"Authorization": "Bearer test-token-user-2"}
+
+    # 1. User A creates trip
+    payload = sample_trip_payload()
+    res = client.post("/api/v1/trips", json=payload, headers=user_a_headers)
+    assert res.status_code == 201
+    trip_id = res.json()["id"]
+
+    # 2. Anonymous PUT is rejected (401)
+    update_payload = {
+        "title": "Updated Mysuru Trip",
+        "itinerary": payload["itinerary"],
+    }
+    res = client.put(f"/api/v1/trips/{trip_id}", json=update_payload)
+    assert res.status_code == 401
+
+    # 3. User B attempts to update User A's trip -> 404
+    res = client.put(f"/api/v1/trips/{trip_id}", json=update_payload, headers=user_b_headers)
+    assert res.status_code == 404
+    assert res.json()["error"]["code"] == "TRIP_NOT_FOUND"
+
+    # 4. User A successfully updates trip -> 200
+    res = client.put(f"/api/v1/trips/{trip_id}", json=update_payload, headers=user_a_headers)
+    assert res.status_code == 200
+    updated_trip = res.json()
+    assert updated_trip["id"] == trip_id
+    assert updated_trip["title"] == "Updated Mysuru Trip"

@@ -11,6 +11,9 @@ import {
   getCloudTrip,
   saveCloudTrip,
   deleteCloudTrip,
+  fetchTransitStopsNear,
+  fetchTransitJourneys,
+  compareTransitAndRoad,
 } from './api';
 import { getSavedLanguage, saveLanguage, translations } from './i18n';
 import { PlanningRequest } from '../types';
@@ -363,6 +366,117 @@ describe('Central API Client', () => {
     );
     expect(saveRes.id).toBe('trip-102');
     expect(capturedMethod).toBe('POST');
+  });
+
+  it('fetches nearby transit stops and parses parameters correctly', async () => {
+    let capturedUrl = '';
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input: RequestInfo | URL) => {
+      capturedUrl = input.toString();
+      return Promise.resolve(
+        new Response(
+          JSON.stringify([
+            {
+              stop_id: 'stop-blr-majestic',
+              name_en: 'Kempegowda Bus Station',
+              name_kn: 'ಕೆಂಪೇಗೌಡ ಬಸ್ ನಿಲ್ದಾಣ',
+              district_code: 'KA-BLRU',
+              station_type: 'bus_terminal',
+              latitude: 12.9778,
+              longitude: 77.5713,
+              operator: 'KSRTC / BMTC',
+            },
+          ]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+    });
+
+    const stops = await fetchTransitStopsNear(12.9778, 77.5713, 15.0, 5);
+    expect(stops).toHaveLength(1);
+    expect(stops[0].stop_id).toBe('stop-blr-majestic');
+    expect(capturedUrl).toContain('/transit/stops?lat=12.9778&lon=77.5713&radius_km=15&limit=5');
+  });
+
+  it('fetches scheduled transit journeys between origin and destination coordinates', async () => {
+    let capturedUrl = '';
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input: RequestInfo | URL) => {
+      capturedUrl = input.toString();
+      return Promise.resolve(
+        new Response(
+          JSON.stringify([
+            {
+              journey_id: 'journey-1',
+              origin_label: 'Kempegowda Bus Station',
+              destination_label: 'Mysuru Suburban Bus Stand',
+              total_duration_minutes: 195,
+              transfers_count: 0,
+              legs: [],
+              total_fare_min_inr: 210,
+              total_fare_max_inr: 360,
+              fare_status: 'verified',
+              calculation_basis: 'Direct KSRTC scheduled service',
+              operator_name: 'KSRTC',
+              feed_version: 'ksrtc_bmtc_swr_static_2026_v1',
+              disclaimer: 'Static scheduled transit data.',
+              is_realtime: false,
+            },
+          ]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+    });
+
+    const journeys = await fetchTransitJourneys(12.9716, 77.5946, 12.2958, 76.6394, '07:30', 2);
+    expect(journeys).toHaveLength(1);
+    expect(journeys[0].operator_name).toBe('KSRTC');
+    expect(capturedUrl).toContain('/transit/journeys?origin_lat=12.9716&origin_lon=77.5946&dest_lat=12.2958&dest_lon=76.6394&departure_time=07%3A30&max_transfers=2');
+  });
+
+  it('compares road and public transit alternatives with honest disclosures', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            origin_lat: 12.9716,
+            origin_lon: 77.5946,
+            dest_lat: 12.2958,
+            dest_lon: 76.6394,
+            road_distance_km: 142.5,
+            road_duration_minutes: 175,
+            road_method: 'terrain_adjusted_estimate',
+            road_estimated_cab_cost_inr: 2565,
+            transit_available: true,
+            transit_options: [
+              {
+                journey_id: 'journey-1',
+                origin_label: 'Kempegowda Bus Station',
+                destination_label: 'Mysuru Suburban Bus Stand',
+                total_duration_minutes: 195,
+                transfers_count: 0,
+                legs: [],
+                total_fare_min_inr: 210,
+                total_fare_max_inr: 360,
+                fare_status: 'verified',
+                calculation_basis: 'Direct KSRTC scheduled service (KSRTC-BLR-MYS-EXP)',
+                operator_name: 'KSRTC Airavat / Rajahamsa',
+                feed_version: 'ksrtc_bmtc_swr_static_2026_v1',
+                disclaimer: 'Static scheduled transit data.',
+                is_realtime: false,
+              },
+            ],
+            carbon_comparison_note_en: 'Taking public transit reduces carbon emissions by ~70%.',
+            carbon_comparison_note_kn: 'ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ಬಳಕೆಯು ಇಂಗಾಲದ ಹೊರಸೂಸುವಿಕೆಯನ್ನು ಗಣನೀಯವಾಗಿ ಕಡಿಮೆ ಮಾಡುತ್ತದೆ.',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+    );
+
+    const comp = await compareTransitAndRoad(12.9716, 77.5946, 12.2958, 76.6394);
+    expect(comp.transit_available).toBe(true);
+    expect(comp.road_distance_km).toBe(142.5);
+    expect(comp.transit_options[0].is_realtime).toBe(false);
+    expect(comp.transit_options[0].total_fare_min_inr).toBe(210);
   });
 });
 

@@ -133,6 +133,24 @@ class DestinationSourceRead(StrictSchema):
     attribution_required: bool = False
 
 
+class DestinationMediaRead(StrictSchema):
+    """Destination photograph metadata with provenance, licensing, and attribution."""
+
+    id: str = Field(..., description="Unique media identifier")
+    destination_id: str
+    url: str = Field(..., description="Image asset URL or valid path")
+    thumbnail_url: str | None = None
+    caption_en: str
+    caption_kn: str | None = None
+    alt_en: str
+    alt_kn: str | None = None
+    source_name: str
+    source_url: str | None = None
+    license_type: str = "Official Tourism Portal / CC BY-SA"
+    attribution: str
+    is_primary: bool = False
+
+
 # ============================================================================
 # Destination Entity Models
 # ============================================================================
@@ -156,6 +174,8 @@ class DestinationBase(StrictSchema):
     active: bool = True
     translations: list[DestinationTranslationRead] = Field(default_factory=list)
     sources: list[DestinationSourceRead] = Field(default_factory=list)
+    media: list[DestinationMediaRead] = Field(default_factory=list)
+    primary_image_url: str | None = None
 
     @model_validator(mode="after")
     def validate_invariants(self) -> DestinationBase:
@@ -240,7 +260,21 @@ class DestinationRead(DestinationBase):
                         data["accessibility_notes_kn"] = t_dict.get("accessibility_notes")
             if not data.get("name_en") and slug:
                 data["name_en"] = slug.replace("-", " ").title()
+            if not data.get("primary_image_url") and data.get("media"):
+                media_list = data["media"]
+                for m in media_list:
+                    if isinstance(m, dict) and m.get("is_primary"):
+                        data["primary_image_url"] = m.get("url")
+                        break
+                    elif hasattr(m, "is_primary") and m.is_primary:
+                        data["primary_image_url"] = m.url
+                        break
+                if not data.get("primary_image_url") and len(media_list) > 0:
+                    first = media_list[0]
+                    first_url = first.get("url") if isinstance(first, dict) else first.url
+                    data["primary_image_url"] = first_url
         return data
+
 
 
 class DestinationPublicItem(StrictSchema):
@@ -266,6 +300,8 @@ class DestinationPublicItem(StrictSchema):
     currency_code: str = "INR"
     language_code: LanguageCode = LanguageCode.EN
     sources: list[DestinationSourceRead] = Field(default_factory=list)
+    media: list[DestinationMediaRead] = Field(default_factory=list)
+    primary_image_url: str | None = None
 
 
 class DestinationListResponse(StrictSchema):
@@ -285,6 +321,49 @@ class DestinationFilterParams(StrictSchema):
     district: str | None = Field(None, max_length=16)
     category: DestinationCategory | None = None
     is_offbeat: bool | None = None
+    fee_type: str | None = Field(None, pattern="^(free|paid|unknown)$")
+    min_duration: int | None = Field(None, ge=1)
+    max_duration: int | None = Field(None, ge=1)
+    sort_by: str | None = Field(None, pattern="^(name|district|duration_asc|duration_desc)$")
     lang: LanguageCode = LanguageCode.EN
     limit: int = Field(20, ge=1, le=100)
     offset: int = Field(0, ge=0)
+
+
+class NearbyAttractionItem(StrictSchema):
+    """Nearby verified attraction with calculated distance."""
+
+    id: str
+    slug: str
+    name: str
+    category: DestinationCategory
+    district_code: str
+    district_name: str | None = None
+    distance_km: float = Field(..., ge=0.0)
+    estimated_visit_minutes: int | None = None
+    entry_fee_min_inr: float | None = None
+    entry_fee_max_inr: float | None = None
+    primary_image_url: str | None = None
+    is_offbeat: bool = False
+
+
+class NearbyTransitItem(StrictSchema):
+    """Nearby transit hub or terminal."""
+
+    hub_id: str
+    name: str
+    hub_type: str = Field(..., description="rail, bus, or airport")
+    distance_km: float = Field(..., ge=0.0)
+    connectivity_summary: str
+
+
+class DestinationNearbyResponse(StrictSchema):
+    """Integrated nearby facilities for a destination."""
+
+    destination_id: str
+    destination_slug: str
+    radius_km: float
+    nearby_attractions: list[NearbyAttractionItem] = Field(default_factory=list)
+    nearby_transit: list[NearbyTransitItem] = Field(default_factory=list)
+    nearby_restaurants: list[dict[str, Any]] = Field(default_factory=list)
+    nearby_accommodations: list[dict[str, Any]] = Field(default_factory=list)

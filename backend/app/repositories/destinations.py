@@ -181,6 +181,31 @@ class InMemoryDestinationRepository:
             if params.is_offbeat is not None and dest.is_offbeat != params.is_offbeat:
                 continue
 
+            if params.fee_type:
+                if params.fee_type == "free":
+                    if not (dest.entry_fee_min_inr == 0 and dest.entry_fee_max_inr == 0):
+                        continue
+                elif params.fee_type == "paid":
+                    has_fee = (
+                        (dest.entry_fee_min_inr is not None and dest.entry_fee_min_inr > 0)
+                        or (dest.entry_fee_max_inr is not None and dest.entry_fee_max_inr > 0)
+                    )
+                    if not has_fee:
+                        continue
+                elif params.fee_type == "unknown":
+                    if dest.entry_fee_min_inr is not None or dest.entry_fee_max_inr is not None:
+                        continue
+
+            if params.min_duration is not None:
+                dur = dest.estimated_visit_minutes
+                if dur is None or dur < params.min_duration:
+                    continue
+
+            if params.max_duration is not None:
+                dur = dest.estimated_visit_minutes
+                if dur is None or dur > params.max_duration:
+                    continue
+
             if params.q:
                 query = params.q.lower()
                 matches_slug = query in dest.slug.lower()
@@ -193,8 +218,20 @@ class InMemoryDestinationRepository:
 
             filtered.append(dest)
 
-        # Deterministic sorting: by slug ascending, then id
-        filtered.sort(key=lambda d: (d.slug, d.id))
+        # Sorting: user-specified or deterministic default (slug asc)
+        if params.sort_by == "name":
+            filtered.sort(key=lambda d: (d.name_en.lower() if d.name_en else d.slug, d.id))
+        elif params.sort_by == "district":
+            filtered.sort(
+                key=lambda d: (d.district_code, d.name_en.lower() if d.name_en else d.slug)
+            )
+        elif params.sort_by == "duration_asc":
+
+            filtered.sort(key=lambda d: (d.estimated_visit_minutes or 9999, d.slug))
+        elif params.sort_by == "duration_desc":
+            filtered.sort(key=lambda d: (-(d.estimated_visit_minutes or 0), d.slug))
+        else:
+            filtered.sort(key=lambda d: (d.slug, d.id))
 
         total = len(filtered)
         start = params.offset
@@ -351,10 +388,17 @@ class SupabaseDestinationRepository:
         params: DestinationFilterParams,
         published_only: bool = True,
     ) -> tuple[list[DestinationRead], int]:
-        if self._is_schema_unmigrated():
+        if (
+            self._is_schema_unmigrated()
+            or params.fee_type is not None
+            or params.min_duration is not None
+            or params.max_duration is not None
+            or params.sort_by is not None
+        ):
             return self._fallback_repo.list_destinations(params, published_only)
         try:
             query_params: dict[str, str] = {
+
                 "select": "*,destination_translations(*),destination_sources(*),districts(*)",
                 "order": "slug.asc,id.asc",
                 "limit": str(params.limit),
@@ -481,7 +525,15 @@ class SupabaseDestinationRepository:
                 name_kn=district_data["name_kn"],
             )
 
+        if not row_copy.get("media"):
+            slug_val = row_copy.get("slug", "")
+            fb_dest = self._fallback_repo.get_by_slug(slug_val)
+            if fb_dest and fb_dest.media:
+                row_copy["media"] = [m.model_dump() for m in fb_dest.media]
+                row_copy["primary_image_url"] = fb_dest.primary_image_url
+
         return DestinationRead.model_validate(row_copy)
+
 
 
 # Central Repository Singleton / Dependency Factory

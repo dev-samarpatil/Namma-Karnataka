@@ -44,8 +44,21 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
     return <span className="fee-tag fee-unknown">ℹ️ {t('feeUnknown')}</span>;
   };
 
+  const imageUrl = destination.primary_image_url || destination.media?.[0]?.thumbnail_url || destination.media?.[0]?.url;
+
   return (
     <article className="destination-card" data-testid={`destination-card-${destination.slug}`}>
+      {imageUrl && (
+        <div className="card-image-wrap" style={{ width: '100%', height: '140px', overflow: 'hidden', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', background: '#f3f4f6' }}>
+          <img
+            src={imageUrl}
+            alt={destination.media?.[0]?.alt_en || name}
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
       <div className="card-header">
         <div className="card-meta-row">
           <span className="card-category-pill">{categoryLabel}</span>
@@ -58,6 +71,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
         </div>
         <h3 className="card-title">{name}</h3>
       </div>
+
 
       <div className="card-body">
         {summary && <p className="card-summary">{summary}</p>}

@@ -173,11 +173,12 @@ export async function processSyncQueue(authToken?: string): Promise<{
         });
         errors++;
       }
-    } catch (networkErr: any) {
+    } catch (networkErr) {
+      const errMsg = networkErr instanceof Error ? networkErr.message : 'Network communication failure';
       updateOperation(op.operation_id, {
         status: 'failed_retryable',
         retry_count: op.retry_count + 1,
-        last_error: networkErr?.message || 'Network communication failure',
+        last_error: errMsg,
       });
       errors++;
     }
@@ -195,7 +196,8 @@ export async function registerBackgroundSync(): Promise<boolean> {
     ) {
       const reg = await navigator.serviceWorker.ready;
       if ('sync' in reg) {
-        await (reg as any).sync.register('nk-itinerary-sync');
+        const syncReg = reg as unknown as { sync: { register: (tag: string) => Promise<void> } };
+        await syncReg.sync.register('nk-itinerary-sync');
         return true;
       }
     }

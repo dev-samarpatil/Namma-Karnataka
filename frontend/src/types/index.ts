@@ -385,8 +385,8 @@ export interface DestinationNearbyResponse {
   radius_km: number;
   nearby_attractions: NearbyAttractionItem[];
   nearby_transit: NearbyTransitItem[];
-  nearby_restaurants: any[];
-  nearby_accommodations: any[];
+  nearby_restaurants: Record<string, unknown>[];
+  nearby_accommodations: Record<string, unknown>[];
 }
 
 export interface SavedTripSummary {
@@ -674,7 +674,7 @@ export interface SyncOperation {
   trip_id: string;
   share_token?: string;
   operation_type: 'UPDATE_TRIP' | 'UPDATE_SHARED_TRIP';
-  payload: any;
+  payload: Record<string, unknown>;
   expected_version: number;
   created_at: string;
   retry_count: number;

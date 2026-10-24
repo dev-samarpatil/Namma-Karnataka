@@ -119,7 +119,11 @@ def test_user_a_and_user_b_isolation(client: TestClient):
         "title": "Hacked Title",
         "itinerary": create_payload["itinerary"],
     }
-    update_res_2 = client.put(f"/api/v1/trips/{trip_1_id}", json=update_payload, headers=headers_user_2)
+    update_res_2 = client.put(
+        f"/api/v1/trips/{trip_1_id}",
+        json=update_payload,
+        headers=headers_user_2,
+    )
     assert update_res_2.status_code == 404
 
     # 5. User 2 attempts to delete User 1's trip; must return 404
@@ -133,8 +137,13 @@ def test_user_a_and_user_b_isolation(client: TestClient):
 
 
 def test_idempotent_guest_trip_import(client: TestClient):
-    """Verify that retrying a trip creation/import with the same Idempotency-Key returns cached trip and avoids duplicates."""
-    headers = {"Authorization": f"Bearer {USER_1_TOKEN}", "Idempotency-Key": "import-guest-trip-999"}
+    """Verify that retrying a trip creation/import with the same Idempotency-Key
+    returns cached trip and avoids duplicates.
+    """
+    headers = {
+        "Authorization": f"Bearer {USER_1_TOKEN}",
+        "Idempotency-Key": "import-guest-trip-999",
+    }
 
     payload = sample_trip_payload("Imported Coorg Gateway")
 

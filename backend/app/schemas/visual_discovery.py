@@ -34,7 +34,8 @@ class VisualEvidence(StrictSchema):
         description="List of observed architectural, natural, or structural features",
     )
     architectural_style: str | None = Field(
-        None, description="Identified architectural school (e.g., Hoysala, Chalukya, Indo-Saracenic)"
+        None,
+        description="Identified architectural school (e.g., Hoysala, Chalukya, Indo-Saracenic)",
     )
     landscape_clues: list[str] = Field(
         default_factory=list, description="Terrain, flora, coastline, or waterbody cues"
@@ -63,7 +64,8 @@ class VisualDiscoveryCandidate(StrictSchema):
     match_score: Annotated[float, Field(ge=0.0, le=1.0, description="Normalized match score")]
     confidence_label: ConfidenceLabel
     matching_reasons: list[str] = Field(
-        default_factory=list, description="Reasons connecting visual observations to catalogue record"
+        default_factory=list,
+        description="Reasons connecting visual observations to catalogue record",
     )
     visual_evidence: VisualEvidence | None = None
     uncertainty_notes: str | None = Field(
@@ -94,6 +96,9 @@ class VisualDiscoveryResponse(StrictSchema):
         description="Timestamp of analysis",
     )
     privacy_notice: str = Field(
-        default="Your uploaded media was processed ephemerally in memory and was not permanently stored.",
+        default=(
+            "Your uploaded media was processed ephemerally in memory "
+            "and was not permanently stored."
+        ),
         description="Explicit privacy disclosure regarding uploaded data handling",
     )

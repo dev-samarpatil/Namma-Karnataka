@@ -1,12 +1,13 @@
 """Unit and integration tests for AI Visual Place Discovery API."""
 
 import io
+
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
-import pytest
 
 from app.main import app
-from app.repositories.destinations import InMemoryDestinationRepository, get_destination_repository
+from app.repositories.destinations import InMemoryDestinationRepository
 from app.schemas.visual_discovery import ConfidenceLabel
 from app.services.visual_discovery.service import VisualDiscoveryService
 
@@ -28,7 +29,11 @@ def test_analyze_image_valid_match(client):
     """Test uploading a photo matching a known landmark signature returns grounded candidate."""
     img_bytes = create_test_image("JPEG")
     files = {"file": ("mysore-palace-evening.jpg", img_bytes, "image/jpeg")}
-    response = client.post("/api/v1/visual-discovery/analyze-image", files=files, data={"language": "en"})
+    response = client.post(
+        "/api/v1/visual-discovery/analyze-image",
+        files=files,
+        data={"language": "en"},
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -116,7 +121,9 @@ def test_analyze_video_missing_media_rejected(client):
 
 
 def test_ai_proposed_hallucinated_slug_rejected():
-    """Verify that an AI candidate with a fabricated slug not in the catalogue is strictly rejected."""
+    """Verify that an AI candidate with a fabricated slug not in the catalogue
+    is strictly rejected.
+    """
     repo = InMemoryDestinationRepository()
     service = VisualDiscoveryService(repo=repo)
 

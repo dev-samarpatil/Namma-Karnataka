@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from app.core.errors import AppError
 from app.repositories.destinations import DestinationRepository, get_destination_repository
@@ -31,7 +31,8 @@ async def analyze_image(
     language: Annotated[str, Form(description="Response language ('en' or 'kn')")] = "en",
     service: Annotated[VisualDiscoveryService, Depends(get_visual_discovery_service)] = None,
 ) -> VisualDiscoveryResponse:
-    """Analyze a user photograph, extract visual clues, and ground candidates in the destination catalogue.
+    """Analyze a user photograph, extract visual clues, and ground candidates
+    in the destination catalogue.
 
     User media is processed ephemerally in memory without persistent storage.
     """

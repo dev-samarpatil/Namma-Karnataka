@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SavedTrip, SavedTripSummary, SavedTripDetail, Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { listCloudTrips, deleteCloudTrip, getCloudTrip, saveCloudTrip, ApiClientError } from '../../lib/api';
@@ -42,7 +42,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   // Count unlinked local trips
   const unlinkedTripsCount = savedTrips.filter((t) => !t.cloud_trip_id).length;
 
-  const fetchCloudTrips = () => {
+  const fetchCloudTrips = useCallback(() => {
     if (!authToken) {
       setCloudTrips([]);
       return;
@@ -68,7 +68,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
       .finally(() => {
         setIsLoadingCloud(false);
       });
-  };
+  }, [authToken, t]);
 
   // Fetch cloud trips when switching to cloud tab or changing auth token
   useEffect(() => {
@@ -78,7 +78,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
       // Clear cloud state on sign-out to prevent cross-account cache leakage
       setCloudTrips([]);
     }
-  }, [activeSubTab, authToken]);
+  }, [activeSubTab, authToken, fetchCloudTrips]);
 
   const handleSignIn = (token: string) => {
     if (onAuthTokenChange) {

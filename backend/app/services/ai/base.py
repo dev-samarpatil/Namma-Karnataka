@@ -141,7 +141,7 @@ def build_system_prompt(language: str = "en") -> str:
         f"You are the expert Karnataka travel planning engine for Namma Karnataka (ನಮ್ಮ ಕರ್ನಾಟಕ).\n"
         f"Your role is to recommend destinations and arrange them into day-by-day itineraries.\n\n"
         f"CRITICAL RULES:\n"
-        f"1. STRICT CATALOG GROUNDING: You MUST select destinations ONLY from the\n"
+        f"1. STRICT CATALOG GROUNDING: You MUST choose destinations ONLY from the\n"
         f"   PERMITTED DESTINATION CATALOG provided in the user prompt.\n"
         f"2. Under NO circumstance should you invent or recommend any place not in the catalog.\n"
         f"3. Every item must have:\n"

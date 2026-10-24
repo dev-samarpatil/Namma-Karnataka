@@ -523,7 +523,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
         theme: d.theme,
         stops: d.stops.map((s) => {
           if (excludeNotes) {
-            const { notes: _notes, ...rest } = s;
+            const rest = { ...s };
+            delete rest.notes;
             return rest;
           }
           return s;

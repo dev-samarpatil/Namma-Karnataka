@@ -80,11 +80,11 @@ export class ApiClientError extends Error {
   }
 }
 
-const DEFAULT_TIMEOUT_MS = 10000;
-const PLANNING_TIMEOUT_MS = 32000; // Allows backend 28s monotonic deadline to complete
+const DEFAULT_TIMEOUT_MS = 25000;
+const PLANNING_TIMEOUT_MS = 35000; // Allows backend 28s monotonic deadline to complete
 
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+  return import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 }
 
 /**
@@ -111,10 +111,14 @@ export async function fetchApi<T>(
   }
 
   try {
+    const effectiveSignal = options.signal && typeof AbortSignal.any === 'function'
+      ? AbortSignal.any([options.signal, controller.signal])
+      : options.signal || controller.signal;
+
     const response = await fetch(url, {
       ...options,
       headers,
-      signal: options.signal || controller.signal,
+      signal: effectiveSignal,
     });
 
     const requestId = response.headers.get('X-Request-ID') || undefined;
@@ -152,11 +156,14 @@ export async function fetchApi<T>(
     }
 
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new ApiClientError(
-        `Request to ${cleanEndpoint} timed out after ${timeoutMs}ms`,
-        408,
-        'TIMEOUT'
-      );
+      if (controller.signal.aborted) {
+        throw new ApiClientError(
+          `Request to ${cleanEndpoint} timed out after ${timeoutMs}ms`,
+          408,
+          'TIMEOUT'
+        );
+      }
+      throw error;
     }
 
     throw new ApiClientError(

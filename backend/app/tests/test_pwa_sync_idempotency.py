@@ -1,7 +1,7 @@
 """Tests for resilient offline sync, idempotency, and optimistic concurrency control."""
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from app.main import app
 from app.repositories.trips import InMemoryTripRepository
@@ -51,7 +51,9 @@ def _create_sample_itinerary():
 
 
 def test_trip_update_idempotency_replay(client):
-    """Test that retrying an update with the same Idempotency-Key returns cached result without 409 conflict."""
+    """Test that retrying an update with the same Idempotency-Key
+    returns cached result without 409 conflict.
+    """
     headers = {"Authorization": "Bearer test-token-user-1"}
     init_itinerary = _create_sample_itinerary()
 

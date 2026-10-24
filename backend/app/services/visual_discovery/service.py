@@ -42,61 +42,91 @@ ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
 # Architectural & landscape feature keywords for deterministic grounded matching
 VISUAL_PROFILES: dict[str, dict[str, Any]] = {
     "mysore-palace": {
-        "features": ["palace", "dome", "indo-saracenic", "arches", "durbar", "royal", "illuminated", "amba vilas"],
+        "features": [
+            "palace", "dome", "indo-saracenic", "arches",
+            "durbar", "royal", "illuminated", "amba vilas",
+        ],
         "style": "Indo-Saracenic & Royal Wadiyar",
         "landscape": ["Urban Mysore, Chamundi Hill backdrop"],
         "category": "architecture",
     },
     "virupaksha-temple-hampi": {
-        "features": ["gopuram", "stepped", "boulder", "stone chariot", "ruins", "vijayanagara", "tungabhadra", "granite"],
+        "features": [
+            "gopuram", "stepped", "boulder", "stone chariot",
+            "ruins", "vijayanagara", "tungabhadra", "granite",
+        ],
         "style": "Vijayanagara Dravidian Temple Architecture",
         "landscape": ["Granite boulder-strewn landscape along Tungabhadra river"],
         "category": "heritage",
     },
     "gol-gumbaz-vijayapura": {
-        "features": ["massive dome", "whispering gallery", "dark grey basalt", "minarets", "adil shahi", "mausoleum"],
+        "features": [
+            "massive dome", "whispering gallery", "dark grey basalt",
+            "minarets", "adil shahi", "mausoleum",
+        ],
         "style": "Deccan Islamic Architectural Style",
         "landscape": ["North Karnataka plains in Vijayapura"],
         "category": "heritage",
     },
     "jog-falls": {
-        "features": ["waterfall", "four cascades", "raja", "roorer", "rocket", "rani", "sharavathi", "mist", "gorge"],
+        "features": [
+            "waterfall", "four cascades", "raja", "roorer",
+            "rocket", "rani", "sharavathi", "mist", "gorge",
+        ],
         "style": "Natural Waterfall Cataract",
         "landscape": ["Dense Western Ghats rainforest in Shivamogga"],
         "category": "waterfall",
     },
     "chennakeshava-temple-belur": {
-        "features": ["star-shaped platform", "soapstone carvings", "bracket figures", "madanika", "hoysala", "yagachi"],
+        "features": [
+            "star-shaped platform", "soapstone carvings", "bracket figures",
+            "madanika", "hoysala", "yagachi",
+        ],
         "style": "Hoysala Soapstone Relief Architecture",
         "landscape": ["Hassan plateau riverbank"],
         "category": "heritage",
     },
     "badami-cave-temples": {
-        "features": ["red sandstone", "cave", "rock-cut", "agastya lake", "chalukya", "nataraja", "cliffs"],
+        "features": [
+            "red sandstone", "cave", "rock-cut",
+            "agastya lake", "chalukya", "nataraja", "cliffs",
+        ],
         "style": "Early Chalukyan Rock-Cut Architecture",
         "landscape": ["Red sandstone ravine flanking Agastya Lake in Bagalkote"],
         "category": "heritage",
     },
     "om-beach-gokarna": {
-        "features": ["crescent beach", "om shape", "black rocks", "arabian sea", "coastline", "golden sand", "palms"],
+        "features": [
+            "crescent beach", "om shape", "black rocks",
+            "arabian sea", "coastline", "golden sand", "palms",
+        ],
         "style": "Coastal Natural Shoreline",
         "landscape": ["Rugged Arabian Sea coastline of Uttara Kannada"],
         "category": "beach",
     },
     "mullayanagiri-peak": {
-        "features": ["misty peak", "rolling hills", "western ghats", "grasslands", "shola forest", "trekking trail"],
+        "features": [
+            "misty peak", "rolling hills", "western ghats",
+            "grasslands", "shola forest", "trekking trail",
+        ],
         "style": "Montane Shola-Grassland Summit",
         "landscape": ["Highest summit in Karnataka, Baba Budan Giri range, Chikkamagaluru"],
         "category": "hill_station",
     },
     "bandipur-national-park": {
-        "features": ["forest", "wildlife", "safari", "elephant", "tiger", "dry deciduous", "nilgiri biosphere"],
+        "features": [
+            "forest", "wildlife", "safari",
+            "elephant", "tiger", "dry deciduous", "nilgiri biosphere",
+        ],
         "style": "Deciduous Forest Biosphere",
         "landscape": ["Foothills of the Nilgiris in Chamarajanagar"],
         "category": "wildlife",
     },
     "murudeshwar-temple": {
-        "features": ["huge shiva statue", "coastal temple", "tall gopuram", "arabian sea cliff", "colossus"],
+        "features": [
+            "huge shiva statue", "coastal temple", "tall gopuram",
+            "arabian sea cliff", "colossus",
+        ],
         "style": "Modern Dravidian Coastal Colossus",
         "landscape": ["Peninsula jutting into the Arabian Sea in Uttara Kannada"],
         "category": "spiritual_cultural",
@@ -104,8 +134,11 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
 }
 
 
-def validate_and_process_image_bytes(data: bytes, filename: str | None = None) -> tuple[bytes, str, int, int]:
-    """Validate image bytes, enforce size/dimensions, strip metadata for privacy, and return sanitized bytes.
+def validate_and_process_image_bytes(
+    data: bytes, filename: str | None = None
+) -> tuple[bytes, str, int, int]:
+    """Validate image bytes, enforce size/dimensions, strip metadata for privacy,
+    and return sanitized bytes.
 
     Raises:
         AppError: If data is empty, exceeds limits, or cannot be parsed as a supported image.
@@ -120,7 +153,10 @@ def validate_and_process_image_bytes(data: bytes, filename: str | None = None) -
     if len(data) > MAX_IMAGE_SIZE_BYTES:
         raise AppError(
             code="FILE_TOO_LARGE",
-            message=f"Uploaded image size ({len(data) / (1024*1024):.1f}MB) exceeds maximum limit of 10MB.",
+            message=(
+                f"Uploaded image size ({len(data) / (1024*1024):.1f}MB) "
+                f"exceeds maximum limit of 10MB."
+            ),
             status_code=400,
         )
 
@@ -142,7 +178,10 @@ def validate_and_process_image_bytes(data: bytes, filename: str | None = None) -
         if fmt not in ALLOWED_IMAGE_FORMATS:
             raise AppError(
                 code="UNSUPPORTED_IMAGE_FORMAT",
-                message=f"Image format '{fmt}' is not supported. Supported formats: JPEG, PNG, WebP.",
+                message=(
+                    f"Image format '{fmt}' is not supported. "
+                    "Supported formats: JPEG, PNG, WebP."
+                ),
                 status_code=400,
             )
 
@@ -150,7 +189,10 @@ def validate_and_process_image_bytes(data: bytes, filename: str | None = None) -
         if width < MIN_IMAGE_DIMENSION or height < MIN_IMAGE_DIMENSION:
             raise AppError(
                 code="IMAGE_TOO_SMALL",
-                message=f"Image resolution ({width}x{height}) is too low for visual feature extraction.",
+                message=(
+                    f"Image resolution ({width}x{height}) is too low "
+                    "for visual feature extraction."
+                ),
                 status_code=400,
             )
 
@@ -210,12 +252,16 @@ class VisualDiscoveryService:
         # Attempt Gemini Multimodal API if configured and enabled
         if settings.is_gemini_configured and settings.AI_ENABLE_LIVE_PROVIDERS:
             try:
-                gemini_res = await self._call_gemini_multimodal(sanitized_bytes, fmt, language=language)
+                gemini_res = await self._call_gemini_multimodal(
+                    sanitized_bytes, fmt, language=language
+                )
                 if gemini_res and gemini_res.candidates:
                     return gemini_res
             except Exception as exc:
                 logger.warning(
-                    f"Gemini multimodal API call failed or timed out: {exc}. Falling back to deterministic matching."
+                    "Gemini multimodal API call failed or timed out: %s. "
+                    "Falling back to deterministic matching.",
+                    exc,
                 )
 
         # Deterministic grounded matching fallback
@@ -277,7 +323,10 @@ class VisualDiscoveryService:
             candidates=base_response.candidates,
             sampled_frame_count=len(valid_frames),
             analyzed_at=datetime.now(UTC).isoformat(),
-            privacy_notice="Video frames were extracted and processed ephemerally in memory without persistent retention.",
+            privacy_notice=(
+                "Video frames were extracted and processed ephemerally in memory "
+                "without persistent retention."
+            ),
         )
 
     async def _call_gemini_multimodal(
@@ -286,9 +335,12 @@ class VisualDiscoveryService:
         fmt: str,
         language: str = "en",
     ) -> VisualDiscoveryResponse | None:
-        """Call Gemini generateContent endpoint with inlineData image part and candidate catalog context."""
+        """Call Gemini generateContent endpoint with inlineData image part
+        and candidate catalog context.
+        """
         endpoint = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent"
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{settings.GEMINI_MODEL}:generateContent"
         )
         headers = {
             "x-goog-api-key": settings.GEMINI_API_KEY or "",
@@ -296,20 +348,26 @@ class VisualDiscoveryService:
         }
 
         # Build catalogue summary for the prompt
-        all_destinations, _ = self._repo.list_destinations(DestinationFilterParams(limit=61), published_only=True)
+        all_destinations, _ = self._repo.list_destinations(
+            DestinationFilterParams(limit=61), published_only=True
+        )
         catalog_summaries = [
-            f"- slug: {d.slug}, id: {d.id}, name: {d.name_en}, district: {d.district_code}, category: {d.category}"
+            f"- slug: {d.slug}, id: {d.id}, name: {d.name_en}, "
+            f"district: {d.district_code}, category: {d.category}"
             for d in all_destinations[:61]
         ]
         catalog_text = "\n".join(catalog_summaries)
 
         prompt = (
-            "You are an expert Karnataka travel and architectural recognition assistant for Namma Karnataka.\n"
-            "Analyze the provided image and identify whether it depicts a known heritage, cultural, or natural destination in Karnataka.\n"
+            "You are an expert Karnataka travel and architectural recognition "
+            "assistant for Namma Karnataka.\n"
+            "Analyze the provided image and identify whether it depicts a known heritage, "
+            "cultural, or natural destination in Karnataka.\n"
             "CRITICAL RULES:\n"
             "1. Choose candidates ONLY from the provided Karnataka Catalogue list below.\n"
             "2. NEVER invent a place, coordinate, or slug that is not in the list.\n"
-            "3. If the image is ambiguous, generic, or not in Karnataka, return an empty candidate list and set is_confident to false.\n"
+            "3. If the image is ambiguous, generic, or not in Karnataka, return an empty "
+            "candidate list and set is_confident to false.\n"
             "4. Return strict JSON matching this schema:\n"
             "{\n"
             '  "is_confident": boolean,\n'
@@ -322,7 +380,8 @@ class VisualDiscoveryService:
             '    {\n'
             '      "slug": "canonical-slug-from-catalog",\n'
             '      "match_score": number between 0.0 and 1.0,\n'
-            '      "confidence_label": "strong_match" | "possible_match" | "uncertain_suggestion",\n'
+            '      "confidence_label": "strong_match" | "possible_match" | '
+            '"uncertain_suggestion",\n'
             '      "matching_reasons": ["reason 1"],\n'
             '      "uncertainty_notes": string or null\n'
             "    }\n"
@@ -413,7 +472,10 @@ class VisualDiscoveryService:
                     confidence=ConfidenceLabel.STRONG_MATCH,
                     reasons=[
                         f"Features match {profile['style']} profile",
-                        f"Distinctive visual signature corresponding to {dest.district_code} region",
+                        (
+                            "Distinctive visual signature corresponding to "
+                            f"{dest.district_code} region"
+                        ),
                     ],
                     evidence=evidence,
                     uncertainty=None,
@@ -432,12 +494,21 @@ class VisualDiscoveryService:
                     message_kn=msg_kn,
                     candidates=[candidate],
                     analyzed_at=datetime.now(UTC).isoformat(),
-                    privacy_notice="Your uploaded media was processed ephemerally in memory and was not permanently stored.",
+                    privacy_notice=(
+                        "Your uploaded media was processed ephemerally in memory "
+                        "and was not permanently stored."
+                    ),
                 )
 
         # Ambiguous / generic upload behavior: return honest no-confident-match
-        msg_en = "We could not reliably identify a specific Karnataka destination from this image. Please explore our curated catalogue or try a photo with clear landmarks."
-        msg_kn = "ಈ ಚಿತ್ರದಿಂದ ನಿರ್ದಿಷ್ಟ ತಾಣವನ್ನು ಖಚಿತವಾಗಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಮ್ಮ ಅಧಿಕೃತ ತಾಣಗಳ ಪಟ್ಟಿಯಲ್ಲಿ ಅನ್ವೇಷಿಸಿ."
+        msg_en = (
+            "We could not reliably identify a specific Karnataka destination from this image. "
+            "Please explore our curated catalogue or try a photo with clear landmarks."
+        )
+        msg_kn = (
+            "ಈ ಚಿತ್ರದಿಂದ ನಿರ್ದಿಷ್ಟ ತಾಣವನ್ನು ಖಚಿತವಾಗಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. "
+            "ದಯವಿಟ್ಟು ನಮ್ಮ ಅಧಿಕೃತ ತಾಣಗಳ ಪಟ್ಟಿಯಲ್ಲಿ ಅನ್ವೇಷಿಸಿ."
+        )
 
         return VisualDiscoveryResponse(
             query_type=query_type,
@@ -446,7 +517,10 @@ class VisualDiscoveryService:
             message_kn=msg_kn,
             candidates=[],
             analyzed_at=datetime.now(UTC).isoformat(),
-            privacy_notice="Your uploaded media was processed ephemerally in memory and was not permanently stored.",
+            privacy_notice=(
+                "Your uploaded media was processed ephemerally in memory "
+                "and was not permanently stored."
+            ),
         )
 
     def _build_validated_response(
@@ -476,7 +550,10 @@ class VisualDiscoveryService:
             # Verify against repository
             dest = self._repo.get_by_slug(slug)
             if not dest:
-                logger.warning(f"Rejecting AI-proposed slug '{slug}' as it is not in the destination catalogue.")
+                logger.warning(
+                    "Rejecting AI-proposed slug '%s' as it is not in the destination catalogue.",
+                    slug,
+                )
                 continue
 
             score = float(raw.get("match_score", 0.7))
@@ -505,7 +582,10 @@ class VisualDiscoveryService:
             return VisualDiscoveryResponse(
                 query_type=query_type,
                 is_confident=False,
-                message_en="No matching Karnataka destinations could be verified from the image evidence.",
+                message_en=(
+                    "No matching Karnataka destinations could be verified "
+                    "from the image evidence."
+                ),
                 message_kn="ಚಿತ್ರದ ಆಧಾರದ ಮೇಲೆ ಯಾವುದೇ ಕರ್ನಾಟಕದ ತಾಣಗಳನ್ನು ದೃಢೀಕರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
                 candidates=[],
                 analyzed_at=datetime.now(UTC).isoformat(),

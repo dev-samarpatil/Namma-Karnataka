@@ -11,7 +11,7 @@ import secrets
 import threading
 import time
 import uuid
-from typing import Protocol
+from typing import Any, Protocol
 
 import httpx
 

@@ -29,7 +29,6 @@ from app.schemas.planning import (
     RawAIPlanResponse,
     RecommendedDestination,
 )
-
 from app.schemas.visual_discovery import (
     ConfidenceLabel,
     VisualDiscoveryCandidate,

@@ -162,8 +162,9 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
         const response = await analyzeVideoVisualDiscovery(sampledFrames, language);
         setDiscoveryResult(response);
       }
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Visual place analysis failed. Please try another media file.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Visual place analysis failed. Please try another media file.';
+      setErrorMessage(msg);
     } finally {
       setIsAnalyzing(false);
       setStatusMessage(null);

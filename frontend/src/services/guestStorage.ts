@@ -52,7 +52,7 @@ export function normalizeSavedTrip(raw: unknown): SavedTrip | null {
   }
 
   const rawPlan = candidate.plan as Record<string, unknown>;
-  const items = Array.isArray(rawPlan.items) ? (rawPlan.items as any[]) : [];
+  const items = Array.isArray(rawPlan.items) ? (rawPlan.items as PlanningRecommendationResponse['items']) : [];
   const duration_days =
     typeof rawPlan.duration_days === 'number' && rawPlan.duration_days > 0
       ? rawPlan.duration_days
@@ -60,14 +60,17 @@ export function normalizeSavedTrip(raw: unknown): SavedTrip | null {
 
   const plan: PlanningRecommendationResponse = {
     request_id: typeof rawPlan.request_id === 'string' ? rawPlan.request_id : undefined,
-    language: (rawPlan.language as any) || 'en',
+    language: rawPlan.language === 'kn' ? 'kn' : 'en',
     generation_mode: (rawPlan.generation_mode as 'ai' | 'fallback') || 'fallback',
     provider_used: typeof rawPlan.provider_used === 'string' ? rawPlan.provider_used : 'deterministic',
     duration_days,
     items,
     total_destinations: typeof rawPlan.total_destinations === 'number' ? rawPlan.total_destinations : items.length,
-    days: Array.isArray(rawPlan.days) ? (rawPlan.days as any[]) : undefined,
-    budget_breakdown: rawPlan.budget_breakdown as any,
+    days: Array.isArray(rawPlan.days) ? (rawPlan.days as PlanningRecommendationResponse['days']) : undefined,
+    budget_breakdown:
+      rawPlan.budget_breakdown && typeof rawPlan.budget_breakdown === 'object'
+        ? (rawPlan.budget_breakdown as PlanningRecommendationResponse['budget_breakdown'])
+        : undefined,
     assumptions: Array.isArray(rawPlan.assumptions) ? (rawPlan.assumptions as string[]) : undefined,
     data_limitations: Array.isArray(rawPlan.data_limitations) ? (rawPlan.data_limitations as string[]) : [],
     warnings: Array.isArray(rawPlan.warnings) ? (rawPlan.warnings as string[]) : [],
@@ -79,7 +82,7 @@ export function normalizeSavedTrip(raw: unknown): SavedTrip | null {
     : {}) as Record<string, unknown>;
 
   const request: PlanningRequest = {
-    language: (rawReq.language as any) || 'en',
+    language: rawReq.language === 'kn' ? 'kn' : 'en',
     origin_label: typeof rawReq.origin_label === 'string' ? rawReq.origin_label : 'Bengaluru',
     duration_days: typeof rawReq.duration_days === 'number' ? rawReq.duration_days : duration_days,
     pace: (['relaxed', 'balanced', 'packed'].includes(rawReq.pace as string)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CalculationMethod(StrEnum):
@@ -40,7 +40,7 @@ class Waypoint(BaseModel):
     """Geographic point in a multi-stop itinerary route."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         str_strip_whitespace=True,
         validate_assignment=True,
     )
@@ -57,7 +57,7 @@ class RouteStep(BaseModel):
     """Single turn or travel instruction within a road route leg."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         str_strip_whitespace=True,
         validate_assignment=True,
     )
@@ -72,7 +72,7 @@ class RouteLeg(BaseModel):
     """Road route segment connecting consecutive itinerary stops."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         str_strip_whitespace=True,
         validate_assignment=True,
     )
@@ -95,7 +95,7 @@ class DirectionsRequest(BaseModel):
     """Request payload to calculate road route and directions across itinerary waypoints."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         str_strip_whitespace=True,
         validate_assignment=True,
     )
@@ -103,15 +103,29 @@ class DirectionsRequest(BaseModel):
     origin: Waypoint
     destination: Waypoint
     waypoints: list[Waypoint] = Field(default_factory=list, max_length=25)
-    travel_mode: str = Field("driving", pattern="^(driving|transit|walking)$")
+    travel_mode: str = Field("driving")
     day_number: int | None = None
+
+    @field_validator("travel_mode", mode="before")
+    @classmethod
+    def normalize_travel_mode(cls, v: str | None) -> str:
+        if not v:
+            return "driving"
+        clean = str(v).lower().strip()
+        if clean in ("driving", "driving_car", "car", "cab_taxi", "cab", "taxi"):
+            return "driving"
+        elif clean in ("transit", "public_transit", "bus", "train"):
+            return "transit"
+        elif clean in ("walking", "walk", "pedestrian"):
+            return "walking"
+        return "driving"
 
 
 class DirectionsResponse(BaseModel):
     """Complete road route response with geometry, per-leg directions, and map navigation link."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         str_strip_whitespace=True,
         validate_assignment=True,
         use_enum_values=True,

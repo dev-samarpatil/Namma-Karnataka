@@ -1,16 +1,66 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { RecommendedDestination, Language, DirectionsResponse, DirectionsRequest, Waypoint } from '../../types';
+import { RecommendedDestination, DayPlan, Language, DirectionsResponse, DirectionsRequest, Waypoint } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { fetchRoadDirections } from '../../lib/api';
 
 interface MapViewProps {
   stops: RecommendedDestination[];
+  dayPlans?: DayPlan[];
   language: Language;
   originLabel?: string;
   travelMode?: string;
   activeDayFilter?: number | null;
+}
+
+// Major Karnataka origin hub coordinates registry
+const ORIGIN_HUB_COORDINATES: Record<string, [number, number]> = {
+  bengaluru: [12.9716, 77.5946],
+  bangalore: [12.9716, 77.5946],
+  mysuru: [12.3051, 76.6551],
+  mysore: [12.3051, 76.6551],
+  mangaluru: [12.9141, 74.8560],
+  mangalore: [12.9141, 74.8560],
+  hubballi: [15.3647, 75.1240],
+  hubli: [15.3647, 75.1240],
+  dharwad: [15.4589, 75.0078],
+  belagavi: [15.8497, 74.4977],
+  belgaum: [15.8497, 74.4977],
+  shivamogga: [13.9299, 75.5681],
+  shimoga: [13.9299, 75.5681],
+  hassan: [13.0033, 76.1004],
+  chikkamagaluru: [13.3161, 75.7720],
+  chikmagalur: [13.3161, 75.7720],
+  madikeri: [12.4244, 75.7382],
+  coorg: [12.4244, 75.7382],
+  udupi: [13.3409, 74.7421],
+  gokarna: [14.5433, 74.3167],
+  karwar: [14.8136, 74.1297],
+  hampi: [15.3350, 76.4600],
+  hosapete: [15.2689, 76.3909],
+  ballari: [15.1394, 76.9214],
+  badami: [15.9189, 75.6833],
+  bagalkote: [16.1817, 75.6958],
+  vijayapura: [16.8319, 75.7289],
+  kalaburagi: [17.3297, 76.8343],
+  bidar: [17.9104, 77.5199],
+  chitradurga: [14.2251, 76.3980],
+  davanagere: [14.4644, 75.9218],
+  tumakuru: [13.3379, 77.1010],
+  kolar: [13.1367, 78.1292],
+  ramanagara: [12.7209, 77.2799],
+  chamarajanagar: [11.9261, 76.9437],
+};
+
+function getOriginCoords(label: string): [number, number] {
+  const clean = label.trim().toLowerCase();
+  for (const [key, coords] of Object.entries(ORIGIN_HUB_COORDINATES)) {
+    if (clean.includes(key) || key.includes(clean)) {
+      return coords;
+    }
+  }
+  return [12.9716, 77.5946];
 }
 
 // Karnataka default center
@@ -19,6 +69,7 @@ const DEFAULT_ZOOM = 7;
 
 export const MapView: React.FC<MapViewProps> = ({
   stops,
+  dayPlans = [],
   language,
   originLabel = 'Bengaluru',
   travelMode = 'driving',
@@ -29,6 +80,11 @@ export const MapView: React.FC<MapViewProps> = ({
   const [selectedDay, setSelectedDay] = useState<number | null>(initialDayFilter);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
 
+  // Synchronize internal day selection when parent activeDayFilter changes
+  useEffect(() => {
+    setSelectedDay(initialDayFilter);
+  }, [initialDayFilter]);
+
   // Road Routing Data State
   const [directionsData, setDirectionsData] = useState<DirectionsResponse | null>(null);
   const [loadingDirections, setLoadingDirections] = useState<boolean>(false);
@@ -38,6 +94,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const routeLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const activeRouteKeyRef = useRef<string>('');
 
   // Group days present in stops
   const availableDays = useMemo(() => {
@@ -54,6 +111,12 @@ export const MapView: React.FC<MapViewProps> = ({
     return stops.filter((s) => s.day_number === selectedDay);
   }, [stops, selectedDay]);
 
+  // Current day plan details if single day selected
+  const currentDayPlan = useMemo(() => {
+    if (selectedDay === null) return null;
+    return dayPlans.find((dp) => dp.day_number === selectedDay) || null;
+  }, [dayPlans, selectedDay]);
+
   // Filter stops with valid coordinates
   const validStops = useMemo(() => {
     return effectiveStops.filter(
@@ -68,80 +131,224 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const missingCoordsCount = effectiveStops.length - validStops.length;
 
+  // Derive authentic ordered waypoints for the current selection (including true start and stay/return endpoints)
+  const dayWaypoints = useMemo<{
+    startWaypoint: Waypoint | null;
+    attractionWaypoints: Waypoint[];
+    endWaypoint: Waypoint | null;
+    allOrderedWaypoints: Waypoint[];
+  }>(() => {
+    if (validStops.length === 0) {
+      return { startWaypoint: null, attractionWaypoints: [], endWaypoint: null, allOrderedWaypoints: [] };
+    }
+
+    const originCoords = getOriginCoords(originLabel);
+
+    if (selectedDay !== null) {
+      // Single Day View
+      let startWp: Waypoint;
+      const currPlan = dayPlans.find((dp) => dp.day_number === selectedDay);
+      if (selectedDay === 1) {
+        const startLat = currPlan?.start_coordinates?.lat ?? originCoords[0];
+        const startLon = currPlan?.start_coordinates?.lon ?? originCoords[1];
+        startWp = {
+          name: currPlan?.start_location_name || originLabel,
+          lat: startLat,
+          lon: startLon,
+          stop_id: 'trip-origin',
+          stop_order: 0,
+          day_number: 1,
+        };
+      } else {
+        const prevPlan = dayPlans.find((dp) => dp.day_number === selectedDay - 1);
+        const prevStay = prevPlan?.stops.find((s) => s.stop_type === 'accommodation');
+        if (currPlan?.start_coordinates) {
+          startWp = {
+            name: currPlan.start_location_name || prevStay?.name || `Overnight Stay (Day ${selectedDay - 1})`,
+            lat: currPlan.start_coordinates.lat,
+            lon: currPlan.start_coordinates.lon,
+            stop_id: prevStay?.stop_id || `start-day-${selectedDay}`,
+            stop_order: 0,
+            day_number: selectedDay,
+          };
+        } else if (prevStay?.coordinates) {
+          startWp = {
+            name: prevStay.name || `Overnight Stay (Day ${selectedDay - 1})`,
+            lat: prevStay.coordinates.lat,
+            lon: prevStay.coordinates.lon,
+            stop_id: prevStay.stop_id,
+            stop_order: 0,
+            day_number: selectedDay,
+          };
+        } else {
+          startWp = {
+            name: currPlan?.start_location_name || originLabel,
+            lat: originCoords[0],
+            lon: originCoords[1],
+            stop_id: `start-day-${selectedDay}`,
+            stop_order: 0,
+            day_number: selectedDay,
+          };
+        }
+      }
+
+      const attrWps: Waypoint[] = validStops.map((s, idx) => ({
+        name: s.name,
+        lat: s.coordinates!.lat,
+        lon: s.coordinates!.lon,
+        stop_id: s.id,
+        stop_order: idx + 1,
+        day_number: s.day_number,
+      }));
+
+      let endWp: Waypoint | null = null;
+      const currStay = currPlan?.stops.find((s) => s.stop_type === 'accommodation');
+      const hasReturnTransit = currPlan?.stops.some((s) => s.stop_type === 'transport');
+
+      if (currStay?.coordinates) {
+        endWp = {
+          name: currStay.name || `Overnight Stay (Day ${selectedDay})`,
+          lat: currStay.coordinates.lat,
+          lon: currStay.coordinates.lon,
+          stop_id: currStay.stop_id,
+          stop_order: attrWps.length + 1,
+          day_number: selectedDay,
+        };
+      } else if (hasReturnTransit) {
+        endWp = {
+          name: `Return to ${originLabel}`,
+          lat: originCoords[0],
+          lon: originCoords[1],
+          stop_id: 'return-origin',
+          stop_order: attrWps.length + 1,
+          day_number: selectedDay,
+        };
+      } else if (attrWps.length > 1) {
+        endWp = attrWps[attrWps.length - 1];
+      }
+
+      const allOrdered: Waypoint[] = [startWp];
+      for (const a of attrWps) {
+        if (!endWp || a.stop_id !== endWp.stop_id) {
+          allOrdered.push(a);
+        }
+      }
+      if (endWp && endWp.stop_id !== startWp.stop_id) {
+        allOrdered.push(endWp);
+      }
+
+      return {
+        startWaypoint: startWp,
+        attractionWaypoints: attrWps,
+        endWaypoint: endWp,
+        allOrderedWaypoints: allOrdered,
+      };
+    } else {
+      // All Days Overview
+      const startWp: Waypoint = {
+        name: originLabel,
+        lat: originCoords[0],
+        lon: originCoords[1],
+        stop_id: 'trip-origin',
+        stop_order: 0,
+      };
+
+      const attrWps: Waypoint[] = validStops.map((s, idx) => ({
+        name: s.name,
+        lat: s.coordinates!.lat,
+        lon: s.coordinates!.lon,
+        stop_id: s.id,
+        stop_order: idx + 1,
+        day_number: s.day_number,
+      }));
+
+      const endWp: Waypoint = {
+        name: `Return to ${originLabel}`,
+        lat: originCoords[0],
+        lon: originCoords[1],
+        stop_id: 'return-origin',
+        stop_order: attrWps.length + 1,
+      };
+
+      return {
+        startWaypoint: startWp,
+        attractionWaypoints: attrWps,
+        endWaypoint: endWp,
+        allOrderedWaypoints: [startWp, ...attrWps, endWp],
+      };
+    }
+  }, [validStops, selectedDay, dayPlans, originLabel]);
+
+  // Compute authoritative active origin label for current day view
+  const activeOriginName = useMemo(() => {
+    if (selectedDay === null) {
+      return originLabel;
+    }
+    const currPlan = dayPlans.find((dp) => dp.day_number === selectedDay);
+    if (selectedDay === 1) {
+      return currPlan?.start_location_name || originLabel;
+    }
+    return dayWaypoints.startWaypoint?.name || currPlan?.start_location_name || originLabel;
+  }, [selectedDay, dayPlans, dayWaypoints, originLabel]);
+
   // Build directions request payload
   const directionsRequest = useMemo<DirectionsRequest | null>(() => {
-    if (validStops.length === 0) return null;
+    const { allOrderedWaypoints } = dayWaypoints;
+    if (allOrderedWaypoints.length < 2) return null;
 
-    // Origin: first stop or starting location
-    const firstStop = validStops[0];
-    const lastStop = validStops[validStops.length - 1];
+    const originWp = allOrderedWaypoints[0];
+    const destWp = allOrderedWaypoints[allOrderedWaypoints.length - 1];
+    const interWps = allOrderedWaypoints.slice(1, -1);
 
-    const originWaypoint: Waypoint = {
-      name: firstStop.name,
-      lat: firstStop.coordinates!.lat,
-      lon: firstStop.coordinates!.lon,
-      stop_id: firstStop.id,
-      stop_order: firstStop.order,
-      day_number: firstStop.day_number,
-    };
-
-    const destWaypoint: Waypoint = {
-      name: lastStop.name,
-      lat: lastStop.coordinates!.lat,
-      lon: lastStop.coordinates!.lon,
-      stop_id: lastStop.id,
-      stop_order: lastStop.order,
-      day_number: lastStop.day_number,
-    };
-
-    const intermediateWaypoints: Waypoint[] = validStops.slice(1, -1).map((s) => ({
-      name: s.name,
-      lat: s.coordinates!.lat,
-      lon: s.coordinates!.lon,
-      stop_id: s.id,
-      stop_order: s.order,
-      day_number: s.day_number,
-    }));
+    const normalizedMode =
+      travelMode === 'driving_car' || travelMode === 'cab_taxi' || travelMode === 'car' || travelMode === 'driving'
+        ? 'driving'
+        : travelMode === 'public_transit' || travelMode === 'transit'
+        ? 'transit'
+        : travelMode === 'walking'
+        ? 'walking'
+        : 'driving';
 
     return {
-      origin: originWaypoint,
-      destination: destWaypoint,
-      waypoints: intermediateWaypoints,
-      travel_mode: travelMode,
+      origin: originWp,
+      destination: destWp,
+      waypoints: interWps,
+      travel_mode: normalizedMode,
       day_number: selectedDay || undefined,
     };
-  }, [validStops, travelMode, selectedDay]);
+  }, [dayWaypoints, travelMode, selectedDay]);
 
-  // Fetch real road route directions from backend
+  // Fetch real road route directions from backend with race-condition prevention
   useEffect(() => {
     if (!directionsRequest) {
       setDirectionsData(null);
+      setLoadingDirections(false);
       return;
     }
 
-    let isMounted = true;
+    const currentKey = `${selectedDay ?? 'all'}-${activeOriginName}-${validStops.map((s) => s.id).join('-')}-${travelMode}`;
+    activeRouteKeyRef.current = currentKey;
+
+    // Clear previous directions immediately to prevent stale day routes from showing
+    setDirectionsData(null);
     setLoadingDirections(true);
     setDirectionsError(null);
 
     fetchRoadDirections(directionsRequest)
       .then((res) => {
-        if (isMounted) {
+        if (activeRouteKeyRef.current === currentKey) {
           setDirectionsData(res);
           setLoadingDirections(false);
         }
       })
       .catch((err) => {
-        if (isMounted) {
+        if (activeRouteKeyRef.current === currentKey) {
           console.warn('Road routing request error:', err);
           setDirectionsError('Unable to fetch live road network geometry. Showing regional estimates.');
           setLoadingDirections(false);
         }
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [directionsRequest]);
+  }, [directionsRequest, selectedDay, originLabel, validStops, travelMode]);
 
   // Leaflet Map Initialization & Rendering
   useEffect(() => {
@@ -171,7 +378,6 @@ export const MapView: React.FC<MapViewProps> = ({
 
       layerGroup.clearLayers();
 
-      // Invalidate size in next frame to handle tab switches and container resizing
       setTimeout(() => {
         try {
           map.invalidateSize();
@@ -197,9 +403,8 @@ export const MapView: React.FC<MapViewProps> = ({
         for (const pt of polyCoords) {
           latLngsToFit.push([pt[0], pt[1]]);
         }
-      } else if (validStops.length > 1) {
-        // Fallback straight-line polyline if geometry not returned yet
-        const directCoords: [number, number][] = validStops.map((s) => [s.coordinates!.lat, s.coordinates!.lon]);
+      } else if (dayWaypoints.allOrderedWaypoints.length > 1) {
+        const directCoords: [number, number][] = dayWaypoints.allOrderedWaypoints.map((w) => [w.lat, w.lon]);
         const polyline = L.polyline(directCoords, {
           color: '#38bdf8',
           weight: 4,
@@ -212,13 +417,54 @@ export const MapView: React.FC<MapViewProps> = ({
         }
       }
 
-      // 2. Add Numbered Markers for each destination
-      validStops.forEach((stop, index) => {
-        const isStart = index === 0;
-        const isEnd = index === validStops.length - 1 && validStops.length > 1;
+      // 2. Add Start Waypoint Marker ("S")
+      if (dayWaypoints.startWaypoint) {
+        const sWp = dayWaypoints.startWaypoint;
+        const startIcon = L.divIcon({
+          className: 'custom-route-marker',
+          html: `
+            <div
+              data-testid="map-marker-start"
+              style="
+              width: 32px;
+              height: 32px;
+              background: #10b981;
+              color: #ffffff;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 0.85rem;
+              border: 2px solid #ffffff;
+              box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+              cursor: pointer;
+            ">
+              S
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16],
+        });
 
-        const pinColor = isStart ? '#10b981' : isEnd ? '#8b5cf6' : '#0284c7';
-        const badgeLabel = isStart ? 'S' : isEnd ? 'E' : `${index + 1}`;
+        const startMarker = L.marker([sWp.lat, sWp.lon], { icon: startIcon });
+        startMarker.bindPopup(`
+          <div style="font-size: 0.75rem; color: #10b981; font-weight: 700; text-transform: uppercase;">
+            ${selectedDay ? `Day ${selectedDay} Starting Point` : 'Trip Starting Point'}
+          </div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a; margin: 2px 0;">
+            🚩 ${sWp.name}
+          </div>
+        `);
+        layerGroup.addLayer(startMarker);
+        latLngsToFit.push([sWp.lat, sWp.lon]);
+      }
+
+      // 3. Add Destination Sightseeing Markers (Numbered 1, 2, 3...)
+      validStops.forEach((stop, index) => {
+        const pinColor = '#0284c7';
+        const badgeLabel = `${index + 1}`;
 
         const customIcon = L.divIcon({
           className: 'custom-route-marker',
@@ -272,6 +518,51 @@ export const MapView: React.FC<MapViewProps> = ({
         latLngsToFit.push([stop.coordinates!.lat, stop.coordinates!.lon]);
       });
 
+      // 4. Add End Waypoint Marker ("E" or "🏨")
+      if (dayWaypoints.endWaypoint && dayWaypoints.endWaypoint.stop_id !== dayWaypoints.startWaypoint?.stop_id) {
+        const eWp = dayWaypoints.endWaypoint;
+        const isHotel = eWp.name.toLowerCase().includes('stay') || eWp.name.toLowerCase().includes('hotel');
+        const endIcon = L.divIcon({
+          className: 'custom-route-marker',
+          html: `
+            <div
+              data-testid="map-marker-end"
+              style="
+              width: 32px;
+              height: 32px;
+              background: #8b5cf6;
+              color: #ffffff;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 0.85rem;
+              border: 2px solid #ffffff;
+              box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+              cursor: pointer;
+            ">
+              ${isHotel ? '🏨' : 'E'}
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16],
+        });
+
+        const endMarker = L.marker([eWp.lat, eWp.lon], { icon: endIcon });
+        endMarker.bindPopup(`
+          <div style="font-size: 0.75rem; color: #8b5cf6; font-weight: 700; text-transform: uppercase;">
+            ${isHotel ? 'Overnight Accommodation' : 'Day Endpoint'}
+          </div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a; margin: 2px 0;">
+            🏁 ${eWp.name}
+          </div>
+        `);
+        layerGroup.addLayer(endMarker);
+        latLngsToFit.push([eWp.lat, eWp.lon]);
+      }
+
       // Fit map bounds to encompass all waypoints & route
       if (latLngsToFit.length > 0) {
         try {
@@ -283,7 +574,7 @@ export const MapView: React.FC<MapViewProps> = ({
     } catch (e) {
       console.warn('Leaflet map initialization skipped or not supported:', e);
     }
-  }, [viewMode, validStops, directionsData]);
+  }, [viewMode, validStops, directionsData, dayWaypoints, selectedDay]);
 
   // Clean up Leaflet instance on unmount
   useEffect(() => {
@@ -314,8 +605,12 @@ export const MapView: React.FC<MapViewProps> = ({
           </h4>
           <p className="map-subtitle" style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
             {directionsData
-              ? `Real road routing from ${originLabel}: ${directionsData.total_distance_km} km • ~${Math.floor(directionsData.total_duration_minutes / 60)}h ${directionsData.total_duration_minutes % 60}m travel time`
-              : `${t('mapNote')} (${originLabel})`}
+              ? selectedDay !== null
+                ? `Day ${selectedDay}: Starting from ${activeOriginName} • ${directionsData.total_distance_km} km • ~${Math.floor(directionsData.total_duration_minutes / 60)}h ${directionsData.total_duration_minutes % 60}m travel time`
+                : `Complete journey from ${originLabel}: ${directionsData.total_distance_km} km • ~${Math.floor(directionsData.total_duration_minutes / 60)}h ${directionsData.total_duration_minutes % 60}m travel time`
+              : selectedDay !== null
+                ? `Day ${selectedDay}: Starting from ${activeOriginName}`
+                : `${t('mapNote')} (${originLabel})`}
           </p>
         </div>
 
@@ -438,6 +733,43 @@ export const MapView: React.FC<MapViewProps> = ({
               Day {d}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Day Corridor & Continuity Banner */}
+      {currentDayPlan && (currentDayPlan.start_location_name || currentDayPlan.driving_distance_km) && (
+        <div
+          data-testid="map-day-corridor-banner"
+          style={{
+            background: 'rgba(56, 189, 248, 0.08)',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            fontSize: '0.85rem',
+            marginBottom: '10px',
+            color: '#e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
+          }}
+        >
+          <div>
+            <span style={{ color: '#38bdf8', fontWeight: 600 }}>🚩 {currentDayPlan.start_location_name || originLabel}</span>
+            <span style={{ margin: '0 6px', color: '#64748b' }}>➔</span>
+            <span style={{ color: '#a78bfa', fontWeight: 600 }}>🏁 {currentDayPlan.end_location_name || 'Destination'}</span>
+            {currentDayPlan.accommodation_name && (
+              <span style={{ marginLeft: '10px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                🏨 {currentDayPlan.accommodation_name}
+              </span>
+            )}
+          </div>
+          {currentDayPlan.driving_distance_km && currentDayPlan.driving_distance_km > 0 ? (
+            <div style={{ color: '#38bdf8', fontWeight: 500, fontSize: '0.8rem' }}>
+              🚗 ~{currentDayPlan.driving_distance_km} km ({Math.round(currentDayPlan.transit_minutes || 0)} mins driving)
+            </div>
+          ) : null}
         </div>
       )}
 

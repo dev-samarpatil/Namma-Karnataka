@@ -788,7 +788,16 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
 
       {/* Embedded Map Section */}
-      {showMap && <MapView stops={plan.items} language={language} />}
+      {showMap && (
+        <MapView
+          stops={plan.items}
+          dayPlans={plan.days}
+          language={language}
+          originLabel={plan.origin_label || 'Bengaluru'}
+          travelMode={activeReq.travel_mode || 'driving'}
+          activeDayFilter={activeDayTab === 0 ? null : activeDayTab}
+        />
+      )}
 
       {/* Embedded Budget Breakdown Section */}
       <BudgetSummary stops={plan.items} language={language} budget={plan.budget_breakdown} />
@@ -876,6 +885,13 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                       <span className="day-badge-meals" style={{ marginLeft: '8px', fontSize: '0.8rem', background: '#ecfdf5', color: '#065f46', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
                         🍽️ {day.meals_covered.join(' · ')}
                       </span>
+                    )}
+                    {day.start_location_name && day.end_location_name && (
+                      <div className="day-route-corridor" style={{ fontSize: '0.84rem', color: 'var(--accent-cyan, #38bdf8)', marginTop: '4px', fontWeight: 600 }}>
+                        🚩 {day.start_location_name} ➔ {day.end_location_name === day.start_location_name ? 'Local Circuit' : `🏁 ${day.end_location_name}`}
+                        {day.driving_distance_km ? ` · ~${day.driving_distance_km} km` : ''}
+                        {day.transit_minutes ? ` (${Math.floor(day.transit_minutes / 60)}h ${day.transit_minutes % 60}m driving)` : ''}
+                      </div>
                     )}
                   </div>
 
@@ -982,6 +998,72 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                               ) : (
                                 <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
                               )}
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    }
+
+                    if (stop.stop_type === 'event') {
+                      return (
+                        <article key={stop.stop_id} className="timeline-stop-card event-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #f59e0b' }}>
+                          <div className="stop-order-indicator stop-type-event" style={{ background: '#f59e0b' }}>
+                            <span className="order-icon" aria-hidden="true">🎪</span>
+                          </div>
+                          <div className="stop-content">
+                            <div className="stop-header-row">
+                              <h4 className="stop-name" style={{ color: '#fef08a' }}>{stop.name}</h4>
+                              <div className="stop-pills">
+                                <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                                <span className="card-category-pill event-pill" style={{ background: '#78350f', color: '#fef3c7' }}>
+                                  🎪 {language === 'kn' ? 'ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವ / ಜಾತ್ರೆ' : 'Cultural Festival'}
+                                </span>
+                                {stop.source_reference && (
+                                  <a href={stop.source_reference} target="_blank" rel="noopener noreferrer" className="card-district-pill" style={{ textDecoration: 'underline' }}>
+                                    🏛️ {language === 'kn' ? 'ಮೂಲ ಪರಿಶೀಲನೆ' : 'Official Citation'}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                            {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                            <div className="stop-footer-row">
+                              <span className="stop-fee-info">
+                                🎟️ {stop.cost_min_inr !== null && stop.cost_min_inr !== undefined
+                                  ? (stop.cost_min_inr === 0 ? (language === 'kn' ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry') : `₹${stop.cost_min_inr}`)
+                                  : (language === 'kn' ? 'ಪ್ರವೇಶ ಶುಲ್ಕ ಅನ್ವಯಿಸಬಹುದು' : 'Entry fee may apply')}
+                              </span>
+                              {stop.cost_status === 'verified' ? (
+                                <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ಉತ್ಸವ' : 'Verified Event'}</span>
+                              ) : (
+                                <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ೠತುಮಾನದ ಉತ್ಸವ' : 'Seasonal Festival'}</span>
+                              )}
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    }
+
+                    if (stop.stop_type === 'transport') {
+                      return (
+                        <article key={stop.stop_id} className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #38bdf8' }}>
+                          <div className="stop-order-indicator stop-type-transport" style={{ background: '#0284c7' }}>
+                            <span className="order-icon" aria-hidden="true">🚗</span>
+                          </div>
+                          <div className="stop-content">
+                            <div className="stop-header-row">
+                              <h4 className="stop-name">{stop.name}</h4>
+                              <div className="stop-pills">
+                                <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                                <span className="card-category-pill transport-pill">
+                                  {language === 'kn' ? 'ಹಿಂತಿರುಗುವ ಪ್ರಯಾಣ' : 'Return Transit'}
+                                </span>
+                              </div>
+                            </div>
+                            {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                            <div className="stop-footer-row">
+                              <span className="stop-fee-info">
+                                🚗 {stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins)
+                              </span>
                             </div>
                           </div>
                         </article>

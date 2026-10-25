@@ -336,11 +336,11 @@ class SupabaseDestinationRepository:
                     return None
                 return self._map_row(rows[0])
         except httpx.RequestError as exc:
-            raise AppError(
-                code="PERSISTENCE_UNAVAILABLE",
-                message="Destination database is temporarily unreachable",
-                status_code=503,
-            ) from exc
+            logger.warning(
+                "Supabase destination query failed (%s); falling back to in-memory catalogue.",
+                exc,
+            )
+            return self._fallback_repo.get_by_id(destination_id)
 
     def get_by_slug(self, slug: str) -> DestinationRead | None:
         if self._is_schema_unmigrated():
@@ -375,11 +375,11 @@ class SupabaseDestinationRepository:
                     return None
                 return self._map_row(rows[0])
         except httpx.RequestError as exc:
-            raise AppError(
-                code="PERSISTENCE_UNAVAILABLE",
-                message="Destination database is temporarily unreachable",
-                status_code=503,
-            ) from exc
+            logger.warning(
+                "Supabase destination query failed (%s); falling back to in-memory catalogue.",
+                exc,
+            )
+            return self._fallback_repo.get_by_slug(slug)
 
     def list_destinations(
         self,
@@ -446,11 +446,11 @@ class SupabaseDestinationRepository:
                 items = [self._map_row(r) for r in rows]
                 return items, (total or len(items))
         except httpx.RequestError as exc:
-            raise AppError(
-                code="PERSISTENCE_UNAVAILABLE",
-                message="Destination database is temporarily unreachable",
-                status_code=503,
-            ) from exc
+            logger.warning(
+                "Supabase destination query failed (%s); falling back to in-memory catalogue.",
+                exc,
+            )
+            return self._fallback_repo.list_destinations(params, published_only)
 
     def list_nearby(
         self,

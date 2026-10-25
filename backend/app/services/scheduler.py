@@ -30,6 +30,8 @@ from app.schemas.planning import (
     StopRegenerateCandidate,
     StopType,
 )
+from app.services.clustering.corridors import get_origin_coordinates
+from app.services.events import get_events_service
 from app.services.places import get_places_service
 from app.services.routing import get_routing_service
 
@@ -67,6 +69,7 @@ class DeterministicScheduler:
     def build_schedule(
         request: PlanningRequest,
         destinations: list[RecommendedDestination | DestinationRead],
+        base_date: datetime | None = None,
     ) -> tuple[list[DayPlan], list[str], list[str]]:
         """Construct chronological day plans with meals, attractions, and accommodations.
 
@@ -91,8 +94,7 @@ class DeterministicScheduler:
             dest_by_day.setdefault(day_num, []).append(d)
 
         # Base calendar date if user supplied start_date
-        base_date: datetime | None = None
-        if request.start_date:
+        if base_date is None and request.start_date:
             try:
                 base_date = datetime.strptime(request.start_date, "%Y-%m-%d")
             except ValueError:
@@ -119,6 +121,11 @@ class DeterministicScheduler:
             stay_unit_min = 1800.0
             stay_unit_max = 3000.0
 
+        origin_coords = get_origin_coordinates(request.origin_label)
+        current_loc_coords: Coordinates | None = origin_coords
+        current_loc_name: str = request.origin_label
+        scheduled_event_ids: set[str] = set()
+
         for day_num in range(1, request.duration_days + 1):
             day_destinations = dest_by_day.get(day_num, [])
             day_date_str = (
@@ -139,7 +146,10 @@ class DeterministicScheduler:
 
             stops: list[ItineraryStop] = []
             current_time = datetime(2026, 1, 1, 8, 30)  # Start day at 08:30 AM
-            prev_coords: Coordinates | None = None
+            start_location_name = current_loc_name
+            start_coordinates = current_loc_coords
+            prev_coords: Coordinates | None = current_loc_coords
+            day_driving_km: float = 0.0
             total_transit_mins = 0
             meals_covered: list[str] = []
             day_cost_min = 0.0
@@ -153,10 +163,10 @@ class DeterministicScheduler:
                 else "ಸಾಂಪ್ರದಾಯಿಕ ಉಪಹಾರ"
             )
             bfast_desc = (
-                "Enjoy local South Indian breakfast (idli, vada, filter coffee). "
-                "Choose a nearby verified eatery."
+                f"Enjoy local South Indian breakfast in {start_location_name} "
+                "(idli, vada, filter coffee). Choose a nearby verified eatery."
                 if request.language == LanguageCode.EN
-                else "ಸ್ಥಳೀಯ ಉಪಹಾರ ಕೇಂದ್ರದಲ್ಲಿ ಬೆಳಗಿನ ತಿಂಡಿ (ಇಡ್ಲಿ, ವಡೆ, ಫಿಲ್ಟರ್ ಕಾಫಿ)."
+                else f"{start_location_name} ನಲ್ಲಿ ಬೆಳಗಿನ ಉಪಹಾರ (ಇಡ್ಲಿ, ವಡೆ, ಫಿಲ್ಟರ್ ಕಾಫಿ)."
             )
             stops.append(
                 ItineraryStop(
@@ -168,7 +178,7 @@ class DeterministicScheduler:
                     start_time=current_time.strftime("%H:%M"),
                     end_time=bfast_end.strftime("%H:%M"),
                     duration_minutes=45,
-                    coordinates=None,
+                    coordinates=current_loc_coords,
                     distance_from_prev_km=None,
                     transit_from_prev_minutes=None,
                     transit_method=None,
@@ -177,7 +187,9 @@ class DeterministicScheduler:
                     currency="INR",
                     cost_status=CostStatus.ESTIMATED,
                     source_reference=None,
-                    rationale="Essential breakfast fuel before morning exploration.",
+                    rationale=(
+                        f"Essential breakfast fuel in {start_location_name} before exploration."
+                    ),
                 )
             )
             meals_covered.append("Breakfast")
@@ -205,6 +217,7 @@ class DeterministicScheduler:
                     transit_mins = route_est.duration_minutes
                     transit_method = "terrain_adjusted_estimate"
                     total_transit_mins += transit_mins
+                    day_driving_km += dist_km
                     current_time += timedelta(minutes=transit_mins)
                     for w in route_est.feasibility_warnings:
                         if w not in schedule_warnings:
@@ -377,6 +390,107 @@ class DeterministicScheduler:
                 day_cost_max += lunch_unit * 1.5 * request.travelers_count
                 current_time = lunch_end + timedelta(minutes=30)
 
+            # Check for Cultural Festival / Event nearby
+            events_svc = get_events_service()
+            event_check_coords = prev_coords or (
+                Coordinates(
+                    lat=day_destinations[0].coordinates.lat, lon=day_destinations[0].coordinates.lon
+                )
+                if day_destinations and getattr(day_destinations[0], "coordinates", None)
+                else None
+            )
+            matched_event = None
+            if event_check_coords:
+                travel_month = base_date.month if base_date else None
+                candidate_events = events_svc.get_events_near(
+                    event_check_coords.lat,
+                    event_check_coords.lon,
+                    radius_km=25.0,
+                    month=travel_month,
+                )
+                if candidate_events and candidate_events[0].event_id not in scheduled_event_ids:
+                    matched_event = candidate_events[0]
+                    scheduled_event_ids.add(matched_event.event_id)
+
+            if matched_event:
+                event_name = (
+                    matched_event.name_en
+                    if request.language == LanguageCode.EN
+                    else matched_event.name_kn
+                )
+                event_desc = (
+                    matched_event.description_en
+                    if request.language == LanguageCode.EN
+                    else matched_event.description_kn
+                )
+                event_coords = Coordinates(
+                    lat=matched_event.latitude, lon=matched_event.longitude
+                )
+                event_dist_km: float | None = None
+                event_transit_mins: int | None = None
+                event_transit_method: str | None = None
+                if prev_coords and event_coords:
+                    routing_svc = get_routing_service()
+                    route_est = routing_svc.estimate_travel(
+                        prev_coords.lat, prev_coords.lon, event_coords.lat, event_coords.lon
+                    )
+                    event_dist_km = route_est.estimated_road_distance_km
+                    event_transit_mins = route_est.duration_minutes
+                    event_transit_method = "terrain_adjusted_estimate"
+                    total_transit_mins += event_transit_mins
+                    day_driving_km += event_dist_km
+                    current_time += timedelta(minutes=event_transit_mins)
+
+                event_start = current_time
+                event_end = current_time + timedelta(minutes=90)
+                event_cost_min = (
+                    matched_event.ticket_cost_min_inr * request.travelers_count
+                    if matched_event.ticket_cost_min_inr is not None
+                    else None
+                )
+                event_cost_max = (
+                    matched_event.ticket_cost_max_inr * request.travelers_count
+                    if matched_event.ticket_cost_max_inr is not None
+                    else event_cost_min
+                )
+                event_cost_status = (
+                    CostStatus.VERIFIED
+                    if matched_event.ticket_cost_status == "verified"
+                    else (
+                        CostStatus.ESTIMATED
+                        if matched_event.ticket_cost_status == "estimated"
+                        else CostStatus.UNKNOWN
+                    )
+                )
+                stops.append(
+                    ItineraryStop(
+                        stop_id=f"stop-d{day_num}-event-{matched_event.event_id}",
+                        destination_id=None,
+                        stop_type=StopType.EVENT,
+                        name=f"🎪 {event_name}",
+                        description=f"{event_desc} (Source: {matched_event.source_name})",
+                        start_time=event_start.strftime("%H:%M"),
+                        end_time=event_end.strftime("%H:%M"),
+                        duration_minutes=90,
+                        coordinates=event_coords,
+                        distance_from_prev_km=event_dist_km,
+                        transit_from_prev_minutes=event_transit_mins,
+                        transit_method=event_transit_method,
+                        cost_min_inr=event_cost_min,
+                        cost_max_inr=event_cost_max,
+                        currency="INR",
+                        cost_status=event_cost_status,
+                        source_reference=matched_event.source_url,
+                        rationale=f"Verified cultural festival in {matched_event.location_name}.",
+                    )
+                )
+                if event_cost_min:
+                    day_cost_min += event_cost_min
+                if event_cost_max:
+                    day_cost_max += event_cost_max
+                current_time = event_end + timedelta(minutes=15)
+                prev_coords = event_coords
+
             # 3. Dinner (20:00 - 21:15)
             if current_time.hour < 20:
                 current_time = datetime(2026, 1, 1, 20, 0)
@@ -477,6 +591,7 @@ class DeterministicScheduler:
             current_time = dinner_end + timedelta(minutes=15)
 
             # 4. Overnight Accommodation (for multi-day trips, days 1 to N-1)
+            accommodation_name: str | None = None
             if day_num < request.duration_days:
                 nearby_accs = (
                     places_svc.get_accommodations_near(
@@ -531,7 +646,22 @@ class DeterministicScheduler:
                     stay_cost_max = round(stay_unit_max * rooms, 2)
                     stay_cost_status = CostStatus.ESTIMATED
                     stay_source = None
-                    stay_coords = None
+                    stay_coords = dinner_ref_coords or prev_coords or Coordinates(lat=12.9716, lon=77.5946)
+
+                stay_dist_km: float | None = None
+                stay_transit_mins: int | None = None
+                stay_transit_method: str | None = None
+                if prev_coords and stay_coords:
+                    routing_svc = get_routing_service()
+                    route_est = routing_svc.estimate_travel(
+                        prev_coords.lat, prev_coords.lon, stay_coords.lat, stay_coords.lon
+                    )
+                    stay_dist_km = route_est.estimated_road_distance_km
+                    stay_transit_mins = route_est.duration_minutes
+                    stay_transit_method = "terrain_adjusted_estimate"
+                    total_transit_mins += stay_transit_mins
+                    day_driving_km += stay_dist_km
+                    current_time += timedelta(minutes=stay_transit_mins)
 
                 stops.append(
                     ItineraryStop(
@@ -544,9 +674,9 @@ class DeterministicScheduler:
                         end_time="23:00",
                         duration_minutes=90,
                         coordinates=stay_coords,
-                        distance_from_prev_km=None,
-                        transit_from_prev_minutes=None,
-                        transit_method=None,
+                        distance_from_prev_km=stay_dist_km,
+                        transit_from_prev_minutes=stay_transit_mins,
+                        transit_method=stay_transit_method,
                         cost_min_inr=stay_cost_min,
                         cost_max_inr=stay_cost_max,
                         currency="INR",
@@ -557,13 +687,80 @@ class DeterministicScheduler:
                 )
                 day_cost_min += stay_cost_min
                 day_cost_max += stay_cost_max
+                accommodation_name = stay_name
+                end_location_name = stay_name
+                end_coordinates = stay_coords
+                # Multi-day continuity: set origin for Day d+1 to this overnight stay
+                current_loc_coords = stay_coords
+                current_loc_name = stay_name
+            else:
+                # Final day of the journey
+                if request.is_return_trip and origin_coords and prev_coords:
+                    routing_svc = get_routing_service()
+                    ret_est = routing_svc.estimate_travel(
+                        prev_coords.lat, prev_coords.lon, origin_coords.lat, origin_coords.lon
+                    )
+                    day_driving_km += ret_est.estimated_road_distance_km
+                    total_transit_mins += ret_est.duration_minutes
+                    ret_name = (
+                        f"Return Trip to {request.origin_label}"
+                        if request.language == LanguageCode.EN
+                        else f"{request.origin_label} ಗೆ ವಾಪಸ್ ಪ್ರಯಾಣ"
+                    )
+                    stops.append(
+                        ItineraryStop(
+                            stop_id=f"stop-d{day_num}-return",
+                            destination_id=None,
+                            stop_type=StopType.TRANSPORT,
+                            name=ret_name,
+                            description=(
+                                f"Drive / return transit back to {request.origin_label} "
+                                f"({round(ret_est.estimated_road_distance_km, 1)} km, approx "
+                                f"{ret_est.duration_minutes // 60}h "
+                                f"{ret_est.duration_minutes % 60}m)."
+                            ),
+                            start_time=current_time.strftime("%H:%M"),
+                            end_time=(
+                                current_time + timedelta(minutes=ret_est.duration_minutes)
+                            ).strftime("%H:%M"),
+                            duration_minutes=min(720, ret_est.duration_minutes),
+                            coordinates=origin_coords,
+                            distance_from_prev_km=round(ret_est.estimated_road_distance_km, 1),
+                            transit_from_prev_minutes=ret_est.duration_minutes,
+                            transit_method="terrain_adjusted_estimate",
+                            cost_min_inr=0.0,
+                            cost_max_inr=0.0,
+                            currency="INR",
+                            cost_status=CostStatus.VERIFIED,
+                            source_reference=None,
+                            rationale=f"Return transit to trip origin ({request.origin_label}).",
+                        )
+                    )
+                    end_location_name = request.origin_label
+                    end_coordinates = origin_coords
+                else:
+                    end_location_name = current_loc_name
+                    end_coordinates = prev_coords or origin_coords
 
-            # Day validation warnings
+            # Day validation warnings & fatigue checks
             day_warnings: list[str] = []
             if len(day_destinations) < 2 and request.pace in ("balanced", "packed"):
                 day_warnings.append(
                     f"Day {day_num} has only {len(day_destinations)} sightseeing "
                     "attraction(s) due to catalogue density."
+                )
+
+            if total_transit_mins > 240:
+                dur_str = f"{total_transit_mins // 60}h {total_transit_mins % 60}m"
+                day_warnings.append(
+                    f"High driving duration on Day {day_num} ({dur_str}). "
+                    "Consider pacing stops or starting earlier to avoid driver fatigue."
+                )
+            elif total_transit_mins > 180:
+                dur_str = f"{total_transit_mins // 60}h {total_transit_mins % 60}m"
+                day_warnings.append(
+                    f"Moderate travel duration on Day {day_num} ({dur_str}). "
+                    "Plan midway refreshment stops."
                 )
 
             total_activity_mins = sum(s.duration_minutes for s in stops)
@@ -576,6 +773,12 @@ class DeterministicScheduler:
                     stops=stops,
                     total_duration_minutes=total_activity_mins,
                     transit_minutes=total_transit_mins,
+                    driving_distance_km=round(day_driving_km, 1),
+                    start_location_name=start_location_name,
+                    start_coordinates=start_coordinates,
+                    end_location_name=end_location_name,
+                    end_coordinates=end_coordinates,
+                    accommodation_name=accommodation_name,
                     meals_covered=meals_covered,
                     daily_cost_min_inr=round(day_cost_min, 2),
                     daily_cost_max_inr=round(day_cost_max, 2),
@@ -624,6 +827,10 @@ class DeterministicScheduler:
             stay_unit_min = 1800.0
             stay_unit_max = 3000.0
 
+        origin_coords = get_origin_coordinates(request.origin_label)
+        current_loc_coords: Coordinates | None = origin_coords
+        current_loc_name: str = request.origin_label
+
         for day in days:
             day_num = day.day_number
             # Extract user attraction/activity stops in their specified sequence
@@ -633,7 +840,11 @@ class DeterministicScheduler:
 
             stops: list[ItineraryStop] = []
             current_time = datetime(2026, 1, 1, 8, 30)
-            prev_coords: Coordinates | None = None
+            start_location_name = current_loc_name
+            start_coordinates = current_loc_coords
+            end_coordinates: Coordinates | None = None
+            prev_coords: Coordinates | None = current_loc_coords
+            day_driving_km: float = 0.0
             total_transit_mins = 0
             meals_covered: list[str] = []
             day_cost_min = 0.0
@@ -647,10 +858,10 @@ class DeterministicScheduler:
                 else "ಸಾಂಪ್ರದಾಯಿಕ ಉಪಹಾರ"
             )
             bfast_desc = (
-                "Enjoy local South Indian breakfast (idli, vada, filter coffee). "
-                "Choose a nearby verified eatery."
+                f"Enjoy local South Indian breakfast in {start_location_name} "
+                "(idli, vada, filter coffee). Choose a nearby verified eatery."
                 if request.language == LanguageCode.EN
-                else "ಸ್ಥಳೀಯ ಉಪಹಾರ ಕೇಂದ್ರದಲ್ಲಿ ಬೆಳಗಿನ ತಿಂಡಿ (ಇಡ್ಲಿ, ವಡೆ, ಫಿಲ್ಟರ್ ಕಾಫಿ)."
+                else f"{start_location_name} ನಲ್ಲಿ ಬೆಳಗಿನ ಉಪಹಾರ (ಇಡ್ಲಿ, ವಡೆ, ಫಿಲ್ಟರ್ ಕಾಫಿ)."
             )
             stops.append(
                 ItineraryStop(
@@ -662,7 +873,7 @@ class DeterministicScheduler:
                     start_time=current_time.strftime("%H:%M"),
                     end_time=bfast_end.strftime("%H:%M"),
                     duration_minutes=45,
-                    coordinates=None,
+                    coordinates=current_loc_coords,
                     distance_from_prev_km=None,
                     transit_from_prev_minutes=None,
                     transit_method=None,
@@ -671,7 +882,9 @@ class DeterministicScheduler:
                     currency="INR",
                     cost_status=CostStatus.ESTIMATED,
                     source_reference=None,
-                    rationale="Essential breakfast fuel before morning exploration.",
+                    rationale=(
+                        f"Essential breakfast fuel in {start_location_name} before exploration."
+                    ),
                 )
             )
             meals_covered.append("Breakfast")
@@ -695,6 +908,7 @@ class DeterministicScheduler:
                     transit_mins = route_est.duration_minutes
                     transit_method = "terrain_adjusted_estimate"
                     total_transit_mins += transit_mins
+                    day_driving_km += dist_km
                     current_time += timedelta(minutes=transit_mins)
                     for w in route_est.feasibility_warnings:
                         if w not in schedule_warnings:
@@ -984,6 +1198,7 @@ class DeterministicScheduler:
             current_time = dinner_end + timedelta(minutes=15)
 
             # 4. Overnight stay for days 1 to N-1
+            accommodation_name: str | None = None
             if day_num < request.duration_days:
                 rooms = math.ceil(request.travelers_count / 2)
                 nearby_accs = (
@@ -1035,7 +1250,21 @@ class DeterministicScheduler:
                     stay_cost_max = round(stay_unit_max * rooms, 2)
                     stay_cost_status = CostStatus.ESTIMATED
                     stay_source = None
-                    stay_coords = None
+                    stay_coords = dinner_ref_coords or Coordinates(lat=12.9716, lon=77.5946)
+
+                stay_dist_km: float | None = None
+                stay_transit_mins: int | None = None
+                stay_transit_method: str | None = None
+                if prev_coords and stay_coords:
+                    route_est = routing_svc.estimate_travel(
+                        prev_coords.lat, prev_coords.lon, stay_coords.lat, stay_coords.lon
+                    )
+                    stay_dist_km = round(route_est.estimated_road_distance_km, 1)
+                    stay_transit_mins = route_est.duration_minutes
+                    stay_transit_method = "terrain_adjusted_estimate"
+                    total_transit_mins += stay_transit_mins
+                    day_driving_km += stay_dist_km
+                    current_time += timedelta(minutes=stay_transit_mins)
 
                 stops.append(
                     ItineraryStop(
@@ -1048,9 +1277,9 @@ class DeterministicScheduler:
                         end_time="23:00",
                         duration_minutes=90,
                         coordinates=stay_coords,
-                        distance_from_prev_km=None,
-                        transit_from_prev_minutes=None,
-                        transit_method=None,
+                        distance_from_prev_km=stay_dist_km,
+                        transit_from_prev_minutes=stay_transit_mins,
+                        transit_method=stay_transit_method,
                         cost_min_inr=stay_cost_min,
                         cost_max_inr=stay_cost_max,
                         currency="INR",
@@ -1061,6 +1290,58 @@ class DeterministicScheduler:
                 )
                 day_cost_min += stay_cost_min
                 day_cost_max += stay_cost_max
+                accommodation_name = stay_name
+                end_location_name = stay_name
+                end_coordinates = stay_coords
+                current_loc_coords = stay_coords
+                current_loc_name = stay_name
+            else:
+                # Final day of the trip
+                if request.is_return_trip and origin_coords and prev_coords:
+                    ret_est = routing_svc.estimate_travel(
+                        prev_coords.lat, prev_coords.lon, origin_coords.lat, origin_coords.lon
+                    )
+                    day_driving_km += ret_est.estimated_road_distance_km
+                    total_transit_mins += ret_est.duration_minutes
+                    ret_name = (
+                        f"Return Trip to {request.origin_label}"
+                        if request.language == LanguageCode.EN
+                        else f"{request.origin_label} ಗೆ ವಾಪಸ್ ಪ್ರಯಾಣ"
+                    )
+                    stops.append(
+                        ItineraryStop(
+                            stop_id=f"stop-d{day_num}-return",
+                            destination_id=None,
+                            stop_type=StopType.TRANSPORT,
+                            name=ret_name,
+                            description=(
+                                f"Drive / return transit back to {request.origin_label} "
+                                f"({round(ret_est.estimated_road_distance_km, 1)} km, approx "
+                                f"{ret_est.duration_minutes // 60}h "
+                                f"{ret_est.duration_minutes % 60}m)."
+                            ),
+                            start_time=current_time.strftime("%H:%M"),
+                            end_time=(
+                                current_time + timedelta(minutes=ret_est.duration_minutes)
+                            ).strftime("%H:%M"),
+                            duration_minutes=min(720, ret_est.duration_minutes),
+                            coordinates=origin_coords,
+                            distance_from_prev_km=round(ret_est.estimated_road_distance_km, 1),
+                            transit_from_prev_minutes=ret_est.duration_minutes,
+                            transit_method="terrain_adjusted_estimate",
+                            cost_min_inr=0.0,
+                            cost_max_inr=0.0,
+                            currency="INR",
+                            cost_status=CostStatus.VERIFIED,
+                            source_reference=None,
+                            rationale=f"Return transit to trip origin ({request.origin_label}).",
+                        )
+                    )
+                    end_location_name = request.origin_label
+                    end_coordinates = origin_coords
+                else:
+                    end_location_name = current_loc_name
+                    end_coordinates = prev_coords or origin_coords
 
             day_warnings: list[str] = []
             if len(attraction_stops) < 2 and request.pace in (
@@ -1069,6 +1350,19 @@ class DeterministicScheduler:
             ):
                 day_warnings.append(
                     f"Day {day_num} has only {len(attraction_stops)} attraction(s)."
+                )
+
+            if total_transit_mins > 240:
+                dur_str = f"{total_transit_mins // 60}h {total_transit_mins % 60}m"
+                day_warnings.append(
+                    f"High driving duration on Day {day_num} ({dur_str}). "
+                    "Consider pacing stops or starting earlier to avoid driver fatigue."
+                )
+            elif total_transit_mins > 180:
+                dur_str = f"{total_transit_mins // 60}h {total_transit_mins % 60}m"
+                day_warnings.append(
+                    f"Moderate travel duration on Day {day_num} ({dur_str}). "
+                    "Plan midway refreshment stops."
                 )
 
             total_activity_mins = sum(s.duration_minutes for s in stops)
@@ -1081,6 +1375,12 @@ class DeterministicScheduler:
                     stops=stops,
                     total_duration_minutes=total_activity_mins,
                     transit_minutes=total_transit_mins,
+                    driving_distance_km=round(day_driving_km, 1),
+                    start_location_name=start_location_name,
+                    start_coordinates=start_coordinates,
+                    end_location_name=end_location_name,
+                    end_coordinates=end_coordinates,
+                    accommodation_name=accommodation_name,
                     meals_covered=meals_covered,
                     daily_cost_min_inr=round(day_cost_min, 2),
                     daily_cost_max_inr=round(day_cost_max, 2),

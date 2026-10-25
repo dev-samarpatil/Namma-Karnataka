@@ -36,6 +36,7 @@ class StopType(StrEnum):
     ACCOMMODATION = "accommodation"
     TRANSPORT = "transport"
     BREAK = "break"
+    EVENT = "event"
 
 
 class CostStatus(StrEnum):
@@ -204,6 +205,12 @@ class DayPlan(StrictSchema):
     stops: list[ItineraryStop] = Field(default_factory=list)
     total_duration_minutes: int = 0
     transit_minutes: int = 0
+    driving_distance_km: float | None = None
+    start_location_name: str | None = None
+    start_coordinates: Coordinates | None = None
+    end_location_name: str | None = None
+    end_coordinates: Coordinates | None = None
+    accommodation_name: str | None = None
     meals_covered: list[str] = Field(default_factory=list)
     daily_cost_min_inr: float | None = None
     daily_cost_max_inr: float | None = None
@@ -268,6 +275,8 @@ class PlanningRecommendationResponse(StrictSchema):
     duration_days: int
     days: list[DayPlan] = Field(default_factory=list)
     budget_breakdown: CompleteBudgetBreakdown | None = None
+    origin_label: str | None = None
+    corridor_name: str | None = None
     assumptions: list[str] = Field(default_factory=list)
     data_limitations: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)

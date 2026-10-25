@@ -167,7 +167,8 @@ export type StopType =
   | 'meal'
   | 'accommodation'
   | 'transport'
-  | 'break';
+  | 'break'
+  | 'event';
 
 export type CostStatus =
   | 'verified'
@@ -247,6 +248,12 @@ export interface DayPlan {
   stops: ItineraryStop[];
   total_duration_minutes: number;
   transit_minutes: number;
+  driving_distance_km?: number | null;
+  start_location_name?: string | null;
+  start_coordinates?: Coordinates | null;
+  end_location_name?: string | null;
+  end_coordinates?: Coordinates | null;
+  accommodation_name?: string | null;
   meals_covered: string[];
   daily_cost_min_inr?: number | null;
   daily_cost_max_inr?: number | null;
@@ -297,6 +304,8 @@ export interface PlanningRecommendationResponse {
   duration_days: number;
   days?: DayPlan[];
   budget_breakdown?: CompleteBudgetBreakdown;
+  origin_label?: string;
+  corridor_name?: string;
   assumptions?: string[];
   data_limitations?: string[];
   warnings?: string[];

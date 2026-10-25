@@ -53,6 +53,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Never intercept Vite development HMR or source module requests
+  if (
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.includes('node_modules') ||
+    url.pathname.includes('@react-refresh')
+  ) {
+    return;
+  }
+
   // 1. API Calls Strategy (Network-first with Cache Fallback for public destinations and transit)
   if (url.pathname.startsWith('/api/v1/destinations') || url.pathname.startsWith('/api/v1/transit')) {
     event.respondWith(
@@ -128,11 +138,17 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
+      }).catch(async () => {
         // Fallback to offline index.html for navigation requests
         if (request.mode === 'navigate') {
-          return caches.match('/index.html');
+          const cachedIndex = await caches.match('/index.html');
+          if (cachedIndex) return cachedIndex;
         }
+        return new Response('Resource unavailable offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' },
+        });
       });
     })
   );

@@ -278,15 +278,22 @@ class BudgetCalculator:
         # ---------------------------------------------------------
         # Calculate total road distance from itinerary stops
         cumulative_route_km = 0.0
+        has_return_leg = False
         for day in days:
             for s in day.stops:
                 if s.distance_from_prev_km and s.distance_from_prev_km > 0:
                     cumulative_route_km += s.distance_from_prev_km
+                if s.stop_id and s.stop_id.endswith("-return"):
+                    has_return_leg = True
 
         # If itinerary stops didn't have distance (e.g. single day, origin not routed),
         # estimate realistic regional circuit based on duration
         if cumulative_route_km < 10.0:
             cumulative_route_km = max(60.0, duration * 110.0)
+
+        # If the return leg is already explicitly scheduled in cumulative_route_km,
+        # do not double the distance in TransportCostCalculator.
+        effective_return_flag = False if has_return_leg else is_return
 
         trans_estimate = TransportCostCalculator.estimate_transport(
             mode=travel_mode,
@@ -295,7 +302,7 @@ class BudgetCalculator:
             duration_days=duration,
             fuel_efficiency_km_per_litre=fuel_eff,
             fuel_price_per_litre=fuel_price,
-            is_return_trip=is_return,
+            is_return_trip=effective_return_flag,
         )
 
         if trans_estimate.cost_status == CostStatus.VERIFIED:

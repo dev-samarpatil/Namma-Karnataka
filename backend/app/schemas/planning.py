@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -164,6 +164,78 @@ class RecommendedDestination(StrictSchema):
     sources: list[DestinationSourceRead] = Field(default_factory=list)
 
 
+class TravelLegAlternative(StrictSchema):
+    """Alternative transport mode option for a travel leg."""
+
+    mode: str
+    mode_label: str
+    mode_label_kn: str | None = None
+    duration_minutes: int
+    cost_inr: float | None = None
+    cost_status: CostStatus = CostStatus.ESTIMATED
+    notes: str | None = None
+    notes_kn: str | None = None
+
+
+class TravelLegSegment(StrictSchema):
+    """Detailed segment within a multi-hop or multimodal journey."""
+
+    segment_order: int
+    segment_type: str
+    mode: str
+    mode_label: str
+    mode_label_kn: str | None = None
+    description: str
+    description_kn: str | None = None
+    operator_name: str | None = None
+    route_service_number: str | None = None
+    origin_name: str | None = None
+    destination_name: str | None = None
+    distance_km: float | None = None
+    duration_minutes: int | None = None
+    cost_inr: float | None = None
+    cost_status: CostStatus = CostStatus.ESTIMATED
+    is_per_person: bool = False
+
+
+class TravelLegDetails(StrictSchema):
+    """Practical, transparent transportation details for moving from previous stop to this stop."""
+
+    leg_id: str | None = None
+    origin_name: str | None = None
+    destination_name: str | None = None
+    distance_km: float | None = None
+    duration_minutes: int | None = None
+    selected_mode: str = "driving_car"
+    recommended_mode: str = "driving_car"
+    recommendation_reason: str | None = None
+    recommendation_reason_kn: str | None = None
+    cost_per_person_inr: float | None = None
+    cost_group_inr: float | None = None
+    fare_status: CostStatus = CostStatus.ESTIMATED
+    calculation_basis: str | None = None
+    operator_name: str | None = None
+    route_service_number: str | None = None
+    origin_terminal: str | None = None
+    destination_terminal: str | None = None
+    fuel_cost_inr: float | None = None
+    fuel_litres: float | None = None
+    vehicles_count: int = 1
+    toll_note: str | None = None
+    toll_note_kn: str | None = None
+    parking_note: str | None = None
+    parking_note_kn: str | None = None
+    walking_feasible: bool = False
+    walking_notes: str | None = None
+    walking_notes_kn: str | None = None
+    first_mile_required: bool = False
+    last_mile_required: bool = False
+    source_reference: str | None = None
+    segments: list[TravelLegSegment] = Field(default_factory=list)
+    alternatives: list[TravelLegAlternative] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class ItineraryStop(StrictSchema):
     """Rich, chronological stop in a day's travel schedule."""
 
@@ -183,6 +255,7 @@ class ItineraryStop(StrictSchema):
     transit_method: str | None = Field(
         None, description="'straight_line_estimate' or 'local_transit'"
     )
+    travel_leg: TravelLegDetails | None = None
     cost_min_inr: float | None = None
     cost_max_inr: float | None = None
     currency: str = "INR"

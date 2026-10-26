@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   DestinationRead,
+  DestinationMedia,
   Language,
   RestaurantRead,
   AccommodationRead,
@@ -12,6 +13,7 @@ import {
   fetchRestaurantsNear,
   fetchAccommodationsNear,
   getDestinationNearby,
+  getApiBaseUrl,
 } from '../../lib/api';
 
 interface DestinationModalProps {
@@ -34,6 +36,7 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
   const [nearbyTransit, setNearbyTransit] = useState<NearbyTransitItem[]>([]);
   const [loadingPlaces, setLoadingPlaces] = useState<boolean>(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState<number>(0);
+  const [modalImageError, setModalImageError] = useState<boolean>(false);
 
   // Close on Escape key
   useEffect(() => {
@@ -43,6 +46,12 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  // Reset modal state on destination change
+  useEffect(() => {
+    setActiveMediaIndex(0);
+    setModalImageError(false);
+  }, [destination]);
 
   // Fetch nearby verified places & transit
   useEffect(() => {
@@ -117,34 +126,163 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
     return <span className="text-unknown">{t('feeUnknown')}</span>;
   };
 
-  const mediaList = destination.media || [];
-  const currentMedia = mediaList[activeMediaIndex] || null;
+  const mediaList = destination.media && destination.media.length > 0 ? destination.media : [];
+  const primaryFallbackMedia: DestinationMedia | null = destination.primary_image_url
+    ? {
+        id: `primary-${destination.id}`,
+        destination_id: destination.id,
+        url: destination.primary_image_url,
+        thumbnail_url: destination.primary_image_url,
+        alt_en: destination.name_en,
+        alt_kn: destination.name_kn,
+        source_name: 'Official Wikimedia / Karnataka Tourism',
+        license_type: 'Creative Commons / Public Domain',
+        attribution: 'Official Wikimedia Commons / Karnataka Tourism',
+        is_primary: true,
+        verification_status: 'verified_authentic',
+      }
+    : null;
+  const currentMedia = (mediaList.length > 0 ? mediaList[activeMediaIndex] : null) || primaryFallbackMedia;
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-dest-title" data-testid="destination-modal-overlay">
       <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         {/* Section A: Hero Image */}
-        {currentMedia ? (
-          <div className="modal-hero-banner" style={{ position: 'relative', width: '100%', height: '260px', overflow: 'hidden', borderTopLeftRadius: '12px', borderTopRightRadius: '12px', background: '#0f172a' }}>
-            <img
-              src={currentMedia.url}
-              alt={language === 'kn' && currentMedia.alt_kn ? currentMedia.alt_kn : currentMedia.alt_en || name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
-            />
-            <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#34d399', fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(52, 211, 153, 0.3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic Photograph'}</span>
-            </div>
-            <div style={{ position: 'absolute', bottom: '8px', right: '12px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#cbd5e1', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.1)', maxWidth: '90%' }}>
-              📷 {currentMedia.attribution} • <span style={{ color: '#93c5fd' }}>{currentMedia.license_type}</span>
-              {currentMedia.source_url && (
-                <a href={currentMedia.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', marginLeft: '6px', textDecoration: 'underline' }}>
-                  Source ↗
-                </a>
-              )}
-            </div>
+        {currentMedia && !modalImageError ? (
+          (() => {
+            const rawModalImg = currentMedia.thumbnail_url || currentMedia.url;
+            const cleanModalUrl = rawModalImg
+              ? rawModalImg.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0]
+              : undefined;
+            const baseUrl = getApiBaseUrl().replace(/\/+$/, '');
+            const modalImgUrl = cleanModalUrl
+              ? `${baseUrl}/destinations/media/proxy?url=${encodeURIComponent(cleanModalUrl)}`
+              : undefined;
+            const isVerified = currentMedia.verification_status === 'verified_authentic';
+
+            if (!modalImgUrl) {
+              return null;
+            }
+
+            return (
+              <div
+                className="modal-hero-banner"
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '260px',
+                  overflow: 'hidden',
+                  borderTopLeftRadius: '12px',
+                  borderTopRightRadius: '12px',
+                  background: '#0f172a',
+                }}
+              >
+                <img
+                  src={modalImgUrl}
+                  alt={language === 'kn' && currentMedia.alt_kn ? currentMedia.alt_kn : currentMedia.alt_en || name}
+                  referrerPolicy="no-referrer"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={() => setModalImageError(true)}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    backdropFilter: 'blur(6px)',
+                    color: isVerified ? '#34d399' : '#fbbf24',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: `1px solid ${isVerified ? 'rgba(52, 211, 153, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <span>
+                    {isVerified
+                      ? language === 'kn'
+                        ? '✓ ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ'
+                        : '✓ Verified Authentic Photograph'
+                      : language === 'kn'
+                      ? 'ℹ️ ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ'
+                      : 'ℹ️ Editorial Record (Verification Pending)'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    right: '12px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    backdropFilter: 'blur(6px)',
+                    color: '#cbd5e1',
+                    fontSize: '0.75rem',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    maxWidth: '90%',
+                  }}
+                >
+                  📷 {currentMedia.attribution} • <span style={{ color: '#93c5fd' }}>{currentMedia.license_type}</span>
+                  {currentMedia.source_url && (
+                    <a
+                      href={currentMedia.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#38bdf8', marginLeft: '8px', textDecoration: 'underline', fontWeight: 600 }}
+                      aria-label={`Open media source page for ${name}`}
+                    >
+                      {language === 'kn' ? 'ಮೂಲ ↗' : 'Source ↗'}
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })()
+        ) : (
+          <div
+            className="modal-hero-banner modal-hero-fallback"
+            style={{
+              position: 'relative',
+              width: '100%',
+              minHeight: '180px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              borderTopLeftRadius: '12px',
+              borderTopRightRadius: '12px',
+              color: '#94a3b8',
+              padding: '24px 16px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '2.5rem' }}>📷</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '8px', color: '#e2e8f0' }}>
+              {language === 'kn' ? 'ಛಾಯಾಚಿತ್ರ ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ' : 'Editorial Record — Media Verification Pending'}
+            </span>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px', maxWidth: '440px' }}>
+              {language === 'kn'
+                ? `${districtName} ಜಿಲ್ಲೆಯ ಈ ತಾಣದ ಅಧಿಕೃತ ಪರವಾನಗಿ ಹೊಂದಿದ ಛಾಯಾಚಿತ್ರ ಪರಿಶೀಲನೆ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ.`
+                : `Authentic CC-licensed photograph verification is in progress for this destination in ${districtName}.`}
+            </span>
+            {destination.sources && destination.sources.length > 0 && destination.sources[0].url && (
+              <a
+                href={destination.sources[0].url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ marginTop: '10px', color: '#38bdf8', fontSize: '0.75rem', textDecoration: 'underline' }}
+              >
+                {language === 'kn' ? 'ಅಧಿಕೃತ ಉಲ್ಲೇಖ ಪುಟ ↗' : 'Official Reference Source ↗'}
+              </a>
+            )}
           </div>
-        ) : null}
+        )}
 
         <div className="modal-header">
           <div className="modal-badges">
@@ -193,6 +331,7 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
                     <img
                       src={m.thumbnail_url || m.url}
                       alt={m.alt_en || name}
+                      referrerPolicy="no-referrer"
                       style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
                     />
                   </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { DestinationRead, Language } from '../../types';
 import { useTranslation, TranslationKey } from '../../lib/i18n';
+import { getApiBaseUrl } from '../../lib/api';
 
 interface DestinationCardProps {
   destination: DestinationRead;
@@ -45,7 +46,16 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
   };
 
   const [imageError, setImageError] = React.useState(false);
-  const imageUrl = destination.primary_image_url || destination.media?.[0]?.thumbnail_url || destination.media?.[0]?.url;
+  const rawImageUrl = destination.primary_image_url || destination.media?.[0]?.thumbnail_url || destination.media?.[0]?.url;
+  const cleanUrl = rawImageUrl
+    ? rawImageUrl.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0]
+    : undefined;
+  const baseUrl = getApiBaseUrl().replace(/\/+$/, '');
+  const imageUrl = cleanUrl
+    ? `${baseUrl}/destinations/media/proxy?url=${encodeURIComponent(cleanUrl)}`
+    : undefined;
+  const primaryMedia = destination.media?.[0];
+  const isVerifiedAuthentic = primaryMedia?.verification_status === 'verified_authentic';
 
   const CATEGORY_FALLBACK_ICONS: Record<string, string> = {
     architecture: '🏛️',
@@ -72,12 +82,19 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
             src={imageUrl}
             alt={destination.media?.[0]?.alt_en || name}
             loading="lazy"
+            referrerPolicy="no-referrer"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={() => setImageError(true)}
           />
-          <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#34d399', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)', fontWeight: 600 }}>
-            ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic'}
-          </span>
+          {isVerifiedAuthentic ? (
+            <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#34d399', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)', fontWeight: 600 }}>
+              ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic'}
+            </span>
+          ) : (
+            <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#fbbf24', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(251, 191, 36, 0.3)', fontWeight: 600 }}>
+              ℹ️ {language === 'kn' ? 'ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ' : 'Verification Pending'}
+            </span>
+          )}
         </div>
       ) : (
         <div className="card-image-wrap card-image-fallback" style={{ width: '100%', height: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#1e293b', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', color: '#94a3b8' }}>

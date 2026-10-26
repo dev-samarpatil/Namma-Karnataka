@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import math
 import re
 from datetime import UTC, datetime
 from typing import Any
@@ -66,6 +67,7 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "vijayanagara",
             "tungabhadra",
             "granite",
+            "hampi",
         ],
         "style": "Vijayanagara Dravidian Temple Architecture",
         "landscape": ["Granite boulder-strewn landscape along Tungabhadra river"],
@@ -79,6 +81,8 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "minarets",
             "adil shahi",
             "mausoleum",
+            "bijapur",
+            "vijayapura",
         ],
         "style": "Deccan Islamic Architectural Style",
         "landscape": ["North Karnataka plains in Vijayapura"],
@@ -95,6 +99,7 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "sharavathi",
             "mist",
             "gorge",
+            "jog",
         ],
         "style": "Natural Waterfall Cataract",
         "landscape": ["Dense Western Ghats rainforest in Shivamogga"],
@@ -108,6 +113,7 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "madanika",
             "hoysala",
             "yagachi",
+            "belur",
         ],
         "style": "Hoysala Soapstone Relief Architecture",
         "landscape": ["Hassan plateau riverbank"],
@@ -122,6 +128,7 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "chalukya",
             "nataraja",
             "cliffs",
+            "badami",
         ],
         "style": "Early Chalukyan Rock-Cut Architecture",
         "landscape": ["Red sandstone ravine flanking Agastya Lake in Bagalkote"],
@@ -136,6 +143,7 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "coastline",
             "golden sand",
             "palms",
+            "gokarna",
         ],
         "style": "Coastal Natural Shoreline",
         "landscape": ["Rugged Arabian Sea coastline of Uttara Kannada"],
@@ -149,6 +157,8 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "grasslands",
             "shola forest",
             "trekking trail",
+            "chikmagalur",
+            "chikkamagaluru",
         ],
         "style": "Montane Shola-Grassland Summit",
         "landscape": ["Highest summit in Karnataka, Baba Budan Giri range, Chikkamagaluru"],
@@ -163,22 +173,55 @@ VISUAL_PROFILES: dict[str, dict[str, Any]] = {
             "tiger",
             "dry deciduous",
             "nilgiri biosphere",
+            "bandipur",
         ],
         "style": "Deciduous Forest Biosphere",
         "landscape": ["Foothills of the Nilgiris in Chamarajanagar"],
         "category": "wildlife",
     },
-    "murudeshwar-temple": {
+    "murudeshwar-temple-beach": {
         "features": [
             "huge shiva statue",
             "coastal temple",
             "tall gopuram",
             "arabian sea cliff",
             "colossus",
+            "murudeshwar",
+            "murudeshwara",
         ],
         "style": "Modern Dravidian Coastal Colossus",
         "landscape": ["Peninsula jutting into the Arabian Sea in Uttara Kannada"],
         "category": "spiritual_cultural",
+    },
+    "yana-rocks-caves": {
+        "features": [
+            "yana",
+            "karst",
+            "black limestone",
+            "monolith",
+            "bhairaveshwara",
+            "moohini shikhara",
+            "caves",
+            "forest trek",
+        ],
+        "style": "Natural Karstic Black Limestone Monoliths",
+        "landscape": ["Dense Sahyadri rainforest of Uttara Kannada"],
+        "category": "nature",
+    },
+    "belagavi-fort-kamal-basti": {
+        "features": [
+            "belagavi fort",
+            "belgaum fort",
+            "kamal basti",
+            "kamal basadi",
+            "stone lotus",
+            "jain temple",
+            "moat",
+            "ramakrishna ashrama",
+        ],
+        "style": "Ratta & Chalukyan Stone Architecture",
+        "landscape": ["Belagavi city central historic ramparts"],
+        "category": "heritage",
     },
 }
 
@@ -272,6 +315,57 @@ def validate_and_process_image_bytes(
             status_code=400,
             details=[{"location": "file", "message": str(exc), "type": "processing_error"}],
         ) from exc
+
+
+def extract_image_visual_traits(image_bytes: bytes) -> dict[str, Any]:
+    """Analyze image chromatic balance and texture variance using Pillow."""
+    try:
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        thumb = img.resize((64, 64), Image.Resampling.BOX)
+        pixels = list(thumb.getdata())
+        total_px = len(pixels)
+
+        r_sum = sum(p[0] for p in pixels)
+        g_sum = sum(p[1] for p in pixels)
+        b_sum = sum(p[2] for p in pixels)
+
+        mean_r = r_sum / total_px
+        mean_g = g_sum / total_px
+        mean_b = b_sum / total_px
+
+        total_intensity = mean_r + mean_g + mean_b + 1e-6
+        r_ratio = mean_r / total_intensity
+        g_ratio = mean_g / total_intensity
+        b_ratio = mean_b / total_intensity
+
+        luminances = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in pixels]
+        mean_lum = sum(luminances) / total_px
+        variance = math.sqrt(sum((lum - mean_lum) ** 2 for lum in luminances) / total_px)
+
+        is_nature_lush = g_ratio > 0.38 and mean_g > 65.0
+        is_coastal_marine = b_ratio > 0.38 and mean_b > 75.0
+        is_heritage_stone = r_ratio > 0.38 and mean_r > 70.0 and (mean_r > mean_g * 1.05)
+
+        return {
+            "r_ratio": r_ratio,
+            "g_ratio": g_ratio,
+            "b_ratio": b_ratio,
+            "variance": variance,
+            "is_nature_lush": is_nature_lush,
+            "is_coastal_marine": is_coastal_marine,
+            "is_heritage_stone": is_heritage_stone,
+        }
+    except Exception as exc:
+        logger.warning("Visual trait extraction failed: %s", exc)
+        return {
+            "r_ratio": 0.33,
+            "g_ratio": 0.33,
+            "b_ratio": 0.33,
+            "variance": 0.0,
+            "is_nature_lush": False,
+            "is_coastal_marine": False,
+            "is_heritage_stone": False,
+        }
 
 
 class VisualDiscoveryService:
@@ -546,6 +640,73 @@ class VisualDiscoveryService:
                         "and was not permanently stored."
                     ),
                 )
+
+        # If no specific landmark name was matched, perform visual trait inspection
+        traits = extract_image_visual_traits(image_bytes)
+        if traits["variance"] >= 15.0:
+            if traits["is_nature_lush"]:
+                suggested_slugs = ["jog-falls", "mullayanagiri-peak", "bandipur-national-park"]
+                style_desc = "Western Ghats Montane & Forest Biome"
+                obs_clues = ["Lush green rainforest / hill canopy", "Western Ghats vegetation profile"]
+                msg_en = "Identified lush Western Ghats landscape traits. Showing top matching nature destinations."
+                msg_kn = "ಪಶ್ಚಿಮ ಘಟ್ಟಗಳ ಹಸಿರು ಪರಿಸರದ ಲಕ್ಷಣಗಳು ಕಂಡುಬಂದಿವೆ. ಸಂಬಂಧಿತ ತಾಣಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
+            elif traits["is_coastal_marine"]:
+                suggested_slugs = ["om-beach-gokarna", "murudeshwar-temple-beach"]
+                style_desc = "Arabian Sea Coastal Shoreline"
+                obs_clues = ["Coastal marine horizon", "Golden shoreline and open sky profile"]
+                msg_en = "Identified coastal shoreline visual traits. Showing top matching Karnataka coastal destinations."
+                msg_kn = "ಕರಾವಳಿ ತೀರದ ದೃಶ್ಯ ಲಕ್ಷಣಗಳು ಕಂಡುಬಂದಿವೆ. ಕರಾವಳಿ ತಾಣಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
+            elif traits["is_heritage_stone"]:
+                suggested_slugs = ["virupaksha-temple-hampi", "badami-cave-temples", "chennakeshava-temple-belur"]
+                style_desc = "Karnataka Heritage Stone & Temple Architecture"
+                obs_clues = ["Carved stone / granite masonry tones", "Dravidian or Chalukyan heritage palette"]
+                msg_en = "Identified heritage stone masonry tones. Showing top matching architectural destinations."
+                msg_kn = "ಐತಿಹಾಸಿಕ ಶಿಲ್ಪಕಲೆಯ ಬಣ್ಣಗಳು ಕಂಡುಬಂದಿವೆ. ಸಂಬಂಧಿತ ಪರಂಪರೆ ತಾಣಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
+            else:
+                suggested_slugs = []
+                style_desc = None
+                obs_clues = []
+                msg_en = ""
+                msg_kn = ""
+
+            if suggested_slugs:
+                candidates: list[VisualDiscoveryCandidate] = []
+                for s in suggested_slugs:
+                    dest = self._repo.get_by_slug(s)
+                    if dest and s in VISUAL_PROFILES:
+                        prof = VISUAL_PROFILES[s]
+                        evidence = VisualEvidence(
+                            observed_features=prof["features"][:3] + obs_clues,
+                            architectural_style=style_desc,
+                            landscape_clues=prof["landscape"],
+                            notes="Visual chromatic analysis indicates alignment with regional landscape signature.",
+                        )
+                        candidates.append(
+                            self._create_candidate_from_destination(
+                                dest,
+                                score=0.78,
+                                confidence=ConfidenceLabel.POSSIBLE_MATCH,
+                                reasons=[
+                                    f"Visual palette matches {style_desc}",
+                                    f"Regional terrain characteristics align with {dest.district_code}",
+                                ],
+                                evidence=evidence,
+                                uncertainty="Grounded visual chromatic match; compare with detailed features.",
+                            )
+                        )
+                if candidates:
+                    return VisualDiscoveryResponse(
+                        query_type=query_type,
+                        is_confident=True,
+                        message_en=msg_en,
+                        message_kn=msg_kn,
+                        candidates=candidates,
+                        analyzed_at=datetime.now(UTC).isoformat(),
+                        privacy_notice=(
+                            "Your uploaded media was processed ephemerally in memory "
+                            "and was not permanently stored."
+                        ),
+                    )
 
         # Ambiguous / generic upload behavior: return honest no-confident-match
         msg_en = (

@@ -179,6 +179,64 @@ def get_destination_nearby(
     )
 
 
+_MEDIA_CACHE: dict[str, tuple[bytes, str]] = {}
+
+
+@router.get("/media/proxy")
+async def proxy_destination_media(
+    url: str = Query(..., description="Canonical Wikimedia media URL to proxy"),
+) -> Any:
+    """Proxy authentic destination media from verified Wikimedia domains to avoid
+    CORS, network sandboxing, or client-side referrer restriction failures.
+    """
+    from fastapi.responses import Response
+
+    clean_url = url.split("?")[0].replace("thumb.wikimedia.org", "upload.wikimedia.org")
+    if not (
+        clean_url.startswith("https://upload.wikimedia.org/")
+        or clean_url.startswith("https://commons.wikimedia.org/")
+    ):
+        raise AppError(
+            code="INVALID_MEDIA_PROXY_URL",
+            message="Only verified Wikimedia Commons media URLs may be proxied.",
+            status_code=403,
+        )
+
+    if clean_url in _MEDIA_CACHE:
+        data, content_type = _MEDIA_CACHE[clean_url]
+        return Response(
+            content=data,
+            media_type=content_type,
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    headers = {
+        "User-Agent": "NammaKarnatakaTravelApp/1.0 (https://karnataka.gov.in; tourism@nammakarnataka.org)",
+        "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+    }
+    import httpx
+
+    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        try:
+            resp = await client.get(clean_url, headers=headers)
+            if resp.status_code == 200:
+                content_type = resp.headers.get("content-type", "image/jpeg")
+                _MEDIA_CACHE[clean_url] = (resp.content, content_type)
+                return Response(
+                    content=resp.content,
+                    media_type=content_type,
+                    headers={"Cache-Control": "public, max-age=86400"},
+                )
+        except Exception:
+            pass
+
+    raise AppError(
+        code="MEDIA_FETCH_FAILED",
+        message="Unable to proxy authentic destination photograph.",
+        status_code=502,
+    )
+
+
 @router.get("/{id_or_slug}", response_model=DestinationRead)
 def get_destination(
     id_or_slug: str,

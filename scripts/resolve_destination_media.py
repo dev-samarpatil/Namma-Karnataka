@@ -37,8 +37,8 @@ SPECIFIC_COMMONS_TITLES: dict[str, str] = {
     "brindavan-gardens": "File:Brindavan Gardens, Mysore 02.jpg",
     "rajas-seat-madikeri": "File:Raja's Seat Madikeri Coorg.jpg",
     "talakaveri-temple-birthplace": "File:Talakaveri temple, Kodagu.JPG",
-    "baba-budangiri-peak": "File:Baba Budan Giri hills.jpg",
-    "agumbe-sunset-viewpoint": "File:Sunset at Agumbe.jpg",
+    "baba-budangiri-peak": "File:Baba Budangiri, Chikmagalur (2024) 74.jpg",
+    "agumbe-sunset-viewpoint": "File:Agumbe ghat (85793).jpg",
     "murudeshwar-temple-beach": "File:Murudeshwara Shiva Statue 2.jpg",
     "malpe-beach-st-marys": "File:Columnar Basaltic Lava at St. Mary's Island.jpg",
     "panambur-beach-mangalore": "File:Panambur Beach Mangalore.jpg",
@@ -54,7 +54,7 @@ SPECIFIC_COMMONS_TITLES: dict[str, str] = {
     "gokak-falls": "File:Gokak Falls.JPG",
     "belagavi-fort": "File:Kamal Basadi, Belgaum Fort.jpg",
     "bidar-fort": "File:Bidar Fort, Bidar.jpg",
-    "gulbarga-fort-haft-gumbaz": "File:Gulbarga Fort and Jami Masjid.jpg",
+    "gulbarga-fort-haft-gumbaz": "File:Gulbarga Fort & Mosque.JPG",
     "bandipur-national-park": "File:Tiger at Bandipur National Park.jpg",
     "shivanasamudra-falls": "File:Gaganachukki Falls, Shivanasamudra.jpg",
     "ranganathittu-bird-sanctuary": "File:Painted Storks at Ranganathittu Bird Sanctuary.jpg",
@@ -62,7 +62,7 @@ SPECIFIC_COMMONS_TITLES: dict[str, str] = {
     "ballari-fort": "File:Bellary Fort, Karnataka.jpg",
     "devanahalli-fort": "File:Devanahalli Fort, Karnataka.jpg",
     "nandi-hills": "File:Nandi Hills sunrise.jpg",
-    "kondajji-lake": "File:Kondajji Lake, Davanagere.jpg",
+    "kondajji-lake": None,  # Verified no authentic Commons photo exists; retain honest placeholder
     "chandramouleshwara-temple": "File:Chandramouleshwara Temple, Hubli.jpg",
     "trikuteshwara-temple": "File:Trikuteshwara Temple, Gadag.jpg",
     "siddheshwara-temple-haveri": "File:Siddheshwara Temple, Haveri.jpg",
@@ -71,14 +71,14 @@ SPECIFIC_COMMONS_TITLES: dict[str, str] = {
     "raichur-fort": "File:Raichur Fort.jpg",
     "ramadevara-betta": "File:Ramadevara Betta, Ramanagara.jpg",
     "devarayanadurga": "File:Devarayanadurga hills, Tumkur.jpg",
-    "yadgir-hill-fort": "File:Yadgir Fort.jpg",
+    "yadgir-hill-fort": "File:Yadgir town view from fort.jpg",
     "aihole-durga-temple": "File:Durga Temple, Aihole.jpg",
     "mirjan-fort": "File:Mirjan Fort, Kumta.jpg",
-    "belagavi-fort-kamal-basti": "File:Kamal Basadi, Belgaum Fort.jpg",
+    "belagavi-fort-kamal-basti": "File:Kamal Basadi, Belagavi, Karnataka.jpg",
     "st-philomenas-cathedral": "File:St. Philomena's Church, Mysore.jpg",
     "keladi-rameshwara-temple": "File:Rameshwara Temple, Keladi.jpg",
     "male-mahadeshwara-hills": "File:Male Mahadeshwara Hills.jpg",
-    "anthargange-caves": "File:Anthargange, Kolar.jpg",
+    "anthargange-caves": "File:Antharagange.JPG",
 }
 
 
@@ -151,8 +151,27 @@ def resolve_media_for_destination(dest: dict[str, Any]) -> dict[str, Any] | None
     curr_media = dest.get("media", [{}])[0]
     curr_source_url = curr_media.get("source_url", "")
 
-    # Try preferred title first
     target_title = SPECIFIC_COMMONS_TITLES.get(slug)
+
+    if slug == "kondajji-lake":
+        return {
+            "id": f"media-{slug}-primary",
+            "destination_id": dest.get("id"),
+            "url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Placeholder_no_image.svg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Placeholder_no_image.svg/800px-Placeholder_no_image.svg.png",
+            "caption_en": "Authentic photograph pending verification for Kondajji Lake",
+            "caption_kn": "ಕೊಂಡಜ್ಜಿ ಕೆರೆಗೆ ಅಧಿಕೃತ ಛಾಯಾಚಿತ್ರ ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ",
+            "alt_en": "Kondajji Lake, Davanagere - photograph pending",
+            "alt_kn": "ಕೊಂಡಜ್ಜಿ ಕೆರೆ - ಛಾಯಾಚಿತ್ರ ಬಾಕಿಯಿದೆ",
+            "source_name": "Namma Karnataka Editorial Review",
+            "source_url": "https://karnatakatourism.org/",
+            "license_type": "Public Domain / Editorial",
+            "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attribution": "Namma Karnataka Editorial Registry (Pending field verification)",
+            "is_primary": True,
+            "verification_status": "needs_review",
+            "media_type": "photograph",
+        }
 
     # If no override, try extracting from existing source_url
     if not target_title and "File:" in curr_source_url:

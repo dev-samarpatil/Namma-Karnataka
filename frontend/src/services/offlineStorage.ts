@@ -6,8 +6,9 @@
 
 import { DestinationRead, DestinationFilterParams, SavedTrip } from '../types';
 
-const OFFLINE_DESTINATIONS_KEY = 'nk_offline_destinations_v1';
-const OFFLINE_FRESHNESS_KEY = 'nk_offline_freshness_v1';
+const OFFLINE_DESTINATIONS_KEY = 'nk_offline_destinations_v2';
+const OFFLINE_FRESHNESS_KEY = 'nk_offline_freshness_v2';
+const LEGACY_DESTINATIONS_KEY = 'nk_offline_destinations_v1';
 const SAVED_TRIPS_KEY = 'nk_saved_trips';
 
 export interface OfflineCatalogueMetadata {
@@ -26,6 +27,9 @@ export function saveOfflineDestinations(destinations: DestinationRead[], isParti
       is_partial: isPartial,
     };
     localStorage.setItem(OFFLINE_FRESHNESS_KEY, JSON.stringify(meta));
+    // Clean legacy v1 cache to prevent stale broken media records
+    localStorage.removeItem(LEGACY_DESTINATIONS_KEY);
+    localStorage.removeItem('nk_offline_freshness_v1');
   } catch {
     // Gracefully handle storage quota exceeded
   }
@@ -34,8 +38,37 @@ export function saveOfflineDestinations(destinations: DestinationRead[], isParti
 export function getOfflineDestinations(): DestinationRead[] {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return [];
-    const raw = localStorage.getItem(OFFLINE_DESTINATIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    // Check v2 first
+    let raw = localStorage.getItem(OFFLINE_DESTINATIONS_KEY);
+    if (!raw) {
+      // Check legacy v1 and clean if needed
+      const legacyRaw = localStorage.getItem(LEGACY_DESTINATIONS_KEY);
+      if (legacyRaw && !legacyRaw.includes('thumb.wikimedia.org')) {
+        raw = legacyRaw;
+      } else {
+        localStorage.removeItem(LEGACY_DESTINATIONS_KEY);
+      }
+    }
+    if (!raw) return [];
+    const items = JSON.parse(raw) as DestinationRead[];
+    // Self-heal any legacy thumb.wikimedia.org URLs in memory
+    return items.map((dest) => {
+      const cleanImg = dest.primary_image_url
+        ? dest.primary_image_url.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0]
+        : dest.primary_image_url;
+      const cleanMedia = dest.media?.map((m) => ({
+        ...m,
+        url: m.url ? m.url.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0] : m.url,
+        thumbnail_url: m.thumbnail_url
+          ? m.thumbnail_url.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0]
+          : undefined,
+      }));
+      return {
+        ...dest,
+        primary_image_url: cleanImg,
+        media: cleanMedia,
+      };
+    });
   } catch {
     return [];
   }

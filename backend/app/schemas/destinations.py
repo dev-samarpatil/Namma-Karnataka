@@ -147,6 +147,7 @@ class DestinationMediaRead(StrictSchema):
     source_name: str
     source_url: str | None = None
     license_type: str = "Official Tourism Portal / CC BY-SA"
+    license_url: str | None = None
     attribution: str
     is_primary: bool = False
     verification_status: str = "verified_authentic"
@@ -174,6 +175,7 @@ class DestinationBase(StrictSchema):
     entry_fee_max_inr: float | None = Field(None, ge=0.0)
     currency_code: str = Field("INR", max_length=3)
     active: bool = True
+    aliases: list[str] = Field(default_factory=list)
     translations: list[DestinationTranslationRead] = Field(default_factory=list)
     sources: list[DestinationSourceRead] = Field(default_factory=list)
     media: list[DestinationMediaRead] = Field(default_factory=list)

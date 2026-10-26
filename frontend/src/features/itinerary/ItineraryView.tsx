@@ -29,6 +29,7 @@ import {
 import { BudgetSummary } from './BudgetSummary';
 import { MapView } from './MapView';
 import { TransitComparisonCard } from './TransitComparisonCard';
+import { TravelLegCard } from './TravelLegCard';
 
 interface ItineraryViewProps {
   plan: PlanningRecommendationResponse | null;
@@ -934,139 +935,164 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                     const matchedItem = plan.items.find((i) => i.id === stop.destination_id || i.slug === stop.destination_id);
                     const stopCardTestId = matchedItem ? `stop-card-${matchedItem.slug}` : `stop-card-${stop.stop_id}`;
 
+                    const hasTravelLeg = stop.travel_leg || (stop.distance_from_prev_km !== null && stop.distance_from_prev_km !== undefined && stop.distance_from_prev_km > 0);
+                    const prevStopName = sIdx > 0 ? day.stops[sIdx - 1]?.name : day.start_location_name || undefined;
+                    const travelLegElement = hasTravelLeg ? (
+                      <TravelLegCard
+                        travelLeg={stop.travel_leg}
+                        distanceKm={stop.distance_from_prev_km}
+                        transitMinutes={stop.transit_from_prev_minutes}
+                        prevStopName={prevStopName}
+                        destStopName={stop.name}
+                        language={language}
+                      />
+                    ) : null;
+
                     if (stop.stop_type === 'meal') {
                       return (
-                        <article key={stop.stop_id} className="timeline-stop-card meal-stop-card" data-testid={stopCardTestId}>
-                          <div className="stop-order-indicator stop-type-meal">
-                            <span className="order-icon" aria-hidden="true">🍽️</span>
-                          </div>
-                          <div className="stop-content">
-                            <div className="stop-header-row">
-                              <h4 className="stop-name">{stop.name}</h4>
-                              <div className="stop-pills">
-                                <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                                <span className="card-category-pill meal-pill">
-                                  {language === 'kn' ? 'ಆಹಾರ ಮತ್ತು ಪಾನೀಯ' : 'Dining & Food'}
+                        <React.Fragment key={stop.stop_id}>
+                          {travelLegElement}
+                          <article className="timeline-stop-card meal-stop-card" data-testid={stopCardTestId}>
+                            <div className="stop-order-indicator stop-type-meal">
+                              <span className="order-icon" aria-hidden="true">🍽️</span>
+                            </div>
+                            <div className="stop-content">
+                              <div className="stop-header-row">
+                                <h4 className="stop-name">{stop.name}</h4>
+                                <div className="stop-pills">
+                                  <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                                  <span className="card-category-pill meal-pill">
+                                    {language === 'kn' ? 'ಆಹಾರ ಮತ್ತು ಪಾನೀಯ' : 'Dining & Food'}
+                                  </span>
+                                  {stop.source_reference && (
+                                    <span className="card-district-pill">🏛️ {stop.source_reference}</span>
+                                  )}
+                                </div>
+                              </div>
+                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                              <div className="stop-footer-row">
+                                <span className="stop-fee-info">
+                                  💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ವೆಚ್ಚ:' : 'Cost:') : (language === 'kn' ? 'ಅಂದಾಜು ವೆಚ್ಚ:' : 'Est. Cost:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
                                 </span>
-                                {stop.source_reference && (
-                                  <span className="card-district-pill">🏛️ {stop.source_reference}</span>
+                                {stop.cost_status === 'verified' ? (
+                                  <span className="status-badge status-verified">✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}</span>
+                                ) : (
+                                  <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
                                 )}
                               </div>
                             </div>
-                            {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                            <div className="stop-footer-row">
-                              <span className="stop-fee-info">
-                                💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ವೆಚ್ಚ:' : 'Cost:') : (language === 'kn' ? 'ಅಂದಾಜು ವೆಚ್ಚ:' : 'Est. Cost:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
-                              </span>
-                              {stop.cost_status === 'verified' ? (
-                                <span className="status-badge status-verified">✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}</span>
-                              ) : (
-                                <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
-                              )}
-                            </div>
-                          </div>
-                        </article>
+                          </article>
+                        </React.Fragment>
                       );
                     }
 
                     if (stop.stop_type === 'accommodation') {
                       return (
-                        <article key={stop.stop_id} className="timeline-stop-card accommodation-stop-card" data-testid={stopCardTestId}>
-                          <div className="stop-order-indicator stop-type-stay">
-                            <span className="order-icon" aria-hidden="true">🏨</span>
-                          </div>
-                          <div className="stop-content">
-                            <div className="stop-header-row">
-                              <h4 className="stop-name">{stop.name}</h4>
-                              <div className="stop-pills">
-                                <span className="stop-time-badge">🌙 {stop.start_time} Check-in</span>
-                                <span className="card-category-pill stay-pill">
-                                  {language === 'kn' ? 'ವಾಸ್ತವ್ಯ' : 'Lodging'}
+                        <React.Fragment key={stop.stop_id}>
+                          {travelLegElement}
+                          <article className="timeline-stop-card accommodation-stop-card" data-testid={stopCardTestId}>
+                            <div className="stop-order-indicator stop-type-stay">
+                              <span className="order-icon" aria-hidden="true">🏨</span>
+                            </div>
+                            <div className="stop-content">
+                              <div className="stop-header-row">
+                                <h4 className="stop-name">{stop.name}</h4>
+                                <div className="stop-pills">
+                                  <span className="stop-time-badge">🌙 {stop.start_time} Check-in</span>
+                                  <span className="card-category-pill stay-pill">
+                                    {language === 'kn' ? 'ವಾಸ್ತವ್ಯ' : 'Lodging'}
+                                  </span>
+                                  {stop.source_reference && (
+                                    <span className="card-district-pill">🏛️ {stop.source_reference}</span>
+                                  )}
+                                </div>
+                              </div>
+                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                              <div className="stop-footer-row">
+                                <span className="stop-fee-info">
+                                  💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ದರ:' : 'Tariff:') : (language === 'kn' ? 'ಅಂದಾಜು ದರ:' : 'Est. Lodging:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
                                 </span>
-                                {stop.source_reference && (
-                                  <span className="card-district-pill">🏛️ {stop.source_reference}</span>
+                                {stop.cost_status === 'verified' ? (
+                                  <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ದರ' : 'Verified Tariff'}</span>
+                                ) : (
+                                  <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
                                 )}
                               </div>
                             </div>
-                            {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                            <div className="stop-footer-row">
-                              <span className="stop-fee-info">
-                                💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ದರ:' : 'Tariff:') : (language === 'kn' ? 'ಅಂದಾಜು ದರ:' : 'Est. Lodging:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
-                              </span>
-                              {stop.cost_status === 'verified' ? (
-                                <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ದರ' : 'Verified Tariff'}</span>
-                              ) : (
-                                <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
-                              )}
-                            </div>
-                          </div>
-                        </article>
+                          </article>
+                        </React.Fragment>
                       );
                     }
 
                     if (stop.stop_type === 'event') {
                       return (
-                        <article key={stop.stop_id} className="timeline-stop-card event-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #f59e0b' }}>
-                          <div className="stop-order-indicator stop-type-event" style={{ background: '#f59e0b' }}>
-                            <span className="order-icon" aria-hidden="true">🎪</span>
-                          </div>
-                          <div className="stop-content">
-                            <div className="stop-header-row">
-                              <h4 className="stop-name" style={{ color: '#fef08a' }}>{stop.name}</h4>
-                              <div className="stop-pills">
-                                <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                                <span className="card-category-pill event-pill" style={{ background: '#78350f', color: '#fef3c7' }}>
-                                  🎪 {language === 'kn' ? 'ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವ / ಜಾತ್ರೆ' : 'Cultural Festival'}
+                        <React.Fragment key={stop.stop_id}>
+                          {travelLegElement}
+                          <article className="timeline-stop-card event-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #f59e0b' }}>
+                            <div className="stop-order-indicator stop-type-event" style={{ background: '#f59e0b' }}>
+                              <span className="order-icon" aria-hidden="true">🎪</span>
+                            </div>
+                            <div className="stop-content">
+                              <div className="stop-header-row">
+                                <h4 className="stop-name" style={{ color: '#fef08a' }}>{stop.name}</h4>
+                                <div className="stop-pills">
+                                  <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                                  <span className="card-category-pill event-pill" style={{ background: '#78350f', color: '#fef3c7' }}>
+                                    🎪 {language === 'kn' ? 'ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವ / ಜಾತ್ರೆ' : 'Cultural Festival'}
+                                  </span>
+                                  {stop.source_reference && (
+                                    <a href={stop.source_reference} target="_blank" rel="noopener noreferrer" className="card-district-pill" style={{ textDecoration: 'underline' }}>
+                                      🏛️ {language === 'kn' ? 'ಮೂಲ ಪರಿಶೀಲನೆ' : 'Official Citation'}
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                              <div className="stop-footer-row">
+                                <span className="stop-fee-info">
+                                  🎟️ {stop.cost_min_inr !== null && stop.cost_min_inr !== undefined
+                                    ? (stop.cost_min_inr === 0 ? (language === 'kn' ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry') : `₹${stop.cost_min_inr}`)
+                                    : (language === 'kn' ? 'ಪ್ರವೇಶ ಶುಲ್ಕ ಅನ್ವಯಿಸಬಹುದು' : 'Entry fee may apply')}
                                 </span>
-                                {stop.source_reference && (
-                                  <a href={stop.source_reference} target="_blank" rel="noopener noreferrer" className="card-district-pill" style={{ textDecoration: 'underline' }}>
-                                    🏛️ {language === 'kn' ? 'ಮೂಲ ಪರಿಶೀಲನೆ' : 'Official Citation'}
-                                  </a>
+                                {stop.cost_status === 'verified' ? (
+                                  <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ಉತ್ಸವ' : 'Verified Event'}</span>
+                                ) : (
+                                  <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ೠತುಮಾನದ ಉತ್ಸವ' : 'Seasonal Festival'}</span>
                                 )}
                               </div>
                             </div>
-                            {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                            <div className="stop-footer-row">
-                              <span className="stop-fee-info">
-                                🎟️ {stop.cost_min_inr !== null && stop.cost_min_inr !== undefined
-                                  ? (stop.cost_min_inr === 0 ? (language === 'kn' ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry') : `₹${stop.cost_min_inr}`)
-                                  : (language === 'kn' ? 'ಪ್ರವೇಶ ಶುಲ್ಕ ಅನ್ವಯಿಸಬಹುದು' : 'Entry fee may apply')}
-                              </span>
-                              {stop.cost_status === 'verified' ? (
-                                <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ಉತ್ಸವ' : 'Verified Event'}</span>
-                              ) : (
-                                <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ೠತುಮಾನದ ಉತ್ಸವ' : 'Seasonal Festival'}</span>
-                              )}
-                            </div>
-                          </div>
-                        </article>
+                          </article>
+                        </React.Fragment>
                       );
                     }
 
                     if (stop.stop_type === 'transport') {
                       return (
-                        <article key={stop.stop_id} className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #38bdf8' }}>
-                          <div className="stop-order-indicator stop-type-transport" style={{ background: '#0284c7' }}>
-                            <span className="order-icon" aria-hidden="true">🚗</span>
-                          </div>
-                          <div className="stop-content">
-                            <div className="stop-header-row">
-                              <h4 className="stop-name">{stop.name}</h4>
-                              <div className="stop-pills">
-                                <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                                <span className="card-category-pill transport-pill">
-                                  {language === 'kn' ? 'ಹಿಂತಿರುಗುವ ಪ್ರಯಾಣ' : 'Return Transit'}
+                        <React.Fragment key={stop.stop_id}>
+                          {travelLegElement}
+                          <article className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #38bdf8' }}>
+                            <div className="stop-order-indicator stop-type-transport" style={{ background: '#0284c7' }}>
+                              <span className="order-icon" aria-hidden="true">🚗</span>
+                            </div>
+                            <div className="stop-content">
+                              <div className="stop-header-row">
+                                <h4 className="stop-name">{stop.name}</h4>
+                                <div className="stop-pills">
+                                  <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                                  <span className="card-category-pill transport-pill">
+                                    {language === 'kn' ? 'ಹಿಂತಿರುಗುವ ಪ್ರಯಾಣ' : 'Return Transit'}
+                                  </span>
+                                </div>
+                              </div>
+                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                              <div className="stop-footer-row">
+                                <span className="stop-fee-info">
+                                  🚗 {stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins)
                                 </span>
                               </div>
                             </div>
-                            {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                            <div className="stop-footer-row">
-                              <span className="stop-fee-info">
-                                🚗 {stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins)
-                              </span>
-                            </div>
-                          </div>
-                        </article>
+                          </article>
+                        </React.Fragment>
                       );
                     }
 
@@ -1079,10 +1105,12 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                     const isLastAttr = attrIdxInDay === attrStopsInDay.length - 1;
 
                     return (
-                      <article key={stop.stop_id} className="timeline-stop-card" data-testid={stopCardTestId}>
-                        <div className="stop-order-indicator">
-                          <span className="order-number">{sIdx + 1}</span>
-                        </div>
+                      <React.Fragment key={stop.stop_id}>
+                        {travelLegElement}
+                        <article className="timeline-stop-card" data-testid={stopCardTestId}>
+                          <div className="stop-order-indicator">
+                            <span className="order-number">{sIdx + 1}</span>
+                          </div>
 
                         <div className="stop-content">
                           <div className="stop-header-row">
@@ -1231,7 +1259,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                           </div>
                         </div>
                       </article>
-                    );
+                    </React.Fragment>
+                  );
                   })}
                 </div>
               </div>

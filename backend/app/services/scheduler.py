@@ -29,11 +29,16 @@ from app.schemas.planning import (
     RecommendedDestination,
     StopRegenerateCandidate,
     StopType,
+    TravelLegAlternative,
+    TravelLegDetails,
+    TravelLegSegment,
 )
 from app.services.clustering.corridors import get_origin_coordinates
 from app.services.events import get_events_service
 from app.services.places import get_places_service
 from app.services.routing import get_routing_service
+from app.services.transit.service import get_transit_service
+from app.services.transport_cost import TransportCostCalculator
 
 
 def haversine_distance_km(coord1: Coordinates, coord2: Coordinates) -> float:
@@ -62,6 +67,659 @@ def estimate_transit_minutes(distance_km: float) -> int:
     return max(15, int(hours * 60) + 15)
 
 
+def build_travel_leg_details(
+    origin_name: str,
+    dest_name: str,
+    dist_km: float,
+    duration_mins: int,
+    prev_coords: Coordinates | None,
+    dest_coords: Coordinates | None,
+    request: PlanningRequest,
+) -> TravelLegDetails:
+    """Build structured, actionable transportation details for a travel leg."""
+    travelers = max(1, request.travelers_count)
+    dist = max(0.1, round(dist_km, 1))
+    req_mode = getattr(request, "travel_mode", "driving_car") or "driving_car"
+
+    # 1. Car fuel estimate
+    eff = getattr(request, "fuel_efficiency_km_per_litre", None) or 15.0
+    fuel_price = getattr(request, "fuel_price_per_litre", None) or 102.50
+    car_est = TransportCostCalculator.calculate_car_fuel(
+        road_distance_km=dist,
+        travelers_count=travelers,
+        fuel_efficiency_km_per_litre=eff,
+        fuel_price_per_litre=fuel_price,
+        is_return_trip=False,
+    )
+    fuel_litres = round(dist / max(1.0, eff), 1)
+
+    # 2. Cab fare estimate
+    cab_est = TransportCostCalculator.calculate_cab_fare(
+        road_distance_km=dist,
+        travelers_count=travelers,
+        duration_days=1,
+        is_return_trip=False,
+    )
+
+    # 3. Check public transit
+    transit_options = []
+    if prev_coords and dest_coords:
+        try:
+            transit_svc = get_transit_service()
+            transit_options = transit_svc.find_journeys(
+                origin_lat=prev_coords.lat,
+                origin_lon=prev_coords.lon,
+                dest_lat=dest_coords.lat,
+                dest_lon=dest_coords.lon,
+            )
+        except Exception:
+            transit_options = []
+
+    # 4. Walking feasibility
+    walking_feasible = dist <= 1.5
+    walking_mins = max(5, math.ceil(dist * 13))  # ~4.6 km/h brisk walk
+
+    # 5. Build Alternatives List
+    alternatives: list[TravelLegAlternative] = [
+        TravelLegAlternative(
+            mode="driving_car",
+            mode_label="Private Car",
+            mode_label_kn="ಸ್ವಂತ ಕಾರು",
+            duration_minutes=duration_mins,
+            cost_inr=car_est.total_cost_min_inr,
+            cost_status=CostStatus.ESTIMATED,
+            notes=f"Fuel: ₹{car_est.total_cost_min_inr:.0f} (~{fuel_litres}L @ ₹{fuel_price:.2f}/L). Tolls & parking separate.",
+            notes_kn=f"ಇಂಧನ: ₹{car_est.total_cost_min_inr:.0f} (~{fuel_litres} ಲೀಟರ್). ಟೋಲ್ ಪ್ರತ್ಯೇಕ.",
+        ),
+        TravelLegAlternative(
+            mode="cab_taxi",
+            mode_label="Taxi / Cab",
+            mode_label_kn="ಟ್ಯಾಕ್ಸಿ / ಕ್ಯಾಬ್",
+            duration_minutes=duration_mins,
+            cost_inr=cab_est.total_cost_min_inr,
+            cost_status=CostStatus.ESTIMATED,
+            notes=f"Commercial taxi tariff ({dist:.1f} km). Tolls not included.",
+            notes_kn=f"ಟ್ಯಾಕ್ಸಿ ದರ ({dist:.1f} ಕಿ.ಮೀ). ಟೋಲ್ ಹೊರತುಪಡಿಸಿ.",
+        ),
+    ]
+
+    # Public transit alternative
+    if transit_options:
+        best_t = transit_options[0]
+        t_per_person = best_t.total_fare_min_inr
+        t_group = t_per_person * travelers
+        t_operator = best_t.operator_name
+        alternatives.append(
+            TravelLegAlternative(
+                mode="public_transit",
+                mode_label=f"Public Transit ({t_operator})",
+                mode_label_kn=f"ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ({t_operator})",
+                duration_minutes=best_t.total_duration_minutes,
+                cost_inr=t_group,
+                cost_status=CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED,
+                notes=f"Scheduled service fare (₹{t_per_person:.0f}/person)",
+                notes_kn=f"ನಿಗದಿತ ಸಾರಿಗೆ ದರ (ತಲಾ ₹{t_per_person:.0f})",
+            )
+        )
+    elif dist <= 1.5:
+        alternatives.append(
+            TravelLegAlternative(
+                mode="public_transit",
+                mode_label="Local City Bus (Short Hop)",
+                mode_label_kn="ಸ್ಥಳೀಯ ನಗರ ಬಸ್",
+                duration_minutes=max(10, duration_mins),
+                cost_inr=15.0 * travelers,
+                cost_status=CostStatus.ESTIMATED,
+                notes=f"Local city transit stop-to-stop (~₹15/person)",
+                notes_kn="ಸ್ಥಳೀಯ ನಗರ ಸಾರಿಗೆ (ತಲಾ ~₹15)",
+            )
+        )
+    elif dist <= 15.0:
+        local_bus_pp = float(min(30, max(15, round(10.0 + dist * 1.5, 0))))
+        alternatives.append(
+            TravelLegAlternative(
+                mode="public_transit",
+                mode_label="Local / City Bus",
+                mode_label_kn="ಸ್ಥಳೀಯ / ನಗರ ಬಸ್",
+                duration_minutes=duration_mins + 15,
+                cost_inr=local_bus_pp * travelers,
+                cost_status=CostStatus.ESTIMATED,
+                notes=f"City municipal / KSRTC town bus (~₹{local_bus_pp:.0f}/person)",
+                notes_kn=f"ಸ್ಥಳೀಯ ಬಸ್ ಸೇವೆ (ತಲಾ ~₹{local_bus_pp:.0f})",
+            )
+        )
+    else:
+        reg_bus_pp = float(max(35.0, round(dist * 1.85, 0)))
+        alternatives.append(
+            TravelLegAlternative(
+                mode="public_transit",
+                mode_label="KSRTC Regional Bus",
+                mode_label_kn="ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಪ್ರಾದೇಶಿಕ ಬಸ್",
+                duration_minutes=duration_mins + 25,
+                cost_inr=reg_bus_pp * travelers,
+                cost_status=CostStatus.ESTIMATED,
+                notes=f"KSRTC Regional service (~₹{reg_bus_pp:.0f}/person, ~₹1.85/km)",
+                notes_kn=f"ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಪ್ರಾದೇಶಿಕ ಬಸ್ ಸೇವೆ (ತಲಾ ~₹{reg_bus_pp:.0f})",
+            )
+        )
+
+    # Mixed alternative
+    autos_needed = math.ceil(travelers / 3)
+    if transit_options:
+        best_t = transit_options[0]
+        local_transfer_fare = 60.0 * autos_needed
+        mixed_cost_group = (best_t.total_fare_min_inr * travelers) + (local_transfer_fare * 2)
+        alternatives.append(
+            TravelLegAlternative(
+                mode="mixed",
+                mode_label="Mixed (Transit + Auto)",
+                mode_label_kn="ಮಿಶ್ರ ಸಾರಿಗೆ (ಬಸ್ + ಆಟೋ)",
+                duration_minutes=best_t.total_duration_minutes + 20,
+                cost_inr=round(mixed_cost_group, 2),
+                cost_status=CostStatus.ESTIMATED,
+                notes=f"Scheduled {best_t.operator_name} (₹{best_t.total_fare_min_inr:.0f}×{travelers}) + ₹{local_transfer_fare*2:.0f} local auto transfers",
+                notes_kn=f"ನಿಗದಿತ {best_t.operator_name} + ಸ್ಥಳೀಯ ಆಟೋ ಸಂಪರ್ಕಗಳು",
+            )
+        )
+    elif dist > 15.0:
+        est_bus_pp = max(35.0, round(dist * 1.85, 0))
+        local_transfer_fare = 60.0 * autos_needed
+        est_mixed_group = (est_bus_pp * travelers) + (local_transfer_fare * 2)
+        alternatives.append(
+            TravelLegAlternative(
+                mode="mixed",
+                mode_label="Mixed (Regional Transit + Local Auto)",
+                mode_label_kn="ಮಿಶ್ರ ಸಾರಿಗೆ (ಪ್ರಾದೇಶಿಕ ಬಸ್ + ಆಟೋ)",
+                duration_minutes=duration_mins + 25,
+                cost_inr=round(est_mixed_group, 2),
+                cost_status=CostStatus.ESTIMATED,
+                notes=f"Estimated regional bus (~₹{est_bus_pp:.0f}/person) + ₹{local_transfer_fare*2:.0f} first/last-mile autos",
+                notes_kn="ಅಂದಾಜು ಪ್ರಾದೇಶಿಕ ಬಸ್ + ಸ್ಥಳೀಯ ಆಟೋ",
+            )
+        )
+    else:
+        auto_fare = max(35.0, round(30.0 + max(0.0, dist - 1.5) * 16.0, 0)) * autos_needed
+        alternatives.append(
+            TravelLegAlternative(
+                mode="mixed",
+                mode_label="Mixed (Local Auto)",
+                mode_label_kn="ಮಿಶ್ರ ಸಾರಿಗೆ (ಸ್ಥಳೀಯ ಆಟೋ)",
+                duration_minutes=duration_mins + 5,
+                cost_inr=round(auto_fare, 2),
+                cost_status=CostStatus.ESTIMATED,
+                notes=f"Local metered auto-rickshaw connection ({dist:.1f} km)",
+                notes_kn=f"ಸ್ಥಳೀಯ ಆಟೋ ರಿಕ್ಷಾ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ)",
+            )
+        )
+
+    # Walking alternative if short
+    if dist <= 2.5:
+        alternatives.append(
+            TravelLegAlternative(
+                mode="walking",
+                mode_label="Walking",
+                mode_label_kn="ಕಾಲ್ನಡಿಗೆ",
+                duration_minutes=walking_mins,
+                cost_inr=0.0,
+                cost_status=CostStatus.VERIFIED,
+                notes="Feasible pedestrian connection" if walking_feasible else "Extended walk, exercise caution",
+                notes_kn="ಕಾಲ್ನಡಿಗೆ ಮಾರ್ಗ" if walking_feasible else "ಹೆಚ್ಚಿನ ದೂರದ ನಡಿಗೆ",
+            )
+        )
+
+    segments: list[TravelLegSegment] = []
+    warnings: list[str] = []
+    toll_note = "Toll estimate unavailable — not included in the total."
+    toll_note_kn = "ಟೋಲ್ ಅಂದಾಜು ಅಲಭ್ಯ — ಒಟ್ಟು ಮೊತ್ತದಲ್ಲಿ ಸೇರಿಸಲಾಗಿಲ್ಲ."
+    parking_note = "Parking excluded — pay locally where applicable."
+    parking_note_kn = "ಪಾರ್ಕಿಂಗ್ ವೆಚ್ಚ ಪ್ರತ್ಯೇಕ — ಅನ್ವಯವಾಗುವ ಸ್ಥಳಗಳಲ್ಲಿ ಪಾವತಿಸಿ."
+    fuel_cost_inr = None
+
+    if req_mode in ("walking", "walk") or (dist <= 0.8 and walking_feasible):
+        rec_mode = "walking"
+        rec_reason = f"Short pedestrian connection ({dist:.1f} km, ~{walking_mins} mins). Walking is pleasant and zero-cost."
+        rec_reason_kn = f"ಹತ್ತಿರದ ಕಾಲ್ನಡಿಗೆ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ, ಸುಮಾರು {walking_mins} ನಿಮಿಷಗಳು). ನಡೆದುಕೊಂಡು ಹೋಗುವುದು ಸೂಕ್ತ."
+        per_person_inr = 0.0
+        group_inr = 0.0
+        fare_status = CostStatus.VERIFIED
+        calc_basis = "Zero-cost pedestrian movement"
+        op_name = None
+        route_num = None
+        orig_term = None
+        dest_term = None
+        segments.append(
+            TravelLegSegment(
+                segment_order=1,
+                segment_type="walk",
+                mode="walking",
+                mode_label="Walking",
+                mode_label_kn="ಕಾಲ್ನಡಿಗೆ",
+                description=f"Walk from {origin_name} to {dest_name}",
+                description_kn=f"{origin_name} ಇಂದ {dest_name} ವರೆಗೆ ಕಾಲ್ನಡಿಗೆ",
+                origin_name=origin_name,
+                destination_name=dest_name,
+                distance_km=dist,
+                duration_minutes=walking_mins,
+                cost_inr=0.0,
+                cost_status=CostStatus.VERIFIED,
+                is_per_person=False,
+            )
+        )
+    elif req_mode == "mixed":
+        rec_mode = "mixed"
+        autos_count = math.ceil(travelers / 3)
+        if transit_options:
+            best_t = transit_options[0]
+            op_name = best_t.operator_name
+            route_num = best_t.legs[0].line_name if best_t.legs else None
+            orig_term = best_t.legs[0].origin_stop.name_en if best_t.legs else f"{origin_name} Bus Stand"
+            dest_term = best_t.legs[-1].destination_stop.name_en if best_t.legs else f"{dest_name} Bus Stand"
+
+            t_fare_pp = best_t.total_fare_min_inr
+            t_fare_group = t_fare_pp * travelers
+            first_mile_cost = 100.0 * autos_count
+            last_mile_cost = 100.0 * autos_count
+            group_inr = t_fare_group + first_mile_cost + last_mile_cost
+            per_person_inr = group_inr / travelers
+            fare_status = CostStatus.ESTIMATED
+
+            rec_reason = (
+                f"Mixed multimodal connection: First-mile local auto to {orig_term}, "
+                f"scheduled {op_name} transit corridor to {dest_term}, and last-mile auto to {dest_name}."
+            )
+            rec_reason_kn = (
+                f"ಮಿಶ್ರ ಸಾರಿಗೆ: {orig_term} ವರೆಗೆ ಸ್ಥಳೀಯ ಆಟೋ, {op_name} ಸಾರ್ವಜನಿಕ ಬಸ್ ಮತ್ತು {dest_name} ವರೆಗೆ ಅಂತಿಮ ಹಂತದ ಆಟೋ."
+            )
+            calc_basis = (
+                f"Scheduled {op_name} fare ₹{t_fare_pp:.0f}×{travelers} + "
+                f"₹{first_mile_cost + last_mile_cost:.0f} first/last-mile local auto transfers"
+            )
+
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="first_mile",
+                    mode="auto_rickshaw",
+                    mode_label="First-Mile Auto-Rickshaw",
+                    mode_label_kn="ಆರಂಭಿಕ ಆಟೋ ಸಂಪರ್ಕ",
+                    description=f"Local auto transfer from {origin_name} to {orig_term}",
+                    description_kn=f"{origin_name} ಇಂದ {orig_term} ವರೆಗೆ ಸ್ಥಳೀಯ ಆಟೋ",
+                    origin_name=origin_name,
+                    destination_name=orig_term,
+                    distance_km=min(3.0, round(dist * 0.1, 1)),
+                    duration_minutes=12,
+                    cost_inr=first_mile_cost,
+                    cost_status=CostStatus.ESTIMATED,
+                    is_per_person=False,
+                ),
+                TravelLegSegment(
+                    segment_order=2,
+                    segment_type="intercity_transit",
+                    mode="public_transit",
+                    mode_label=f"{op_name} Scheduled Service",
+                    mode_label_kn=f"{op_name} ನಿಗದಿತ ಬಸ್ ಸೇವೆ",
+                    description=f"Scheduled intercity transit from {orig_term} to {dest_term}",
+                    description_kn=f"{orig_term} ಇಂದ {dest_term} ವರೆಗೆ ನಿಗದಿತ ಸಾರಿಗೆ",
+                    operator_name=op_name,
+                    route_service_number=route_num,
+                    origin_name=orig_term,
+                    destination_name=dest_term,
+                    distance_km=dist,
+                    duration_minutes=best_t.total_duration_minutes,
+                    cost_inr=t_fare_group,
+                    cost_status=CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED,
+                    is_per_person=True,
+                ),
+                TravelLegSegment(
+                    segment_order=3,
+                    segment_type="last_mile",
+                    mode="auto_rickshaw",
+                    mode_label="Last-Mile Auto-Rickshaw",
+                    mode_label_kn="ಅಂತಿಮ ಆಟೋ ಸಂಪರ್ಕ",
+                    description=f"Local auto transfer from {dest_term} to {dest_name}",
+                    description_kn=f"{dest_term} ಇಂದ {dest_name} ವರೆಗೆ ಸ್ಥಳೀಯ ಆಟೋ",
+                    origin_name=dest_term,
+                    destination_name=dest_name,
+                    distance_km=min(3.0, round(dist * 0.1, 1)),
+                    duration_minutes=12,
+                    cost_inr=last_mile_cost,
+                    cost_status=CostStatus.ESTIMATED,
+                    is_per_person=False,
+                ),
+            ]
+        elif dist > 15.0:
+            est_bus_pp = max(40.0, round(dist * 1.5, 0))
+            est_bus_group = est_bus_pp * travelers
+            first_mile_cost = 120.0 * autos_count
+            last_mile_cost = 120.0 * autos_count
+            group_inr = est_bus_group + first_mile_cost + last_mile_cost
+            per_person_inr = group_inr / travelers
+            fare_status = CostStatus.ESTIMATED
+            op_name = "KSRTC / Regional Transit"
+            route_num = None
+            orig_term = f"{origin_name} Bus Stand"
+            dest_term = f"{dest_name} Bus Stand"
+            rec_reason = (
+                f"Mixed transit: Local auto to regional bus station, intercity state bus (~{dist:.1f} km), "
+                f"and local auto connection to destination."
+            )
+            rec_reason_kn = (
+                f"ಮಿಶ್ರ ಸಾರಿಗೆ: ಪ್ರಾದೇಶಿಕ ಬಸ್ ನಿಲ್ದಾಣಕ್ಕೆ ಆಟೋ, ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಬಸ್ ಪ್ರಯಾಣ ಮತ್ತು ಸ್ಥಳೀಯ ಆಟೋ ಸಂಪರ್ಕ."
+            )
+            calc_basis = (
+                f"Estimated regional transit fare (~₹{est_bus_pp:.0f}/person) + "
+                f"₹{first_mile_cost + last_mile_cost:.0f} local auto transfers"
+            )
+            warnings.append("Direct timetable schedule unverified for this corridor; board at local KSRTC bus stand.")
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="first_mile",
+                    mode="auto_rickshaw",
+                    mode_label="First-Mile Auto",
+                    mode_label_kn="ಆರಂಭಿಕ ಆಟೋ",
+                    description=f"Auto transfer to {orig_term}",
+                    description_kn=f"{orig_term} ವರೆಗೆ ಆಟೋ",
+                    origin_name=origin_name,
+                    destination_name=orig_term,
+                    distance_km=2.0,
+                    duration_minutes=10,
+                    cost_inr=first_mile_cost,
+                    cost_status=CostStatus.ESTIMATED,
+                    is_per_person=False,
+                ),
+                TravelLegSegment(
+                    segment_order=2,
+                    segment_type="intercity_transit",
+                    mode="public_transit",
+                    mode_label="Regional Intercity Bus",
+                    mode_label_kn="ಪ್ರಾದೇಶಿಕ ಅಂತರ್-ನಗರ ಬಸ್",
+                    description=f"State bus service ({dist:.1f} km)",
+                    description_kn=f"ಸರ್ಕಾರಿ ಬಸ್ ಸೇವೆ ({dist:.1f} ಕಿ.ಮೀ)",
+                    operator_name=op_name,
+                    origin_name=orig_term,
+                    destination_name=dest_term,
+                    distance_km=dist,
+                    duration_minutes=duration_mins + 15,
+                    cost_inr=est_bus_group,
+                    cost_status=CostStatus.ESTIMATED,
+                    is_per_person=True,
+                ),
+                TravelLegSegment(
+                    segment_order=3,
+                    segment_type="last_mile",
+                    mode="auto_rickshaw",
+                    mode_label="Last-Mile Auto",
+                    mode_label_kn="ಅಂತಿಮ ಆಟೋ",
+                    description=f"Auto transfer from {dest_term} to {dest_name}",
+                    description_kn=f"{dest_term} ಇಂದ {dest_name} ವರೆಗೆ ಆಟೋ",
+                    origin_name=dest_term,
+                    destination_name=dest_name,
+                    distance_km=2.0,
+                    duration_minutes=10,
+                    cost_inr=last_mile_cost,
+                    cost_status=CostStatus.ESTIMATED,
+                    is_per_person=False,
+                ),
+            ]
+        else:
+            auto_fare = max(35.0, round(30.0 + max(0.0, dist - 1.5) * 16.0, 0)) * autos_count
+            group_inr = auto_fare
+            per_person_inr = group_inr / travelers
+            fare_status = CostStatus.ESTIMATED
+            op_name = "Local Auto-Rickshaw"
+            route_num = None
+            orig_term = None
+            dest_term = None
+            rec_reason = f"Short local connection ({dist:.1f} km): Local metered auto-rickshaw transfer."
+            rec_reason_kn = f"ಸ್ಥಳೀಯ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ): ಸ್ಥಳೀಯ ಆಟೋ ರಿಕ್ಷಾ ಸಂಪರ್ಕ."
+            calc_basis = f"Metered local auto-rickshaw (₹30 base for 1.5km + ₹16/km for {autos_count} auto(s))"
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="local_transfer",
+                    mode="auto_rickshaw",
+                    mode_label="Local Auto-Rickshaw",
+                    mode_label_kn="ಸ್ಥಳೀಯ ಆಟೋ ರಿಕ್ಷಾ",
+                    description=f"Metered auto transfer ({dist:.1f} km)",
+                    description_kn=f"ಸ್ಥಳೀಯ ಆಟೋ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ)",
+                    origin_name=origin_name,
+                    destination_name=dest_name,
+                    distance_km=dist,
+                    duration_minutes=duration_mins,
+                    cost_inr=auto_fare,
+                    cost_status=CostStatus.ESTIMATED,
+                    is_per_person=False,
+                )
+            ]
+    elif req_mode in ("public_transit", "transit"):
+        rec_mode = "public_transit"
+        if transit_options:
+            best_t = transit_options[0]
+            op_name = best_t.operator_name
+            route_num = best_t.legs[0].line_name if best_t.legs else None
+            orig_term = best_t.legs[0].origin_stop.name_en if best_t.legs else None
+            dest_term = best_t.legs[-1].destination_stop.name_en if best_t.legs else None
+            per_person_inr = best_t.total_fare_min_inr
+            group_inr = per_person_inr * travelers
+            fare_status = CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED
+            rec_reason = f"Verified scheduled {op_name} service connecting {origin_name} corridor to {dest_name}."
+            rec_reason_kn = f"{op_name} ಪರಿಶೀಲಿಸಿದ ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ಸಂಪರ್ಕ."
+            calc_basis = f"Published schedule fare ₹{per_person_inr:.0f} per traveler"
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="transit",
+                    mode="public_transit",
+                    mode_label=f"{op_name} Bus/Train",
+                    mode_label_kn=f"{op_name} ಸಾರಿಗೆ",
+                    description=f"Scheduled service from {orig_term or origin_name} to {dest_term or dest_name}",
+                    description_kn="ನಿಗದಿತ ಸಾರಿಗೆ ಸೇವೆ",
+                    operator_name=op_name,
+                    route_service_number=route_num,
+                    origin_name=orig_term or origin_name,
+                    destination_name=dest_term or dest_name,
+                    distance_km=dist,
+                    duration_minutes=best_t.total_duration_minutes,
+                    cost_inr=group_inr,
+                    cost_status=fare_status,
+                    is_per_person=True,
+                )
+            ]
+        elif dist <= 1.5:
+            per_person_inr = 15.0
+            group_inr = 15.0 * travelers
+            fare_status = CostStatus.ESTIMATED
+            op_name = "City Transit / Municipal Bus"
+            route_num = None
+            orig_term = None
+            dest_term = None
+            rec_reason = f"Short urban transit hop ({dist:.1f} km): Local city bus or pedestrian walk."
+            rec_reason_kn = f"ಸ್ಥಳೀಯ ನಗರ ಸಾರಿಗೆ ({dist:.1f} ಕಿ.ಮೀ): ಸ್ಥಳೀಯ ಬಸ್."
+            calc_basis = f"Standard local stage fare ₹{per_person_inr:.0f} per traveler"
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="transit",
+                    mode="public_transit",
+                    mode_label="Local City Bus",
+                    mode_label_kn="ಸ್ಥಳೀಯ ನಗರ ಬಸ್",
+                    description=f"Local bus hop ({dist:.1f} km)",
+                    description_kn=f"ಸ್ಥಳೀಯ ನಗರ ಬಸ್ ({dist:.1f} ಕಿ.ಮೀ)",
+                    operator_name=op_name,
+                    origin_name=origin_name,
+                    destination_name=dest_name,
+                    distance_km=dist,
+                    duration_minutes=max(10, duration_mins),
+                    cost_inr=group_inr,
+                    cost_status=fare_status,
+                    is_per_person=True,
+                )
+            ]
+        elif dist <= 15.0:
+            per_person_inr = float(min(30, max(15, round(10.0 + dist * 1.5, 0))))
+            group_inr = per_person_inr * travelers
+            fare_status = CostStatus.ESTIMATED
+            op_name = "Local Town / City Bus"
+            route_num = None
+            orig_term = f"{origin_name} Stop"
+            dest_term = f"{dest_name} Stop"
+            rec_reason = f"City municipal / KSRTC town bus service ({dist:.1f} km, ~₹{per_person_inr:.0f}/person)."
+            rec_reason_kn = f"ಸ್ಥಳೀಯ ನಗರ / ಪಟ್ಟಣ ಬಸ್ ಸೇವೆ ({dist:.1f} ಕಿ.ಮೀ, ತಲಾ ~₹{per_person_inr:.0f})."
+            calc_basis = f"Standard municipal stage fare ₹{per_person_inr:.0f} per traveler"
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="transit",
+                    mode="public_transit",
+                    mode_label="City / Town Bus",
+                    mode_label_kn="ನಗರ / ಪಟ್ಟಣ ಬಸ್",
+                    description=f"City bus from {orig_term} to {dest_term}",
+                    description_kn=f"{orig_term} ಇಂದ {dest_term} ವರೆಗೆ ನಗರ ಬಸ್",
+                    operator_name=op_name,
+                    origin_name=orig_term,
+                    destination_name=dest_term,
+                    distance_km=dist,
+                    duration_minutes=duration_mins + 15,
+                    cost_inr=group_inr,
+                    cost_status=fare_status,
+                    is_per_person=True,
+                )
+            ]
+        else:
+            per_person_inr = float(max(35.0, round(dist * 1.85, 0)))
+            group_inr = per_person_inr * travelers
+            fare_status = CostStatus.ESTIMATED
+            op_name = "KSRTC Regional Bus"
+            route_num = None
+            orig_term = f"{origin_name} Bus Stand"
+            dest_term = f"{dest_name} Bus Stand"
+            rec_reason = f"KSRTC regional state bus service ({dist:.1f} km, ~₹1.85/km ordinary/express rate)."
+            rec_reason_kn = f"ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಪ್ರಾದೇಶಿಕ ಸರ್ಕಾರಿ ಬಸ್ ಸೇವೆ ({dist:.1f} ಕಿ.ಮೀ)."
+            calc_basis = f"Standard KSRTC regional fare estimate ₹{per_person_inr:.0f} per traveler (~₹1.85/km)"
+            segments = [
+                TravelLegSegment(
+                    segment_order=1,
+                    segment_type="transit",
+                    mode="public_transit",
+                    mode_label="KSRTC Regional Bus",
+                    mode_label_kn="ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಪ್ರಾದೇಶಿಕ ಬಸ್",
+                    description=f"Regional state bus from {orig_term} to {dest_term}",
+                    description_kn=f"{orig_term} ಇಂದ {dest_term} ವರೆಗೆ ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಬಸ್",
+                    operator_name=op_name,
+                    origin_name=orig_term,
+                    destination_name=dest_term,
+                    distance_km=dist,
+                    duration_minutes=duration_mins + 25,
+                    cost_inr=group_inr,
+                    cost_status=fare_status,
+                    is_per_person=True,
+                )
+            ]
+    elif req_mode in ("driving_car", "car"):
+        rec_mode = "driving_car"
+        per_person_inr = car_est.per_person_min_inr
+        group_inr = car_est.total_cost_min_inr
+        fare_status = CostStatus.ESTIMATED
+        fuel_cost_inr = car_est.total_cost_min_inr
+        rec_reason = (
+            f"Convenient self-drive route ({dist:.1f} km, ~{duration_mins} mins) across Karnataka road network. "
+            f"Estimated fuel: ₹{fuel_cost_inr:.0f} (~{fuel_litres}L @ ₹{fuel_price:.2f}/L)."
+        )
+        rec_reason_kn = (
+            f"ಸ್ವಂತ ವಾಹನ ಪ್ರಯಾಣ ({dist:.1f} ಕಿ.ಮೀ, ಸುಮಾರು {duration_mins} ನಿಮಿಷಗಳು). "
+            f"ಅಂದಾಜು ಇಂಧನ ವೆಚ್ಚ: ₹{fuel_cost_inr:.0f} (~{fuel_litres} ಲೀಟರ್)."
+        )
+        calc_basis = car_est.calculation_basis
+        op_name = None
+        route_num = None
+        orig_term = None
+        dest_term = None
+        segments = [
+            TravelLegSegment(
+                segment_order=1,
+                segment_type="direct_drive",
+                mode="driving_car",
+                mode_label="Self-Drive Route",
+                mode_label_kn="ಸ್ವಂತ ವಾಹನ ಚಾಲನೆ",
+                description=f"Drive {dist:.1f} km via state road network",
+                description_kn=f"ರಸ್ತೆ ಜಾಲದ ಮೂಲಕ {dist:.1f} ಕಿ.ಮೀ ಚಾಲನೆ",
+                origin_name=origin_name,
+                destination_name=dest_name,
+                distance_km=dist,
+                duration_minutes=duration_mins,
+                cost_inr=fuel_cost_inr,
+                cost_status=CostStatus.ESTIMATED,
+                is_per_person=False,
+            )
+        ]
+    else:  # cab_taxi or default
+        rec_mode = "cab_taxi"
+        per_person_inr = cab_est.per_person_min_inr
+        group_inr = cab_est.total_cost_min_inr
+        fare_status = CostStatus.ESTIMATED
+        rec_reason = f"Point-to-point road taxi / auto transfer ({dist:.1f} km, ~{duration_mins} mins)."
+        rec_reason_kn = f"ನೇರ ಟ್ಯಾಕ್ಸಿ / ಆಟೋ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ, ಸುಮಾರು {duration_mins} ನಿಮಿಷಗಳು)."
+        calc_basis = cab_est.calculation_basis
+        op_name = "Local Taxi / Auto"
+        route_num = None
+        orig_term = None
+        dest_term = None
+        segments = [
+            TravelLegSegment(
+                segment_order=1,
+                segment_type="taxi",
+                mode="cab_taxi",
+                mode_label="Commercial Cab / Taxi",
+                mode_label_kn="ಟ್ಯಾಕ್ಸಿ / ಕ್ಯಾಬ್",
+                description=f"Point-to-point commercial taxi service ({dist:.1f} km)",
+                description_kn=f"ನೇರ ಟ್ಯಾಕ್ಸಿ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ)",
+                operator_name=op_name,
+                origin_name=origin_name,
+                destination_name=dest_name,
+                distance_km=dist,
+                duration_minutes=duration_mins,
+                cost_inr=group_inr,
+                cost_status=CostStatus.ESTIMATED,
+                is_per_person=False,
+            )
+        ]
+
+    return TravelLegDetails(
+        leg_id=f"leg-{dist:.1f}km",
+        origin_name=origin_name,
+        destination_name=dest_name,
+        distance_km=dist,
+        duration_minutes=duration_mins,
+        selected_mode=req_mode,
+        recommended_mode=rec_mode,
+        recommendation_reason=rec_reason,
+        recommendation_reason_kn=rec_reason_kn,
+        cost_per_person_inr=round(per_person_inr, 2) if per_person_inr is not None else None,
+        cost_group_inr=round(group_inr, 2) if group_inr is not None else None,
+        fare_status=fare_status,
+        calculation_basis=calc_basis,
+        operator_name=op_name,
+        route_service_number=route_num,
+        origin_terminal=orig_term,
+        destination_terminal=dest_term,
+        fuel_cost_inr=fuel_cost_inr,
+        fuel_litres=fuel_litres if req_mode in ("driving_car", "car") else None,
+        vehicles_count=car_est.vehicles_count,
+        toll_note=toll_note,
+        toll_note_kn=toll_note_kn,
+        parking_note=parking_note,
+        parking_note_kn=parking_note_kn,
+        walking_feasible=walking_feasible,
+        walking_notes=f"Pedestrian feasible ({dist:.1f} km)" if walking_feasible else f"Distance ({dist:.1f} km) is not recommended for walking",
+        walking_notes_kn=f"ಕಾಲ್ನಡಿಗೆಗೆ ಸೂಕ್ತ ({dist:.1f} ಕಿ.ಮೀ)" if walking_feasible else f"ದೂರವು ({dist:.1f} ಕಿ.ಮೀ) ಕಾಲ್ನಡಿಗೆಗೆ ಸೂಕ್ತವಲ್ಲ",
+        source_reference="Karnataka Transit Network / Transport Cost Calculator",
+        segments=segments,
+        alternatives=alternatives,
+        warnings=warnings,
+    )
+
+
 class DeterministicScheduler:
     """Builds and validates structured day-by-day travel timelines."""
 
@@ -87,9 +745,33 @@ class DeterministicScheduler:
             "Overnight accommodation costs assume standard 2-person occupancy per room.",
         ]
 
+        # Deduplicate input destinations by canonical ID / slug
+        repo = get_destination_repository()
+        canonical_id_map = getattr(repo, "CANONICAL_ID_MAPPINGS", {})
+        canonical_slug_map = getattr(repo, "CANONICAL_SLUG_MAPPINGS", {})
+        deduped_destinations: list[Any] = []
+        seen_keys: set[str] = set()
+
+        for d in destinations:
+            raw_id = str(getattr(d, "id", "") or getattr(d, "destination_id", "") or "")
+            raw_slug = str(getattr(d, "slug", "") or "")
+            canon_id = canonical_id_map.get(raw_id, raw_id)
+            canon_slug = canonical_slug_map.get(raw_slug, raw_slug)
+            key = canon_id or canon_slug
+
+            if key and key in seen_keys:
+                name = getattr(d, "name_en", raw_slug or raw_id)
+                schedule_warnings.append(
+                    f"Consolidated duplicate destination '{name}' into single canonical itinerary stop."
+                )
+                continue
+            if key:
+                seen_keys.add(key)
+            deduped_destinations.append(d)
+
         # Group input destinations by day number
         dest_by_day: dict[int, list[Any]] = {}
-        for d in destinations:
+        for d in deduped_destinations:
             day_num = getattr(d, "day_number", 1)
             dest_by_day.setdefault(day_num, []).append(d)
 
@@ -334,6 +1016,19 @@ class DeterministicScheduler:
 
                 stop_end = current_time + timedelta(minutes=visit_duration)
 
+                travel_leg_data = None
+                if dist_km is not None and transit_mins is not None and prev_coords and coords:
+                    prev_name = stops[-1].name if stops else start_location_name
+                    travel_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=dest_name,
+                        dist_km=dist_km,
+                        duration_mins=transit_mins,
+                        prev_coords=prev_coords,
+                        dest_coords=coords,
+                        request=request,
+                    )
+
                 stops.append(
                     ItineraryStop(
                         stop_id=f"stop-d{day_num}-{dest_slug}",
@@ -348,6 +1043,7 @@ class DeterministicScheduler:
                         distance_from_prev_km=dist_km,
                         transit_from_prev_minutes=transit_mins,
                         transit_method=transit_method,
+                        travel_leg=travel_leg_data,
                         cost_min_inr=stop_cost_min,
                         cost_max_inr=stop_cost_max,
                         currency="INR",
@@ -462,6 +1158,19 @@ class DeterministicScheduler:
                         else CostStatus.UNKNOWN
                     )
                 )
+                event_leg_data = None
+                if event_dist_km is not None and event_transit_mins is not None and prev_coords and event_coords:
+                    prev_name = stops[-1].name if stops else start_location_name
+                    event_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=event_name,
+                        dist_km=event_dist_km,
+                        duration_mins=event_transit_mins,
+                        prev_coords=prev_coords,
+                        dest_coords=event_coords,
+                        request=request,
+                    )
+
                 stops.append(
                     ItineraryStop(
                         stop_id=f"stop-d{day_num}-event-{matched_event.event_id}",
@@ -476,6 +1185,7 @@ class DeterministicScheduler:
                         distance_from_prev_km=event_dist_km,
                         transit_from_prev_minutes=event_transit_mins,
                         transit_method=event_transit_method,
+                        travel_leg=event_leg_data,
                         cost_min_inr=event_cost_min,
                         cost_max_inr=event_cost_max,
                         currency="INR",
@@ -663,6 +1373,19 @@ class DeterministicScheduler:
                     day_driving_km += stay_dist_km
                     current_time += timedelta(minutes=stay_transit_mins)
 
+                stay_leg_data = None
+                if stay_dist_km is not None and stay_transit_mins is not None and prev_coords and stay_coords:
+                    prev_name = stops[-1].name if stops else start_location_name
+                    stay_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=stay_name,
+                        dist_km=stay_dist_km,
+                        duration_mins=stay_transit_mins,
+                        prev_coords=prev_coords,
+                        dest_coords=stay_coords,
+                        request=request,
+                    )
+
                 stops.append(
                     ItineraryStop(
                         stop_id=f"stop-d{day_num}-stay",
@@ -677,6 +1400,7 @@ class DeterministicScheduler:
                         distance_from_prev_km=stay_dist_km,
                         transit_from_prev_minutes=stay_transit_mins,
                         transit_method=stay_transit_method,
+                        travel_leg=stay_leg_data,
                         cost_min_inr=stay_cost_min,
                         cost_max_inr=stay_cost_max,
                         currency="INR",
@@ -707,6 +1431,16 @@ class DeterministicScheduler:
                         if request.language == LanguageCode.EN
                         else f"{request.origin_label} ಗೆ ವಾಪಸ್ ಪ್ರಯಾಣ"
                     )
+                    prev_name = stops[-1].name if stops else start_location_name
+                    ret_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=request.origin_label,
+                        dist_km=ret_est.estimated_road_distance_km,
+                        duration_mins=ret_est.duration_minutes,
+                        prev_coords=prev_coords,
+                        dest_coords=origin_coords,
+                        request=request,
+                    )
                     stops.append(
                         ItineraryStop(
                             stop_id=f"stop-d{day_num}-return",
@@ -728,6 +1462,7 @@ class DeterministicScheduler:
                             distance_from_prev_km=round(ret_est.estimated_road_distance_km, 1),
                             transit_from_prev_minutes=ret_est.duration_minutes,
                             transit_method="terrain_adjusted_estimate",
+                            travel_leg=ret_leg_data,
                             cost_min_inr=0.0,
                             cost_max_inr=0.0,
                             currency="INR",
@@ -1001,6 +1736,19 @@ class DeterministicScheduler:
                 stop_end = current_time + timedelta(minutes=visit_duration)
 
                 # Recomputed or preserved attraction stop
+                attr_leg_data = None
+                if dist_km is not None and transit_mins is not None and prev_coords and coords:
+                    prev_name = stops[-1].name if stops else start_location_name
+                    attr_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=attr.name,
+                        dist_km=dist_km,
+                        duration_mins=transit_mins,
+                        prev_coords=prev_coords,
+                        dest_coords=coords,
+                        request=request,
+                    )
+
                 rescheduled_attr = ItineraryStop(
                     stop_id=attr.stop_id,
                     destination_id=attr.destination_id,
@@ -1014,6 +1762,7 @@ class DeterministicScheduler:
                     distance_from_prev_km=dist_km,
                     transit_from_prev_minutes=transit_mins,
                     transit_method=transit_method,
+                    travel_leg=attr_leg_data,
                     cost_min_inr=attr.cost_min_inr,
                     cost_max_inr=attr.cost_max_inr,
                     currency=attr.currency,
@@ -1266,6 +2015,19 @@ class DeterministicScheduler:
                     day_driving_km += stay_dist_km
                     current_time += timedelta(minutes=stay_transit_mins)
 
+                stay_leg_data = None
+                if stay_dist_km is not None and stay_transit_mins is not None and prev_coords and stay_coords:
+                    prev_name = stops[-1].name if stops else start_location_name
+                    stay_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=stay_name,
+                        dist_km=stay_dist_km,
+                        duration_mins=stay_transit_mins,
+                        prev_coords=prev_coords,
+                        dest_coords=stay_coords,
+                        request=request,
+                    )
+
                 stops.append(
                     ItineraryStop(
                         stop_id=f"stop-d{day_num}-stay",
@@ -1280,6 +2042,7 @@ class DeterministicScheduler:
                         distance_from_prev_km=stay_dist_km,
                         transit_from_prev_minutes=stay_transit_mins,
                         transit_method=stay_transit_method,
+                        travel_leg=stay_leg_data,
                         cost_min_inr=stay_cost_min,
                         cost_max_inr=stay_cost_max,
                         currency="INR",
@@ -1308,6 +2071,16 @@ class DeterministicScheduler:
                         if request.language == LanguageCode.EN
                         else f"{request.origin_label} ಗೆ ವಾಪಸ್ ಪ್ರಯಾಣ"
                     )
+                    prev_name = stops[-1].name if stops else start_location_name
+                    ret_leg_data = build_travel_leg_details(
+                        origin_name=prev_name,
+                        dest_name=request.origin_label,
+                        dist_km=ret_est.estimated_road_distance_km,
+                        duration_mins=ret_est.duration_minutes,
+                        prev_coords=prev_coords,
+                        dest_coords=origin_coords,
+                        request=request,
+                    )
                     stops.append(
                         ItineraryStop(
                             stop_id=f"stop-d{day_num}-return",
@@ -1329,6 +2102,7 @@ class DeterministicScheduler:
                             distance_from_prev_km=round(ret_est.estimated_road_distance_km, 1),
                             transit_from_prev_minutes=ret_est.duration_minutes,
                             transit_method="terrain_adjusted_estimate",
+                            travel_leg=ret_leg_data,
                             cost_min_inr=0.0,
                             cost_max_inr=0.0,
                             currency="INR",

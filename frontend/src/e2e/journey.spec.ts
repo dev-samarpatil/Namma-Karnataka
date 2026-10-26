@@ -139,4 +139,72 @@ test.describe('Namma Karnataka — Comprehensive E2E Product Verification', () =
     const mobileBottomNav = page.locator('.mobile-bottom-nav');
     await expect(mobileBottomNav).toBeVisible();
   });
+
+  test('6. Defect Verifications: Numeric inputs, mixed mode propagation, compact card, authentic photos & source link', async ({ page }) => {
+    await page.goto('/');
+
+    // Verify destination card image renders authentic photo via media proxy
+    await expect(page.getByTestId('destinations-grid')).toBeVisible({ timeout: 35000 });
+    const firstCardImg = page.locator('.destination-card img').first();
+    await expect(firstCardImg).toBeVisible();
+    const imgSrc = await firstCardImg.getAttribute('src');
+    expect(imgSrc).toContain('/destinations/media/proxy?url=');
+
+    // Click on Abbey Falls card to open modal
+    const abbeyCard = page.locator('[data-testid="destination-card-abbey-falls-madikeri"]');
+    if (await abbeyCard.isVisible()) {
+      await abbeyCard.locator('[data-testid^="view-details-"]').click();
+      const modal = page.getByTestId('destination-modal-overlay');
+      await expect(modal).toBeVisible();
+
+      // Check hero image in modal
+      const modalHeroImg = modal.locator('.modal-hero-banner img');
+      await expect(modalHeroImg).toBeVisible();
+
+      // Check source link
+      const sourceLink = modal.locator('a[href*="commons.wikimedia.org"]');
+      await expect(sourceLink).toBeVisible();
+
+      // Close modal
+      await page.getByTestId('modal-close-button').click();
+    }
+
+    // Go to Plan Trip tab
+    const planTab = page.locator('[data-testid="nav-tab-planner"], [data-testid="mobile-nav-tab-planner"]').locator('visible=true').first();
+    await planTab.click();
+
+    // Verify numeric inputs for duration and travelers
+    const durationInput = page.getByTestId('planner-duration-input');
+    const travelersInput = page.getByTestId('planner-travelers-input');
+    await expect(durationInput).toBeVisible();
+    await expect(travelersInput).toBeVisible();
+
+    // Type 3 days and 4 travelers
+    await durationInput.fill('3');
+    await travelersInput.fill('4');
+
+    // Select mixed transport mode
+    const modeSelect = page.getByTestId('planner-travel-mode');
+    await modeSelect.selectOption('mixed');
+
+    // Submit plan
+    await page.getByTestId('submit-plan-button').click();
+
+    // Wait for Itinerary to load
+    const timeline = page.locator('[data-testid="itinerary-timeline"], [data-testid="day-block-1"], .timeline-container').first();
+    await expect(timeline).toBeVisible({ timeout: 45000 });
+
+    // Verify compact travel card exists and recommends Mixed (NOT Private Car!)
+    const travelCard = page.getByTestId('travel-leg-card').first();
+    await expect(travelCard).toBeVisible();
+    await expect(travelCard).toContainText(/Mixed/i);
+    await expect(travelCard).not.toContainText(/Fare unavailable/i);
+
+    // Expand details
+    const detailsToggle = travelCard.locator('button', { hasText: /View travel details|ಮಾರ್ಗ ವಿವರ/i });
+    if (await detailsToggle.isVisible()) {
+      await detailsToggle.click();
+      await expect(travelCard.locator('.travel-leg-segment-flow')).toBeVisible();
+    }
+  });
 });

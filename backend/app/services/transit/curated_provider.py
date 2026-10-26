@@ -106,9 +106,16 @@ class CuratedTransitProvider(TransitProvider):
         departure_time: str = "08:00",
         max_transfers: int = 2,
     ) -> list[TransitJourneyOption]:
-        # Expand catchment radius to 45km to capture regional bus/rail hubs in Karnataka
-        origin_stops = self.search_nearby_stops(origin_lat, origin_lon, radius_km=45.0, limit=5)
-        dest_stops = self.search_nearby_stops(dest_lat, dest_lon, radius_km=45.0, limit=5)
+        direct_dist_km = _haversine_km(origin_lat, origin_lon, dest_lat, dest_lon)
+        # Short intra-city journeys (< 15 km) should be served by local transit / city buses / auto-rickshaws,
+        # NOT by routing through intercity regional express terminals or circular hub transfers.
+        if direct_dist_km < 15.0:
+            return []
+
+        # Catchment radius scaled proportionally to journey distance
+        catchment_km = min(40.0, max(10.0, direct_dist_km * 0.40))
+        origin_stops = self.search_nearby_stops(origin_lat, origin_lon, radius_km=catchment_km, limit=5)
+        dest_stops = self.search_nearby_stops(dest_lat, dest_lon, radius_km=catchment_km, limit=5)
 
         if not origin_stops or not dest_stops:
             return []
@@ -129,8 +136,13 @@ class CuratedTransitProvider(TransitProvider):
             is_reverse = dest_id in origin_stop_ids and orig_id in dest_stop_ids
 
             if is_forward or is_reverse:
+                # Corridor must be geographically compatible with direct journey
+                if r["distance_km"] > direct_dist_km * 2.5:
+                    continue
                 o_stop = origin_stop_ids[orig_id if is_forward else dest_id]
                 d_stop = dest_stop_ids[dest_id if is_forward else orig_id]
+                if o_stop.stop_id == d_stop.stop_id:
+                    continue
 
                 # Select next scheduled departure at or after departure_time
                 deps = r.get("scheduled_departures", ["08:00"])
@@ -219,6 +231,10 @@ class CuratedTransitProvider(TransitProvider):
                     )
 
                     if not (hub_stop1 and hub_stop2 and o_stop and d_stop):
+                        continue
+                    if o_stop.stop_id == d_stop.stop_id:
+                        continue
+                    if (r1["distance_km"] + r2["distance_km"]) > direct_dist_km * 2.5:
                         continue
 
                     dep1 = self._find_next_departure(

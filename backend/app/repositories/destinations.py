@@ -152,11 +152,22 @@ class InMemoryDestinationRepository:
             self._by_id[record.id] = record
             self._by_slug[record.slug] = record
 
+    CANONICAL_ID_MAPPINGS: dict[str, str] = {
+        "22222222-2222-4222-8222-222222222223": "11111111-1111-4111-8111-111111111121",
+        "22222222-2222-4222-8222-222222222216": "11111111-1111-4111-8111-111111111134",
+    }
+    CANONICAL_SLUG_MAPPINGS: dict[str, str] = {
+        "murudeshwara-temple-beach": "murudeshwar-temple-beach",
+        "belagavi-fort": "belagavi-fort-kamal-basti",
+    }
+
     def get_by_id(self, destination_id: str) -> DestinationRead | None:
-        return self._by_id.get(destination_id)
+        canonical_id = self.CANONICAL_ID_MAPPINGS.get(destination_id, destination_id)
+        return self._by_id.get(canonical_id)
 
     def get_by_slug(self, slug: str) -> DestinationRead | None:
-        return self._by_slug.get(slug)
+        canonical_slug = self.CANONICAL_SLUG_MAPPINGS.get(slug, slug)
+        return self._by_slug.get(canonical_slug)
 
     def list_destinations(
         self,
@@ -212,7 +223,8 @@ class InMemoryDestinationRepository:
                     (query in t.name.lower() or (t.summary and query in t.summary.lower()))
                     for t in dest.translations
                 )
-                if not (matches_slug or matches_trans):
+                matches_aliases = any(query in a.lower() for a in getattr(dest, "aliases", []))
+                if not (matches_slug or matches_trans or matches_aliases):
                     continue
 
             filtered.append(dest)
@@ -300,10 +312,13 @@ class SupabaseDestinationRepository:
         self._schema_unmigrated = False
 
     def get_by_id(self, destination_id: str) -> DestinationRead | None:
+        canonical_id = InMemoryDestinationRepository.CANONICAL_ID_MAPPINGS.get(
+            destination_id, destination_id
+        )
         if self._is_schema_unmigrated():
-            return self._fallback_repo.get_by_id(destination_id)
+            return self._fallback_repo.get_by_id(canonical_id)
         try:
-            uuid.UUID(str(destination_id))
+            uuid.UUID(str(canonical_id))
         except (ValueError, AttributeError):
             return None
         try:
@@ -313,7 +328,7 @@ class SupabaseDestinationRepository:
                     f"{self._base_url}/rest/v1/destinations",
                     headers=self._headers,
                     params={
-                        "id": f"eq.{destination_id}",
+                        "id": f"eq.{canonical_id}",
                         "select": select_fields,
                     },
                 )
@@ -323,7 +338,7 @@ class SupabaseDestinationRepository:
                         "caching unmigrated state for 60s and using in-memory dataset."
                     )
                     self._mark_schema_unmigrated()
-                    return self._fallback_repo.get_by_id(destination_id)
+                    return self._fallback_repo.get_by_id(canonical_id)
                 if res.status_code != 200:
                     raise AppError(
                         code="DATABASE_ERROR",
@@ -340,11 +355,12 @@ class SupabaseDestinationRepository:
                 "Supabase destination query failed (%s); falling back to in-memory catalogue.",
                 exc,
             )
-            return self._fallback_repo.get_by_id(destination_id)
+            return self._fallback_repo.get_by_id(canonical_id)
 
     def get_by_slug(self, slug: str) -> DestinationRead | None:
+        canonical_slug = InMemoryDestinationRepository.CANONICAL_SLUG_MAPPINGS.get(slug, slug)
         if self._is_schema_unmigrated():
-            return self._fallback_repo.get_by_slug(slug)
+            return self._fallback_repo.get_by_slug(canonical_slug)
         try:
             with httpx.Client(timeout=10.0) as client:
                 select_fields = "*,destination_translations(*),destination_sources(*),districts(*)"
@@ -352,7 +368,7 @@ class SupabaseDestinationRepository:
                     f"{self._base_url}/rest/v1/destinations",
                     headers=self._headers,
                     params={
-                        "slug": f"eq.{slug}",
+                        "slug": f"eq.{canonical_slug}",
                         "select": select_fields,
                     },
                 )
@@ -362,7 +378,7 @@ class SupabaseDestinationRepository:
                         "caching unmigrated state for 60s and using in-memory dataset."
                     )
                     self._mark_schema_unmigrated()
-                    return self._fallback_repo.get_by_slug(slug)
+                    return self._fallback_repo.get_by_slug(canonical_slug)
                 if res.status_code != 200:
                     raise AppError(
                         code="DATABASE_ERROR",
@@ -379,7 +395,7 @@ class SupabaseDestinationRepository:
                 "Supabase destination query failed (%s); falling back to in-memory catalogue.",
                 exc,
             )
-            return self._fallback_repo.get_by_slug(slug)
+            return self._fallback_repo.get_by_slug(canonical_slug)
 
     def list_destinations(
         self,
@@ -395,12 +411,14 @@ class SupabaseDestinationRepository:
         ):
             return self._fallback_repo.list_destinations(params, published_only)
         try:
+            deprecated_ids = ",".join(InMemoryDestinationRepository.CANONICAL_ID_MAPPINGS.keys())
             query_params: dict[str, str] = {
                 "select": "*,destination_translations(*),destination_sources(*),districts(*)",
                 "order": "slug.asc,id.asc",
                 "limit": str(params.limit),
                 "offset": str(params.offset),
                 "active": "eq.true",
+                "id": f"not.in.({deprecated_ids})",
             }
             if published_only:
                 query_params["content_status"] = "eq.published"
@@ -443,7 +461,14 @@ class SupabaseDestinationRepository:
                         total = int(total_str)
 
                 rows = res.json()
-                items = [self._map_row(r) for r in rows]
+                items: list[DestinationRead] = []
+                for r in rows:
+                    if (
+                        r.get("id") in InMemoryDestinationRepository.CANONICAL_ID_MAPPINGS
+                        or r.get("slug") in InMemoryDestinationRepository.CANONICAL_SLUG_MAPPINGS
+                    ):
+                        continue
+                    items.append(self._map_row(r))
                 return items, (total or len(items))
         except httpx.RequestError as exc:
             logger.warning(
@@ -522,12 +547,19 @@ class SupabaseDestinationRepository:
                 name_kn=district_data["name_kn"],
             )
 
-        if not row_copy.get("media"):
-            slug_val = row_copy.get("slug", "")
-            fb_dest = self._fallback_repo.get_by_slug(slug_val)
-            if fb_dest and fb_dest.media:
+        slug_val = row_copy.get("slug", "")
+        fb_dest = self._fallback_repo.get_by_slug(slug_val)
+        if fb_dest:
+            if not row_copy.get("media") and fb_dest.media:
                 row_copy["media"] = [m.model_dump() for m in fb_dest.media]
+            if fb_dest.primary_image_url is not None:
                 row_copy["primary_image_url"] = fb_dest.primary_image_url
+            elif slug_val == "kondajji-lake":
+                row_copy["primary_image_url"] = None
+            if fb_dest.aliases and not row_copy.get("aliases"):
+                row_copy["aliases"] = fb_dest.aliases
+            if fb_dest.verification_status:
+                row_copy["verification_status"] = fb_dest.verification_status
 
         return DestinationRead.model_validate(row_copy)
 

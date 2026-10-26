@@ -105,6 +105,7 @@ export interface DestinationMedia {
   license_type: string;
   attribution: string;
   is_primary: boolean;
+  verification_status?: VerificationStatus | string;
 }
 
 export interface DestinationRead {
@@ -136,6 +137,7 @@ export interface DestinationRead {
   sources?: DestinationSource[];
   media?: DestinationMedia[];
   primary_image_url?: string;
+  aliases?: string[];
 }
 
 export interface DestinationListResponse {
@@ -217,6 +219,72 @@ export interface RecommendedDestination {
   sources?: DestinationSource[];
 }
 
+export interface TravelLegAlternative {
+  mode: string;
+  mode_label: string;
+  mode_label_kn?: string | null;
+  duration_minutes: number;
+  cost_inr?: number | null;
+  cost_status: CostStatus;
+  notes?: string | null;
+  notes_kn?: string | null;
+}
+
+export interface TravelLegSegment {
+  segment_order: number;
+  segment_type: string;
+  mode: string;
+  mode_label: string;
+  mode_label_kn?: string | null;
+  description: string;
+  description_kn?: string | null;
+  operator_name?: string | null;
+  route_service_number?: string | null;
+  origin_name?: string | null;
+  destination_name?: string | null;
+  distance_km?: number | null;
+  duration_minutes?: number | null;
+  cost_inr?: number | null;
+  cost_status: CostStatus;
+  is_per_person: boolean;
+}
+
+export interface TravelLegDetails {
+  leg_id?: string | null;
+  origin_name?: string | null;
+  destination_name?: string | null;
+  distance_km?: number | null;
+  duration_minutes?: number | null;
+  selected_mode?: string;
+  recommended_mode: string;
+  recommendation_reason?: string | null;
+  recommendation_reason_kn?: string | null;
+  cost_per_person_inr?: number | null;
+  cost_group_inr?: number | null;
+  fare_status: CostStatus;
+  calculation_basis?: string | null;
+  operator_name?: string | null;
+  route_service_number?: string | null;
+  origin_terminal?: string | null;
+  destination_terminal?: string | null;
+  fuel_cost_inr?: number | null;
+  fuel_litres?: number | null;
+  vehicles_count?: number;
+  toll_note?: string | null;
+  toll_note_kn?: string | null;
+  parking_note?: string | null;
+  parking_note_kn?: string | null;
+  walking_feasible?: boolean;
+  walking_notes?: string | null;
+  walking_notes_kn?: string | null;
+  first_mile_required?: boolean;
+  last_mile_required?: boolean;
+  source_reference?: string | null;
+  segments?: TravelLegSegment[];
+  alternatives?: TravelLegAlternative[];
+  warnings?: string[];
+}
+
 export interface ItineraryStop {
   stop_id: string;
   destination_id?: string | null;
@@ -230,6 +298,7 @@ export interface ItineraryStop {
   distance_from_prev_km?: number | null;
   transit_from_prev_minutes?: number | null;
   transit_method?: string | null;
+  travel_leg?: TravelLegDetails | null;
   cost_min_inr?: number | null;
   cost_max_inr?: number | null;
   currency: string;

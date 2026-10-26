@@ -73,9 +73,15 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
 
   // Section 1: Trip Basics
   const [origin, setOrigin] = useState<string>('Bengaluru');
-  const [duration, setDuration] = useState<number>(2);
-  const [travelers, setTravelers] = useState<number>(2);
+  const [durationInput, setDurationInput] = useState<string>('2');
+  const [travelersInput, setTravelersInput] = useState<string>('2');
   const [pace, setPace] = useState<'relaxed' | 'balanced' | 'packed'>('balanced');
+
+  const duration = parseInt(durationInput, 10);
+  const isDurationValid = !isNaN(duration) && duration >= 1 && duration <= 7 && Number.isInteger(Number(durationInput));
+
+  const travelers = parseInt(travelersInput, 10);
+  const isTravelersValid = !isNaN(travelers) && travelers >= 1 && travelers <= 20 && Number.isInteger(Number(travelersInput));
 
   // Section 2: Dedicated Budget
   const [enableBudgetLimit, setEnableBudgetLimit] = useState<boolean>(false);
@@ -174,8 +180,13 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
       return;
     }
 
-    if (duration < 1 || duration > 7) {
-      setValidationError(language === 'kn' ? 'ಪ್ರವಾಸದ ದಿನಗಳು ೧ ರಿಂದ ೭ ದಿನಗಳ ನಡುವೆ ಇರಬೇಕು.' : 'Trip duration must be between 1 and 7 days.');
+    if (!isDurationValid) {
+      setValidationError(t('durationError'));
+      return;
+    }
+
+    if (!isTravelersValid) {
+      setValidationError(t('travelersError'));
       return;
     }
 
@@ -283,17 +294,73 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
             </div>
 
             <div className="form-field">
-              <label className="form-label">
-                📅 {t('durationLabel')}: <strong>{duration} {language === 'kn' ? 'ದಿನಗಳು' : duration === 1 ? 'Day' : 'Days'}</strong>
+              <label htmlFor="planner-duration-input" className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>📅 {t('durationLabel')} *</span>
+                <span style={{ fontSize: '0.78rem', color: isDurationValid ? '#94a3b8' : '#f87171' }}>
+                  {isDurationValid ? `${duration} ${language === 'kn' ? 'ದಿನಗಳು' : duration === 1 ? 'Day' : 'Days'}` : t('durationHelp')}
+                </span>
               </label>
-              <div className="duration-selector">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  aria-label="Decrease duration"
+                  onClick={() => {
+                    const next = Math.max(1, (parseInt(durationInput, 10) || 2) - 1);
+                    setDurationInput(String(next));
+                    setValidationError(null);
+                  }}
+                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  −
+                </button>
+                <input
+                  id="planner-duration-input"
+                  type="number"
+                  min={1}
+                  max={7}
+                  step={1}
+                  value={durationInput}
+                  onChange={(e) => {
+                    setDurationInput(e.target.value);
+                    setValidationError(null);
+                  }}
+                  className="form-input"
+                  data-testid="planner-duration-input"
+                  aria-invalid={!isDurationValid}
+                  aria-describedby="planner-duration-hint"
+                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1rem', borderColor: !isDurationValid && durationInput !== '' ? '#ef4444' : undefined }}
+                />
+                <button
+                  type="button"
+                  aria-label="Increase duration"
+                  onClick={() => {
+                    const next = Math.min(7, (parseInt(durationInput, 10) || 1) + 1);
+                    setDurationInput(String(next));
+                    setValidationError(null);
+                  }}
+                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  +
+                </button>
+              </div>
+              {!isDurationValid && durationInput !== '' && (
+                <div id="planner-duration-hint" style={{ color: '#f87171', fontSize: '0.78rem', marginTop: '4px' }} role="alert">
+                  ⚠️ {t('durationError')}
+                </div>
+              )}
+              {/* Quick Presets */}
+              <div className="duration-selector" style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
                 {[1, 2, 3, 4, 5, 7].map((days) => (
                   <button
                     key={days}
                     type="button"
                     className={`btn-duration ${duration === days ? 'active' : ''}`}
-                    onClick={() => setDuration(days)}
+                    onClick={() => {
+                      setDurationInput(String(days));
+                      setValidationError(null);
+                    }}
                     data-testid={`duration-btn-${days}`}
+                    style={{ flex: 1, padding: '4px 0', fontSize: '0.8rem' }}
                   >
                     {days}d
                   </button>
@@ -304,17 +371,73 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
 
           <div className="form-row two-col" style={{ marginTop: '16px' }}>
             <div className="form-field">
-              <label className="form-label">
-                👥 {language === 'kn' ? 'ಪ್ರಯಾಣಿಕರ ಸಂಖ್ಯೆ' : 'Travelers Count'}: <strong>{travelers}</strong>
+              <label htmlFor="planner-travelers-input" className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>👥 {t('travelersLabel')} *</span>
+                <span style={{ fontSize: '0.78rem', color: isTravelersValid ? '#94a3b8' : '#f87171' }}>
+                  {isTravelersValid ? `${travelers} ${language === 'kn' ? 'ಜನರು' : travelers === 1 ? 'Traveler' : 'Travelers'}` : t('travelersHelp')}
+                </span>
               </label>
-              <div className="duration-selector">
-                {[1, 2, 4, 6, 8].map((count) => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  aria-label="Decrease travelers"
+                  onClick={() => {
+                    const next = Math.max(1, (parseInt(travelersInput, 10) || 2) - 1);
+                    setTravelersInput(String(next));
+                    setValidationError(null);
+                  }}
+                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  −
+                </button>
+                <input
+                  id="planner-travelers-input"
+                  type="number"
+                  min={1}
+                  max={20}
+                  step={1}
+                  value={travelersInput}
+                  onChange={(e) => {
+                    setTravelersInput(e.target.value);
+                    setValidationError(null);
+                  }}
+                  className="form-input"
+                  data-testid="planner-travelers-input"
+                  aria-invalid={!isTravelersValid}
+                  aria-describedby="planner-travelers-hint"
+                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1rem', borderColor: !isTravelersValid && travelersInput !== '' ? '#ef4444' : undefined }}
+                />
+                <button
+                  type="button"
+                  aria-label="Increase travelers"
+                  onClick={() => {
+                    const next = Math.min(20, (parseInt(travelersInput, 10) || 1) + 1);
+                    setTravelersInput(String(next));
+                    setValidationError(null);
+                  }}
+                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  +
+                </button>
+              </div>
+              {!isTravelersValid && travelersInput !== '' && (
+                <div id="planner-travelers-hint" style={{ color: '#f87171', fontSize: '0.78rem', marginTop: '4px' }} role="alert">
+                  ⚠️ {t('travelersError')}
+                </div>
+              )}
+              {/* Quick Presets */}
+              <div className="duration-selector" style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
+                {[1, 2, 4, 6, 8, 12].map((count) => (
                   <button
                     key={count}
                     type="button"
                     className={`btn-duration ${travelers === count ? 'active' : ''}`}
-                    onClick={() => setTravelers(count)}
+                    onClick={() => {
+                      setTravelersInput(String(count));
+                      setValidationError(null);
+                    }}
                     data-testid={`travelers-btn-${count}`}
+                    style={{ flex: 1, padding: '4px 0', fontSize: '0.8rem' }}
                   >
                     {count}p
                   </button>
@@ -709,7 +832,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
         {/* SECTION 7: Generation Summary & Submit */}
         <div className="form-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#94a3b8', background: '#0f172a', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
-            <span><strong>Trip:</strong> {duration}d from {origin} ({travelers}p)</span>
+            <span><strong>Trip:</strong> {isDurationValid ? `${duration}d` : '—'} from {origin} ({isTravelersValid ? `${travelers}p` : '—'})</span>
             <span>•</span>
             <span><strong>Transport:</strong> {travelMode.replace('_', ' ')}</span>
             <span>•</span>
@@ -723,7 +846,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
           <button
             type="submit"
             className="btn-submit-plan"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isDurationValid || !isTravelersValid}
             data-testid="submit-plan-button"
             style={{ width: '100%', padding: '14px', fontSize: '1rem', fontWeight: 700 }}
           >

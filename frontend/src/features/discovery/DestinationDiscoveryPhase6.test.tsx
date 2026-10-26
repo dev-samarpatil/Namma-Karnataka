@@ -129,7 +129,7 @@ describe('DestinationDiscovery — Phase 6 Advanced Discovery & Filters', () => 
 
     const palaceImg = screen.getByAltText('Mysuru Palace grand facade with illumination');
     expect(palaceImg).toBeInTheDocument();
-    expect(palaceImg).toHaveAttribute('src', 'https://upload.wikimedia.org/wikipedia/commons/mysore_palace_thumb.jpg');
+    expect(palaceImg.getAttribute('src')).toContain('upload.wikimedia.org%2Fwikipedia%2Fcommons%2Fmysore_palace_thumb.jpg');
   });
 
   it('opens rich detail modal with gallery and nearby transit when destination card is clicked', async () => {

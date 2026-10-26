@@ -102,13 +102,11 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
     };
   }, []);
 
-  // 2. Render Destination Markers
+  // 2. Render Destination Markers with Zoom-Aware Clustering & Rich Popups
   useEffect(() => {
     const map = mapInstanceRef.current;
     const layer = markersLayerRef.current;
     if (!map || !layer) return;
-
-    layer.clearLayers();
 
     const validDestinations = destinations.filter(
       (d) => d.coordinates && typeof d.coordinates.lat === 'number' && typeof d.coordinates.lon === 'number'
@@ -116,52 +114,176 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
 
     const latLngs: L.LatLngExpression[] = [];
 
-    validDestinations.forEach((dest) => {
-      if (!dest.coordinates) return;
-      const isSelected = dest.id === activeDestinationId;
-      const categoryIcon = CATEGORY_ICONS[dest.category] || '📍';
-      const name = language === 'kn' && dest.name_kn ? dest.name_kn : dest.name_en;
-      const lat = dest.coordinates.lat;
-      const lon = dest.coordinates.lon;
+    const renderMarkers = () => {
+      layer.clearLayers();
+      const currentZoom = typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM;
 
-      // Accessible HTML pin marker
-      const pinHtml = `
-        <div class="custom-leaflet-marker ${isSelected ? 'selected' : ''}" role="button" aria-label="${name}">
-          <span class="marker-emoji">${categoryIcon}</span>
-          <span class="marker-caption">${name}</span>
-        </div>
-      `;
+      // Group by district when zoomed out to state overview (zoom <= 7)
+      if (currentZoom <= 7 && !selectedDistrict && !activeDestinationId) {
+        const districtGroups: Record<string, DestinationRead[]> = {};
+        validDestinations.forEach((d) => {
+          const dCode = d.district?.code || d.district_code || 'KA';
+          if (!districtGroups[dCode]) districtGroups[dCode] = [];
+          districtGroups[dCode].push(d);
+        });
 
-      const icon = L.divIcon({
-        html: pinHtml,
-        className: 'custom-div-icon',
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
+        Object.entries(districtGroups).forEach(([code, group]) => {
+          if (group.length === 0) return;
+          const avgLat = group.reduce((sum, d) => sum + (d.coordinates?.lat || 0), 0) / group.length;
+          const avgLon = group.reduce((sum, d) => sum + (d.coordinates?.lon || 0), 0) / group.length;
+          const first = group[0];
+          const distName =
+            language === 'kn' && first.district?.name_kn
+              ? first.district.name_kn
+              : first.district?.name_en || code;
+
+          const clusterHtml = `
+            <div class="map-district-cluster" role="button" aria-label="${distName}: ${group.length} destinations">
+              <span class="cluster-count">${group.length}</span>
+              <span class="cluster-label">${distName}</span>
+            </div>
+          `;
+
+          const clusterIcon = L.divIcon({
+            html: clusterHtml,
+            className: 'custom-cluster-icon',
+            iconSize: [120, 32],
+            iconAnchor: [60, 16],
+          });
+
+          const clusterMarker = L.marker([avgLat, avgLon], { icon: clusterIcon });
+          clusterMarker.on('click', () => {
+            if (typeof map.setView === 'function') {
+              map.setView([avgLat, avgLon], 9, { animate: true });
+            }
+          });
+          clusterMarker.addTo(layer);
+        });
+        return;
+      }
+
+      // Detailed pins for zoom >= 8 or active selection
+      validDestinations.forEach((dest) => {
+        if (!dest.coordinates) return;
+        const isSelected = dest.id === activeDestinationId;
+        const categoryIcon = CATEGORY_ICONS[dest.category] || '📍';
+        const name = language === 'kn' && dest.name_kn ? dest.name_kn : dest.name_en;
+        const distName =
+          language === 'kn' && dest.district?.name_kn
+            ? dest.district.name_kn
+            : dest.district?.name_en || dest.district_code;
+        const lat = dest.coordinates.lat;
+        const lon = dest.coordinates.lon;
+
+        // Clean pin without permanent text clutter
+        const pinHtml = `
+          <div class="custom-leaflet-marker ${isSelected ? 'selected' : ''}" role="button" aria-label="${name}">
+            <span class="marker-emoji">${categoryIcon}</span>
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          html: pinHtml,
+          className: 'custom-div-icon',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+
+        const marker = L.marker([lat, lon], { icon });
+
+        if (typeof marker.bindTooltip === 'function') {
+          marker.bindTooltip(name, { direction: 'top', offset: [0, -18] });
+        }
+
+        const thumb = dest.primary_image_url || (dest.media && dest.media[0]?.thumbnail_url) || '';
+        const fee =
+          dest.entry_fee_min_inr === 0
+            ? language === 'kn'
+              ? 'ಉಚಿತ'
+              : 'Free'
+            : dest.entry_fee_min_inr
+            ? `₹${dest.entry_fee_min_inr}`
+            : language === 'kn'
+            ? 'ಮಾಹಿತಿಯಿಲ್ಲ'
+            : 'N/A';
+        const duration = dest.estimated_visit_minutes
+          ? `${Math.round(dest.estimated_visit_minutes / 60)}h`
+          : '1-2h';
+
+        const popupHtml = `
+          <div class="map-rich-popup" data-dest-id="${dest.id}">
+            ${thumb ? `<div class="map-popup-thumb"><img src="${thumb}" alt="${name}" onerror="this.parentElement.style.display='none'" /></div>` : ''}
+            <div class="map-popup-body">
+              <div class="map-popup-badge-row">
+                <span class="map-popup-cat">${categoryIcon} ${dest.category}</span>
+                <span class="map-popup-dist">📍 ${distName}</span>
+              </div>
+              <h4 class="map-popup-title">${name}</h4>
+              <div class="map-popup-meta">
+                <span>🎟️ ${fee}</span>
+                <span>⏱️ ${duration}</span>
+              </div>
+              <div class="map-popup-actions">
+                <button type="button" class="btn-popup-details" data-action="details">ℹ️ ${language === 'kn' ? 'ವಿವರಗಳು' : 'Details'}</button>
+                <button type="button" class="btn-popup-plan" data-action="plan">🧭 ${language === 'kn' ? 'ಯೋಜಿಸಿ' : 'Plan'}</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (typeof marker.bindPopup === 'function') {
+          marker.bindPopup(popupHtml, { maxWidth: 260 });
+          marker.on('popupopen', (e: any) => {
+            const el = e.popup?.getElement ? e.popup.getElement() : null;
+            if (el) {
+              const detailsBtn = el.querySelector('[data-action="details"]');
+              if (detailsBtn) {
+                detailsBtn.onclick = () => onOpenDetails && onOpenDetails(dest);
+              }
+              const planBtn = el.querySelector('[data-action="plan"]');
+              if (planBtn) {
+                planBtn.onclick = () => onPlanWithDestination && onPlanWithDestination(dest);
+              }
+            }
+          });
+        }
+
+        marker.on('click', () => {
+          onSelectDestination(dest);
+        });
+
+        marker.addTo(layer);
+        latLngs.push([lat, lon]);
       });
+    };
 
-      const marker = L.marker([lat, lon], { icon });
+    renderMarkers();
 
-      marker.on('click', () => {
-        onSelectDestination(dest);
-      });
-
-      marker.addTo(layer);
-      latLngs.push([lat, lon]);
-    });
+    if (typeof map.on === 'function') {
+      map.on('zoomend', renderMarkers);
+    }
 
     // Pan / zoom focus according to filter or selection
     if (activeDestinationId) {
       const activeDest = destinations.find((d) => d.id === activeDestinationId);
-      if (activeDest?.coordinates) {
+      if (activeDest?.coordinates && typeof map.setView === 'function') {
         map.setView([activeDest.coordinates.lat, activeDest.coordinates.lon], 12, { animate: true });
       }
     } else if (selectedDistrict && latLngs.length > 0) {
-      const bounds = L.latLngBounds(latLngs);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
-    } else if (latLngs.length > 0 && selectedDistrict === '') {
+      if (typeof map.fitBounds === 'function' && typeof L.latLngBounds === 'function') {
+        const bounds = L.latLngBounds(latLngs);
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
+      }
+    } else if (latLngs.length > 0 && selectedDistrict === '' && typeof map.setView === 'function') {
       map.setView(KARNATAKA_CENTER, DEFAULT_ZOOM, { animate: true });
     }
-  }, [destinations, selectedDistrict, activeDestinationId, language, onSelectDestination]);
+
+    return () => {
+      if (typeof map.off === 'function') {
+        map.off('zoomend', renderMarkers);
+      }
+    };
+  }, [destinations, selectedDistrict, activeDestinationId, language, onSelectDestination, onOpenDetails, onPlanWithDestination]);
 
   // 3. Render Nearby Overlays (Dining, Accommodations, Transit Hubs)
   useEffect(() => {

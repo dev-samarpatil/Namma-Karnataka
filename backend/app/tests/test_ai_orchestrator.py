@@ -298,3 +298,99 @@ async def test_orchestrator_preserves_kannada_language(repo, monkeypatch):
     res = await orchestrator.recommend_itinerary(req_kn)
 
     assert res.language == LanguageCode.KN
+
+
+async def test_orchestrator_gemini_quota_exhausted_falls_back_to_groq(repo, monkeypatch):
+    """Verify that when Gemini hits rate limit/quota exhaustion (429), Orchestrator falls back to Groq."""
+    monkeypatch.setattr(config.settings, "AI_PLANNING_ENABLED", True)
+    monkeypatch.setattr(config.settings, "AI_PREFERRED_PROVIDER", "gemini")
+
+    from app.services.ai.base import AIProviderRateLimitError
+
+    gemini_mock = MockAIProvider(
+        "gemini",
+        configured=True,
+        error=AIProviderRateLimitError("Gemini quota exhausted across all models", provider="gemini"),
+    )
+    groq_mock = MockAIProvider(
+        "groq",
+        configured=True,
+        response='{"items": [{"destination_id": "mysore-palace", "day_number": 1, "order": 1, "rationale": "Groq fallback"}]}',
+    )
+
+    orchestrator = AIOrchestrator(
+        repository=repo,
+        providers={"gemini": gemini_mock, "groq": groq_mock},
+    )
+    req = PlanningRequest(duration_days=1)
+    res = await orchestrator.recommend_itinerary(req)
+
+    assert res.generation_mode == "ai"
+    assert "groq" in res.provider_used.lower()
+    assert gemini_mock.call_count == 1
+    assert groq_mock.call_count == 1
+
+
+async def test_orchestrator_gemini_auth_failure_falls_back_to_groq(repo, monkeypatch):
+    """Verify that when Gemini hits 401/403 auth error, Orchestrator cleanly falls back to Groq."""
+    monkeypatch.setattr(config.settings, "AI_PLANNING_ENABLED", True)
+    monkeypatch.setattr(config.settings, "AI_PREFERRED_PROVIDER", "gemini")
+
+    from app.services.ai.base import AIProviderAuthError
+
+    gemini_mock = MockAIProvider(
+        "gemini",
+        configured=True,
+        error=AIProviderAuthError("Invalid Gemini API key", provider="gemini"),
+    )
+    groq_mock = MockAIProvider(
+        "groq",
+        configured=True,
+        response='{"items": [{"destination_id": "mysore-palace", "day_number": 1, "order": 1, "rationale": "Groq after auth error"}]}',
+    )
+
+    orchestrator = AIOrchestrator(
+        repository=repo,
+        providers={"gemini": gemini_mock, "groq": groq_mock},
+    )
+    req = PlanningRequest(duration_days=1)
+    res = await orchestrator.recommend_itinerary(req)
+
+    assert res.generation_mode == "ai"
+    assert "groq" in res.provider_used.lower()
+    assert gemini_mock.call_count == 1
+    assert groq_mock.call_count == 1
+
+
+async def test_orchestrator_both_providers_fail_graceful_deterministic_fallback(repo, monkeypatch):
+    """Verify that when both Gemini and Groq fail, Orchestrator returns a valid deterministic response."""
+    monkeypatch.setattr(config.settings, "AI_PLANNING_ENABLED", True)
+    monkeypatch.setattr(config.settings, "AI_PREFERRED_PROVIDER", "gemini")
+
+    from app.services.ai.base import AIProviderRateLimitError, AIProviderUnavailableError
+
+    gemini_mock = MockAIProvider(
+        "gemini",
+        configured=True,
+        error=AIProviderRateLimitError("Gemini quota exhausted", provider="gemini"),
+    )
+    groq_mock = MockAIProvider(
+        "groq",
+        configured=True,
+        error=AIProviderUnavailableError("Groq server 503 error", provider="groq"),
+    )
+
+    orchestrator = AIOrchestrator(
+        repository=repo,
+        providers={"gemini": gemini_mock, "groq": groq_mock},
+    )
+    req = PlanningRequest(duration_days=2)
+    res = await orchestrator.recommend_itinerary(req)
+
+    assert res.generation_mode == "fallback"
+    assert res.provider_used == "deterministic_fallback"
+    assert len(res.items) >= 1
+    assert res.budget_breakdown is not None
+    assert gemini_mock.call_count == 1
+    assert groq_mock.call_count == 1
+

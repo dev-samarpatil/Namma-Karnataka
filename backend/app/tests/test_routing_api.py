@@ -116,4 +116,3 @@ def test_routing_directions_frontend_contract_and_modes() -> None:
         assert data["total_duration_minutes"] > 30
         assert len(data["all_coordinates"]) > 0
         assert len(data["all_coordinates"][0]) == 2  # [lat, lon]
-

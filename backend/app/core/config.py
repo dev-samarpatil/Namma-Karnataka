@@ -1,6 +1,8 @@
 """Application configuration with environment-driven settings."""
 
-from pydantic import Field
+from typing import Any
+
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,9 +35,17 @@ class Settings(BaseSettings):
     GROQ_ENABLED: bool = False
     GROQ_API_KEY: str | None = None
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_PRIMARY_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_FALLBACK_MODELS: Any = Field(
+        default_factory=lambda: ["llama-3.1-8b-instant", "llama3-70b-8192"]
+    )
     GEMINI_ENABLED: bool = False
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_PRIMARY_MODEL: str = "gemini-2.5-flash"
+    GEMINI_FALLBACK_MODELS: Any = Field(
+        default_factory=lambda: ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
+    )
     AI_PREFERRED_PROVIDER: str = "groq"
     AI_PROVIDER_TIMEOUT_SECONDS: int = 12
     AI_GLOBAL_DEADLINE_SECONDS: int = 28
@@ -46,6 +56,20 @@ class Settings(BaseSettings):
     # Routing
     ROUTING_PROVIDER: str = "osrm"
     OSRM_BASE_URL: str = "https://router.project-osrm.org"
+
+    @field_validator("GEMINI_FALLBACK_MODELS", "GROQ_FALLBACK_MODELS", mode="before")
+    @classmethod
+    def _parse_model_list(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str):
+            import json
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return [str(item).strip() for item in parsed if str(item).strip()]
+            except Exception:
+                pass
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
 
     @property
     def is_groq_configured(self) -> bool:

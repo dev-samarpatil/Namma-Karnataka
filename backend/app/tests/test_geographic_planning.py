@@ -155,8 +155,8 @@ def test_events_service_retrieval():
     assert "Hampi Utsav" in utsav.name_en
 
 
-def test_scheduler_inserts_cultural_event():
-    """Verify scheduler inserts cultural festival stops when dates align."""
+def test_scheduler_recommends_cultural_event():
+    """Verify scheduler provides optional cultural festival recommendations near route without forcing mandatory stops."""
     request = PlanningRequest(
         origin_label="Mysuru",
         duration_days=1,
@@ -178,12 +178,16 @@ def test_scheduler_inserts_cultural_event():
     )
 
     day1 = days[0]
+    # Workstream 6: Festivals are not forced as mandatory stops
     event_stops = [s for s in day1.stops if s.stop_type == StopType.EVENT]
-    assert len(event_stops) == 1
-    event_stop = event_stops[0]
-    assert "🎪" in event_stop.name
-    assert "Dasara" in event_stop.name
-    assert event_stop.source_reference is not None
+    assert len(event_stops) == 0
+
+    # Instead, they are attached as recommended cultural events
+    assert len(day1.recommended_events) >= 1
+    dasara_rec = next((e for e in day1.recommended_events if "Dasara" in e.name_en), None)
+    assert dasara_rec is not None
+    assert dasara_rec.district_code == "KA-MYS"
+    assert dasara_rec.source_url is not None
 
 
 def test_fatigue_warning_on_excessive_driving():

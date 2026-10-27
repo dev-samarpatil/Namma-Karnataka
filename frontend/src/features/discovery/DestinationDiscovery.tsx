@@ -17,6 +17,7 @@ import { DestinationCard } from './DestinationCard';
 import { DestinationModal } from './DestinationModal';
 import { DestinationInteractiveMap } from './DestinationInteractiveMap';
 import { VisualDiscoveryModal } from './VisualDiscoveryModal';
+import { VisualDiscoveryCard } from './VisualDiscoveryCard';
 import { VisualDiscoveryCandidate } from '../../types';
 
 interface DestinationDiscoveryProps {
@@ -164,8 +165,8 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
       </div>
 
       <div className="filter-panel" role="search" aria-label="Destination filters">
-        <div className="search-bar-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div className="search-bar" style={{ flex: 1 }}>
+        <div className="search-bar-row">
+          <div className="search-bar" style={{ width: '100%' }}>
             <span className="search-icon" aria-hidden="true">🔍</span>
             <input
               type="search"
@@ -177,28 +178,6 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
               data-testid="destination-search-input"
             />
           </div>
-          <button
-            type="button"
-            className="btn-visual-discovery-trigger"
-            onClick={() => setIsVisualDiscoveryOpen(true)}
-            data-testid="open-visual-discovery-btn"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '10px 16px',
-              background: '#4f46e5',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}
-          >
-            {t('visualDiscoveryBtn')}
-          </button>
         </div>
 
         <div className="filter-controls-row">
@@ -366,6 +345,22 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
         )}
       </div>
 
+      {/* NK-FIX-05: Dedicated Visual Discovery Card */}
+      <VisualDiscoveryCard
+        language={language}
+        onSelectCandidate={(candidate: VisualDiscoveryCandidate) => {
+          const query = language === 'kn' && candidate.name_kn ? candidate.name_kn : candidate.name_en;
+          setSearchQuery(query);
+        }}
+        onOpenDestinationDetailsBySlug={(slug: string) => {
+          const match = destinations.find((d) => d.slug === slug);
+          if (match) {
+            setActiveDestination(match);
+          } else {
+            setSearchQuery(slug);
+          }
+        }}
+      />
 
       <div className="results-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

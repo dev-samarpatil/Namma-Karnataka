@@ -31,6 +31,7 @@ from app.schemas.planning import (
 )
 from app.schemas.visual_discovery import (
     ConfidenceLabel,
+    ExternalPlaceRecognition,
     VisualDiscoveryCandidate,
     VisualDiscoveryResponse,
     VisualEvidence,
@@ -39,6 +40,7 @@ from app.schemas.visual_discovery import (
 __all__ = [
     "AccessStatus",
     "ConfidenceLabel",
+    "ExternalPlaceRecognition",
     "ContentStatus",
     "Coordinates",
     "DestinationBase",

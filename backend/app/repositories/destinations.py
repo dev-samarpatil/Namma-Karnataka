@@ -151,6 +151,8 @@ class InMemoryDestinationRepository:
             self._destinations.append(record)
             self._by_id[record.id] = record
             self._by_slug[record.slug] = record
+            for alias in record.aliases:
+                self._by_slug[alias] = record
 
     CANONICAL_ID_MAPPINGS: dict[str, str] = {
         "22222222-2222-4222-8222-222222222223": "11111111-1111-4111-8111-111111111121",
@@ -159,6 +161,9 @@ class InMemoryDestinationRepository:
     CANONICAL_SLUG_MAPPINGS: dict[str, str] = {
         "murudeshwara-temple-beach": "murudeshwar-temple-beach",
         "belagavi-fort": "belagavi-fort-kamal-basti",
+        "kondajji-lake-nature-sanctuary": "kondajji-lake",
+        "hampi": "vijaya-vittala-temple-hampi",
+        "hampi-monuments": "vijaya-vittala-temple-hampi",
     }
 
     def get_by_id(self, destination_id: str) -> DestinationRead | None:
@@ -219,12 +224,18 @@ class InMemoryDestinationRepository:
             if params.q:
                 query = params.q.lower()
                 matches_slug = query in dest.slug.lower()
+                matches_name = (
+                    (bool(dest.name_en) and query in dest.name_en.lower())
+                    or (bool(dest.name_kn) and query in dest.name_kn.lower())
+                    or (bool(dest.summary_en) and query in dest.summary_en.lower())
+                    or (bool(dest.summary_kn) and query in dest.summary_kn.lower())
+                )
                 matches_trans = any(
                     (query in t.name.lower() or (t.summary and query in t.summary.lower()))
                     for t in dest.translations
                 )
                 matches_aliases = any(query in a.lower() for a in getattr(dest, "aliases", []))
-                if not (matches_slug or matches_trans or matches_aliases):
+                if not (matches_slug or matches_name or matches_trans or matches_aliases):
                     continue
 
             filtered.append(dest)
@@ -404,6 +415,7 @@ class SupabaseDestinationRepository:
     ) -> tuple[list[DestinationRead], int]:
         if (
             self._is_schema_unmigrated()
+            or params.q is not None
             or params.fee_type is not None
             or params.min_duration is not None
             or params.max_duration is not None

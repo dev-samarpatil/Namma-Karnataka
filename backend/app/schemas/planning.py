@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,6 +14,7 @@ from app.schemas.destinations import (
     DestinationSourceRead,
     LanguageCode,
 )
+from app.schemas.events import EventRead
 
 
 class StrictSchema(BaseModel):
@@ -287,6 +288,7 @@ class DayPlan(StrictSchema):
     meals_covered: list[str] = Field(default_factory=list)
     daily_cost_min_inr: float | None = None
     daily_cost_max_inr: float | None = None
+    recommended_events: list[EventRead] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -350,6 +352,7 @@ class PlanningRecommendationResponse(StrictSchema):
     budget_breakdown: CompleteBudgetBreakdown | None = None
     origin_label: str | None = None
     corridor_name: str | None = None
+    recommended_festivals: list[EventRead] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     data_limitations: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)

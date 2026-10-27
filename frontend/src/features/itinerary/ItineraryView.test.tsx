@@ -147,10 +147,15 @@ describe('ItineraryView rich travel planner features', () => {
     expect(screen.getByText('Overnight Stay (Mysuru)')).toBeInTheDocument();
     expect(screen.getByText(/21:30 Check-in/i)).toBeInTheDocument();
 
-    // Verify categorized budget table
-    expect(screen.getByText('Itemized Cost Estimates')).toBeInTheDocument();
-    expect(screen.getByText('Attraction Entry Fees')).toBeInTheDocument();
-    expect(screen.getByText('Meals & Dining')).toBeInTheDocument();
+    // Verify categorized budget cards render and redundant itemized table is absent (Workstream 5)
+    const costHeadings = screen.getAllByText('Itemized Cost Estimates');
+    expect(costHeadings).toHaveLength(1);
+    expect(costHeadings[0]).toBeInTheDocument();
+    expect(screen.getByText(/Attraction Tickets/i)).toBeInTheDocument();
+    expect(screen.getByText(/Food & Dining/i)).toBeInTheDocument();
+    expect(screen.getByText(/Transportation/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('itemized-breakdown-table')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Itemized Category Breakdown Table/i)).not.toBeInTheDocument();
 
     // Verify assumptions rendered
     expect(screen.getByText(/Planning Assumptions/i)).toBeInTheDocument();

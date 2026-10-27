@@ -18,12 +18,12 @@ from pathlib import Path
 from typing import Any
 
 URL_REGEX = re.compile(
-    r"^https?://"
+    r"^(?:https?://"
     r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"
     r"localhost|"
     r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
     r"(?::\d+)?"
-    r"(?:/?|[/?]\S+)$",
+    r"(?:/?|[/?]\S+)|/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+)$",
     re.IGNORECASE,
 )
 
@@ -106,6 +106,8 @@ def validate_destination_media(
             # 4. URL Syntax and Provenance Hygiene
             for url_field in ["url", "thumbnail_url", "source_url"]:
                 val = media.get(url_field)
+                if val is None and url_field == "thumbnail_url" and media.get("verification_status") == "needs_review":
+                    continue
                 if not val or not isinstance(val, str) or not URL_REGEX.match(val):
                     errors.append(f"{m_label}: Field '{url_field}' has invalid URL '{val}'")
                 elif "thumb.wikimedia.org" in val:

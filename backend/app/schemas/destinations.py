@@ -154,6 +154,9 @@ class DestinationMediaRead(StrictSchema):
     media_type: str = "photograph"
 
 
+DestinationMedia = DestinationMediaRead
+
+
 # ============================================================================
 # Destination Entity Models
 # ============================================================================
@@ -366,7 +369,11 @@ class DestinationNearbyResponse(StrictSchema):
     destination_id: str
     destination_slug: str
     radius_km: float
+    effective_radius_km: float | None = None
+    radius_expanded: bool = False
+    radius_note: str | None = None
     nearby_attractions: list[NearbyAttractionItem] = Field(default_factory=list)
     nearby_transit: list[NearbyTransitItem] = Field(default_factory=list)
     nearby_restaurants: list[dict[str, Any]] = Field(default_factory=list)
     nearby_accommodations: list[dict[str, Any]] = Field(default_factory=list)
+

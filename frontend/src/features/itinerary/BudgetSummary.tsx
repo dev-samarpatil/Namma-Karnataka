@@ -35,11 +35,81 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
   const renderStatusBadge = (status: CostStatus) => {
     switch (status) {
       case 'verified':
-        return <span className="status-badge status-verified">✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}</span>;
+        return (
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: '#34d399',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}
+          </span>
+        );
       case 'estimated':
-        return <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>;
+        return (
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              background: 'rgba(56, 189, 248, 0.15)',
+              color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            ≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}
+          </span>
+        );
       case 'unknown':
-        return <span className="status-badge status-unknown">? {language === 'kn' ? 'ತಿಳಿದಿಲ್ಲ' : 'Unknown'}</span>;
+        return (
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              background: 'rgba(245, 158, 11, 0.15)',
+              color: '#fbbf24',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            ? {language === 'kn' ? 'ತಿಳಿದಿಲ್ಲ' : 'Unknown'}
+          </span>
+        );
+      case 'not_applicable':
+        return (
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              background: 'rgba(148, 163, 184, 0.15)',
+              color: '#94a3b8',
+              border: '1px solid rgba(148, 163, 184, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            - {language === 'kn' ? 'ಅನ್ವಯಿಸುವುದಿಲ್ಲ' : 'N/A'}
+          </span>
+        );
       default:
         return null;
     }
@@ -60,255 +130,490 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
     }
   };
 
+  const formatScenario = (scenario?: string) => {
+    switch (scenario) {
+      case 'budget':
+        return language === 'kn' ? 'ಕಡಿಮೆ ಬಜೆಟ್ (ಹೋಮ್‌ಸ್ಟೇ)' : 'Budget-Conscious';
+      case 'comfort':
+        return language === 'kn' ? 'ಆರಾಮದಾಯಕ / ಐಷಾರಾಮಿ' : 'Comfort / Heritage';
+      default:
+        return language === 'kn' ? 'ಸಾಮಾನ್ಯ (ಸ್ಟ್ಯಾಂಡರ್ಡ್)' : 'Standard';
+    }
+  };
+
+  // Find specific categories from budget response if available
+  const findCategory = (keywords: string[]) => {
+    if (!budget?.categories) return null;
+    return budget.categories.find((c) =>
+      keywords.some((k) => c.category_name.toLowerCase().includes(k.toLowerCase()))
+    );
+  };
+
+  const transportCat = findCategory(['transport', 'fuel', 'transit']);
+  const lodgingCat = findCategory(['accommodation', 'hotel', 'lodging', 'stay']);
+  const foodCat = findCategory(['food', 'dining', 'meal']);
+  const ticketCat = findCategory(['ticket', 'entry', 'attraction']);
+  const contingencyCat = findCategory(['contingency', 'buffer', 'other']);
+
   return (
-    <div className="budget-summary-card" data-testid="budget-summary-card">
-      <div className="budget-header">
-        <div>
-          <h4 className="budget-title">💰 {t('budgetTitle')}</h4>
+    <div
+      className="budget-summary-card"
+      data-testid="budget-summary-card"
+      style={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        borderRadius: '12px',
+        padding: '24px',
+        color: '#f8fafc',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+        margin: '24px 0',
+      }}
+    >
+      {/* SECTION A: Trip Cost Overview (Hero Summary Card) */}
+      <div
+        style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          borderRadius: '10px',
+          padding: '20px',
+          marginBottom: '20px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: 700 }}>
+              {t('tripCostOverview')}
+            </span>
+            <h3 style={{ margin: '6px 0 0 0', fontSize: '1.75rem', fontWeight: 800, color: '#f8fafc' }}>
+              {budget && budget.grand_total_min_inr !== null && budget.grand_total_min_inr !== undefined ? (
+                `₹${budget.grand_total_min_inr.toLocaleString('en-IN')} – ₹${budget.grand_total_max_inr?.toLocaleString('en-IN')}`
+              ) : (
+                `₹${minEntryTotal} – ₹${maxEntryTotal}`
+              )}
+            </h3>
+            <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '4px' }}>
+              {budget && budget.per_person_min_inr !== null && budget.per_person_min_inr !== undefined ? (
+                <>
+                  <span style={{ color: '#34d399', fontWeight: 600 }}>
+                    ≈ ₹{budget.per_person_min_inr.toLocaleString('en-IN')} – ₹{budget.per_person_max_inr?.toLocaleString('en-IN')}
+                  </span>{' '}
+                  / {language === 'kn' ? 'ಪ್ರಯಾಣಿಕರಿಗೆ' : 'traveler'}
+                </>
+              ) : (
+                <span>{t('estimatedPerPerson')}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Trip Parameters Badges */}
           {budget && (
-            <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  color: '#bae6fd',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                }}
+              >
+                👥 {budget.traveler_count} {language === 'kn' ? 'ಪ್ರಯಾಣಿಕರು' : 'travelers'}
+              </span>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  color: '#bae6fd',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                }}
+              >
                 🚗 {formatTransportMode(budget.travel_mode_used)} {budget.is_return_trip ? '(Round-trip)' : '(One-way)'}
               </span>
-              <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>
-                🏷️ {budget.budget_scenario_used ? budget.budget_scenario_used.toUpperCase() : 'STANDARD'}
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(251, 191, 36, 0.12)',
+                  color: '#fef08a',
+                  border: '1px solid rgba(251, 191, 36, 0.25)',
+                }}
+              >
+                🏷️ {formatScenario(budget.budget_scenario_used)}
               </span>
             </div>
           )}
         </div>
 
-        {budget && budget.grand_total_min_inr !== null && (
-          <div className="budget-grand-total">
-            <span className="grand-total-label">{language === 'kn' ? 'ಒಟ್ಟು ಅಂದಾಜು ವೆಚ್ಚ' : 'Est. Trip Total'}:</span>
-            <span className="grand-total-amount">
-              ₹{budget.grand_total_min_inr} – ₹{budget.grand_total_max_inr}
-            </span>
-            <span className="per-person-sub">
-              (≈ ₹{budget.per_person_min_inr} – ₹{budget.per_person_max_inr} / {language === 'kn' ? 'ಪ್ರಯಾಣಿಕ' : 'traveler'})
-            </span>
+        {/* SECTION E: Budget Cap Comparison */}
+        {budget && budget.budget_limit_inr !== undefined && budget.budget_limit_inr !== null && (
+          <div
+            data-testid="budget-limit-comparison-card"
+            style={{
+              marginTop: '16px',
+              padding: '12px 16px',
+              background: budget.is_budget_feasible ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.12)',
+              border: `1px solid ${budget.is_budget_feasible ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)'}`,
+              borderRadius: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.1rem' }}>{budget.is_budget_feasible ? '🎯' : '⚠️'}</span>
+                <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#f8fafc' }}>
+                  {language === 'kn' ? 'ನಿಗದಿಪಡಿಸಿದ ಬಜೆಟ್ ಮಿತಿ' : 'Target Budget Limit'}:
+                </span>
+                <span style={{ fontWeight: 700, fontSize: '0.98rem', color: '#fbbf24' }}>
+                  ₹{budget.budget_limit_inr.toLocaleString('en-IN')}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  ({budget.budget_scope === 'per_person' ? (language === 'kn' ? 'ಪ್ರತಿ ಪ್ರಯಾಣಿಕನಿಗೆ' : 'Per Traveler') : (language === 'kn' ? 'ಸಂಪೂರ್ಣ ಗುಂಪು' : 'Entire Group')})
+                </span>
+              </div>
+              <div>
+                {budget.is_budget_feasible ? (
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                    }}
+                  >
+                    ✓ {t('withinBudgetBadge')}
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      color: '#f87171',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                    }}
+                  >
+                    ⚠️ {t('budgetOverrunBadge')}: +₹{Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}
+                  </span>
+                )}
+              </div>
+            </div>
+            {!budget.is_budget_feasible && (
+              <div style={{ fontSize: '0.8rem', color: '#fca5a5', lineHeight: 1.4, marginTop: '2px' }}>
+                {language === 'kn'
+                  ? `ಅಂದಾಜು ಕನಿಷ್ಠ ವೆಚ್ಚವು ನಿಮ್ಮ ಗುರಿ ಮಿತಿಗಿಂತ ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')} ಹೆಚ್ಚಾಗಿದೆ. ಕಡಿಮೆ ವೆಚ್ಚದ ಆಕರ್ಷಣೆಗಳನ್ನು ಆಯ್ಕೆಮಾಡಲು ಅಥವಾ ವಸತಿ ವರ್ಗ ಬದಲಾಯಿಸಲು ಶಿಫಾರಸು ಮಾಡುತ್ತೇವೆ.`
+                  : `Estimated minimum expenses exceed your target budget cap by ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}. Consider switching to public transit or choosing budget homestay accommodation.`}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Target Budget Comparison Banner (if user set a numeric limit) */}
-      {budget && budget.budget_limit_inr !== undefined && budget.budget_limit_inr !== null && (
-        <div
-          data-testid="budget-limit-comparison-card"
-          style={{
-            margin: '12px 0',
-            padding: '12px 16px',
-            background: budget.is_budget_feasible ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.12)',
-            border: `1px solid ${budget.is_budget_feasible ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)'}`,
-            borderRadius: 'var(--radius-md, 8px)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.1rem' }}>{budget.is_budget_feasible ? '🎯' : '⚠️'}</span>
-              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary, #f8fafc)' }}>
-                {language === 'kn' ? 'ನಿಗದಿಪಡಿಸಿದ ಬಜೆಟ್ ಮಿತಿ' : 'Target Budget Limit'}:
-              </span>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--accent-gold, #f59e0b)' }}>
-                ₹{budget.budget_limit_inr.toLocaleString('en-IN')}
-              </span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)' }}>
-                ({budget.budget_scope === 'per_person' ? (language === 'kn' ? 'ಪ್ರತಿ ಪ್ರಯಾಣಿಕನಿಗೆ' : 'Per Traveler') : (language === 'kn' ? 'ಸಂಪೂರ್ಣ ಗುಂಪು' : 'Entire Group')})
-              </span>
-            </div>
+      {/* SECTION B: Canonical Itemized Cost Estimates Section */}
+      <div
+        className="itemized-cost-estimates-section"
+        data-testid="itemized-cost-estimates-section"
+        style={{ marginBottom: '24px' }}
+      >
+        <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#38bdf8', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>📊</span>
+          <span>{language === 'kn' ? 'ವಿವರವಾದ ವೆಚ್ಚದ ಪಟ್ಟಿ' : 'Itemized Cost Estimates'}</span>
+        </h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
+          {/* 1. Transportation */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
             <div>
-              {budget.is_budget_feasible ? (
-                <span
-                  style={{
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    color: '#34d399',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                  }}
-                >
-                  ✓ {language === 'kn' ? 'ಬಜೆಟ್ ಮಿತಿಯಲ್ಲಿದೆ' : 'Within Budget Cap'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#93c5fd' }}>
+                  🚗 {t('categoryTransport')}
                 </span>
-              ) : (
-                <span
-                  style={{
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    background: 'rgba(239, 68, 68, 0.2)',
-                    color: '#f87171',
-                    border: '1px solid rgba(239, 68, 68, 0.4)',
-                  }}
-                >
-                  ⚠️ {language === 'kn' ? 'ಬಜೆಟ್ ಮಿತಿ ಮೀರಿದೆ' : 'Budget Overrun'}: +₹{Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}
-                </span>
-              )}
+                {renderStatusBadge(transportCat?.cost_status || 'estimated')}
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '8px 0 4px 0' }}>
+                {transportCat?.estimated_min_inr !== undefined && transportCat?.estimated_min_inr !== null
+                  ? transportCat.estimated_min_inr === transportCat.estimated_max_inr
+                    ? `₹${transportCat.estimated_min_inr.toLocaleString('en-IN')}`
+                    : `₹${transportCat.estimated_min_inr.toLocaleString('en-IN')} – ₹${transportCat.estimated_max_inr?.toLocaleString('en-IN')}`
+                  : `₹${Math.round(stops.length * 450)}`}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                {transportCat?.calculation_basis || `${formatTransportMode(budget?.travel_mode_used)} route fuel & tolls`}
+              </p>
             </div>
           </div>
-          {!budget.is_budget_feasible && (
-            <div style={{ fontSize: '0.8rem', color: '#fca5a5', lineHeight: 1.4 }}>
-              {language === 'kn'
-                ? `ಅಂದಾಜು ಕನಿಷ್ಠ ವೆಚ್ಚವು (₹${budget.grand_total_min_inr?.toLocaleString('en-IN')}) ನಿಮ್ಮ ಗುರಿ ಮಿತಿಗಿಂತ ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')} ಹೆಚ್ಚಾಗಿದೆ. ಕಡಿಮೆ ವೆಚ್ಚದ ಆಕರ್ಷಣೆಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ.`
-                : `Estimated minimum expenses (₹${budget.grand_total_min_inr?.toLocaleString('en-IN')}) exceed your target spending limit by ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}. Consider choosing fewer paid attractions or adjusting transport options.`}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Subtotals & Breakdown Bar */}
+          {/* 2. Accommodation */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#93c5fd' }}>
+                  🏨 {t('categoryAccommodation')}
+                </span>
+                {renderStatusBadge(lodgingCat?.cost_status || 'estimated')}
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '8px 0 4px 0' }}>
+                {lodgingCat?.estimated_min_inr !== undefined && lodgingCat?.estimated_min_inr !== null
+                  ? lodgingCat.estimated_min_inr === lodgingCat.estimated_max_inr
+                    ? `₹${lodgingCat.estimated_min_inr.toLocaleString('en-IN')}`
+                    : `₹${lodgingCat.estimated_min_inr.toLocaleString('en-IN')} – ₹${lodgingCat.estimated_max_inr?.toLocaleString('en-IN')}`
+                  : '₹0 (Day Trip)'}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                {lodgingCat?.calculation_basis || `${formatScenario(budget?.budget_scenario_used)} stays`}
+              </p>
+            </div>
+          </div>
+
+          {/* 3. Food & Dining */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#93c5fd' }}>
+                  🍽️ {t('categoryFood')}
+                </span>
+                {renderStatusBadge(foodCat?.cost_status || 'estimated')}
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '8px 0 4px 0' }}>
+                {foodCat?.estimated_min_inr !== undefined && foodCat?.estimated_min_inr !== null
+                  ? foodCat.estimated_min_inr === foodCat.estimated_max_inr
+                    ? `₹${foodCat.estimated_min_inr.toLocaleString('en-IN')}`
+                    : `₹${foodCat.estimated_min_inr.toLocaleString('en-IN')} – ₹${foodCat.estimated_max_inr?.toLocaleString('en-IN')}`
+                  : `₹${Math.round((budget?.traveler_count || 1) * 350)}`}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                {foodCat?.calculation_basis || 'Daily meals and regional tiffin allowance'}
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Attraction Tickets */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#93c5fd' }}>
+                  🎟️ {t('categoryTickets')}
+                </span>
+                {renderStatusBadge(ticketCat?.cost_status || (knownFeeCount > 0 ? 'verified' : 'unknown'))}
+              </div>
+              <div
+                style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '8px 0 4px 0' }}
+                data-testid="total-estimated-fees"
+              >
+                {minEntryTotal === maxEntryTotal ? `₹${minEntryTotal}` : `₹${minEntryTotal} – ₹${maxEntryTotal}`}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                {knownFeeCount} of {stops.length} destinations confirmed ({freeCount} free)
+                {unknownCount > 0 && ` · ${unknownCount} unconfirmed`}
+              </p>
+            </div>
+          </div>
+
+          {/* 5. Contingency Buffer & Other */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#93c5fd' }}>
+                  🛡️ {t('categoryContingency')}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    background: 'rgba(251, 191, 36, 0.15)',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                  }}
+                >
+                  +10% Buffer
+                </span>
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '8px 0 4px 0' }}>
+                {contingencyCat?.estimated_min_inr !== undefined && contingencyCat?.estimated_min_inr !== null
+                  ? contingencyCat.estimated_min_inr === contingencyCat.estimated_max_inr
+                    ? `₹${contingencyCat.estimated_min_inr.toLocaleString('en-IN')}`
+                    : `₹${contingencyCat.estimated_min_inr.toLocaleString('en-IN')} – ₹${contingencyCat.estimated_max_inr?.toLocaleString('en-IN')}`
+                  : '+10% contingency'}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                Reserve buffer for parking, local guide fees, and fuel fluctuations
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION C: Verified versus Estimated Costs */}
       {budget && (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '10px',
-            margin: '12px 0',
-            padding: '12px 16px',
-            background: 'var(--bg-card, #182238)',
-            border: '1px solid var(--border-subtle, #243350)',
-            borderRadius: 'var(--radius-md, 8px)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '12px',
+            marginBottom: '20px',
+            padding: '14px',
+            background: 'rgba(15, 23, 42, 0.5)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '8px',
           }}
         >
           <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>{t('verifiedSubtotalLabel')}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#34d399' }}>
-              ₹{budget.verified_subtotal_inr || 0}
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{t('verifiedSubtotalLabel')}</div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#34d399', marginTop: '2px' }}>
+              ₹{budget.verified_subtotal_inr?.toLocaleString('en-IN') || 0}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+              {language === 'kn' ? 'ಅಧಿಕೃತ ಸರ್ಕಾರಿ ತಾಣ ದರಗಳು' : 'Based on official public tariffs'}
             </div>
           </div>
+
           <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>{t('estimatedSubtotalLabel')}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--accent-cyan, #38bdf8)' }}>
-              ₹{budget.estimated_subtotal_min_inr || 0} – ₹{budget.estimated_subtotal_max_inr || 0}
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{t('estimatedSubtotalLabel')}</div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#38bdf8', marginTop: '2px' }}>
+              ₹{budget.estimated_subtotal_min_inr?.toLocaleString('en-IN') || 0} – ₹{budget.estimated_subtotal_max_inr?.toLocaleString('en-IN') || 0}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+              {language === 'kn' ? 'ಮಾದರಿ ಮಾರ್ಗ ಮತ್ತು ಮಾರುಕಟ್ಟೆ ದರ' : 'Standard regional mileage & stay rates'}
             </div>
           </div>
+
           <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>{t('contingencyLabel')}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--accent-gold, #f59e0b)' }}>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{t('contingencyLabel')}</div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fbbf24', marginTop: '2px' }}>
               +10% Buffer Included
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+              {language === 'kn' ? 'ಅನಿಶ್ಚಿತ ವೆಚ್ಚಗಳ ಮೀಸಲು' : 'Protects against unverified tolls/fees'}
             </div>
           </div>
         </div>
       )}
 
-      <div className="budget-grid">
-        <div className="budget-stat">
-          <span className="budget-stat-label">{t('totalEstimatedFees')}</span>
-          <span className="budget-stat-value text-accent" data-testid="total-estimated-fees">
-            {minEntryTotal === maxEntryTotal ? `₹${minEntryTotal}` : `₹${minEntryTotal} – ₹${maxEntryTotal}`}
-          </span>
-        </div>
+      {/* SECTION D: Collapsible Calculation Details ("How were these costs calculated?") */}
+      <div style={{ marginBottom: '16px' }}>
+        <button
+          type="button"
+          onClick={() => setShowNotes(!showNotes)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#38bdf8',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            padding: '4px 0',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <span>{showNotes ? '▲' : '▼'}</span>
+          <span>{t('howCalculatedTitle')}</span>
+          {budget?.calculation_notes && (
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>({budget.calculation_notes.length} notes)</span>
+          )}
+        </button>
 
-        <div className="budget-stat">
-          <span className="budget-stat-label">Confirmed Destinations</span>
-          <span className="budget-stat-value">
-            {knownFeeCount} of {stops.length} ({freeCount} free)
-          </span>
-        </div>
-
-        {unknownCount > 0 && (
-          <div className="budget-stat">
-            <span className="budget-stat-label">Unconfirmed Fees</span>
-            <span className="budget-stat-value text-warning" data-testid="unknown-fees-count">
-              {unknownCount} {t('destinationsWithUnknownFees')}
-            </span>
+        {showNotes && (
+          <div
+            style={{
+              marginTop: '10px',
+              padding: '14px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              fontSize: '0.82rem',
+              color: '#cbd5e1',
+              lineHeight: 1.6,
+            }}
+          >
+            <div style={{ fontWeight: 600, color: '#f8fafc', marginBottom: '6px' }}>
+              {language === 'kn' ? 'ಲೆಕ್ಕಾಚಾರದ ಸೂತ್ರಗಳು ಮತ್ತು ಆಧಾರಗಳು:' : 'Calculation Formulas & Assumptions:'}
+            </div>
+            {budget?.calculation_notes && budget.calculation_notes.length > 0 ? (
+              <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                {budget.calculation_notes.map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ margin: 0 }}>
+                {language === 'kn'
+                  ? 'ವೆಚ್ಚಗಳನ್ನು ಕರ್ನಾಟಕದ ಅಧಿಕೃತ ಪ್ರವೇಶ ಶುಲ್ಕಗಳು, ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ/ಇಂಧನ ದರಗಳು ಮತ್ತು ಕೆಎಸ್‌ಟಿಡಿಸಿ ಹೋಟೆಲ್ ದರಗಳ ಆಧಾರದಲ್ಲಿ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತದೆ.'
+                  : 'Costs are calculated deterministically using verified entry fees, prevailing KSRTC bus/train and car fuel efficiency benchmarks, and curated Karnataka hotel price bands.'}
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      {/* Categorized Detailed Breakdown Table */}
-      {budget && budget.categories.length > 0 && (
-        <div className="budget-categories-section">
-          <h5 className="breakdown-subtitle">{language === 'kn' ? 'ವೆಚ್ಚದ ವಿವರಣೆ' : 'Itemized Cost Estimates'}</h5>
-          <div className="budget-table-wrapper">
-            <table className="budget-categories-table">
-              <thead>
-                <tr>
-                  <th>{language === 'kn' ? 'ವರ್ಗ' : 'Category'}</th>
-                  <th>{language === 'kn' ? 'ಅಂದಾಜು' : 'Estimate'}</th>
-                  <th>{language === 'kn' ? 'ಸ್ಥಿತಿ' : 'Status'}</th>
-                  <th>{language === 'kn' ? 'ಆಧಾರ ಮತ್ತು ವಿವರ' : 'Calculation Basis & Notes'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {budget.categories.map((cat, idx) => (
-                  <tr key={idx}>
-                    <td className="cat-name">
-                      {cat.category_name}
-                      {cat.basis_type && (
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
-                          [{cat.basis_type === 'per_person' ? 'Per Person' : 'Per Group'}]
-                        </div>
-                      )}
-                    </td>
-                    <td className="cat-amount">
-                      {cat.estimated_min_inr !== null && cat.estimated_min_inr !== undefined ? (
-                        cat.estimated_min_inr === cat.estimated_max_inr
-                          ? `₹${cat.estimated_min_inr}`
-                          : `₹${cat.estimated_min_inr} – ₹${cat.estimated_max_inr}`
-                      ) : (
-                        <span className="text-muted">Unverified</span>
-                      )}
-                    </td>
-                    <td>{renderStatusBadge(cat.cost_status)}</td>
-                    <td className="cat-basis">
-                      <div>{cat.calculation_basis}</div>
-                      {cat.notes && (
-                        <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px', fontStyle: 'italic' }}>
-                          {cat.notes}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Expandable Model Notes and Assumptions */}
-      {budget && budget.calculation_notes && budget.calculation_notes.length > 0 && (
-        <div style={{ marginTop: '10px' }}>
-          <button
-            type="button"
-            onClick={() => setShowNotes(!showNotes)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#0f766e',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              padding: '4px 0',
-            }}
-          >
-            {showNotes ? '▲ ' : '▼ '} {t('calculationNotesTitle')} ({budget.calculation_notes.length})
-          </button>
-          {showNotes && (
-            <ul
-              style={{
-                margin: '6px 0 0 16px',
-                padding: 0,
-                fontSize: '0.78rem',
-                color: '#475569',
-                lineHeight: 1.5,
-              }}
-            >
-              {budget.calculation_notes.map((n, i) => (
-                <li key={i}>{n}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
+      {/* Warnings & Exclusions */}
       {budget && budget.has_unknown_costs && (
-        <div className="budget-warning-banner" role="alert" style={{ marginTop: '10px' }}>
+        <div className="budget-warning-banner" role="alert" style={{ marginBottom: '10px' }}>
           ⚠️ {language === 'kn' ? 'ಕೆಲವು ಆಕರ್ಷಣೆಗಳ ಪ್ರವೇಶ ಶುಲ್ಕ ಪರಿಶೀಲಿಸಿಲ್ಲ. ಇವುಗಳನ್ನು ಕನಿಷ್ಠ ವೆಚ್ಚದಲ್ಲಿ ಸೇರಿಸಲಾಗಿಲ್ಲ.' : 'Some attractions have unverified entry fees. These are excluded from minimum calculated totals.'}
         </div>
       )}

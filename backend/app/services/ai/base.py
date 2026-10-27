@@ -83,6 +83,18 @@ class AIProviderResponseError(AIProviderError):
         )
 
 
+class AIProviderModelError(AIProviderError):
+    """Requested model identifier is unsupported, invalid, or unavailable."""
+
+    def __init__(self, message: str, provider: str) -> None:
+        super().__init__(
+            code="AI_PROVIDER_MODEL_NOT_FOUND",
+            message=message,
+            provider=provider,
+            status_code=404,
+        )
+
+
 # ============================================================================
 # Provider Interface Protocol
 # ============================================================================
@@ -99,6 +111,11 @@ class AIProvider(Protocol):
     @property
     def is_configured(self) -> bool:
         """Whether the provider has valid credentials and is enabled in settings."""
+        ...
+
+    @property
+    def last_model_used(self) -> str | None:
+        """The specific model identifier that succeeded or was last attempted."""
         ...
 
     async def generate_plan(

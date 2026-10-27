@@ -87,8 +87,14 @@ export const KARNATAKA_DISTRICTS: DistrictOption[] = [
 
 export interface DestinationSource {
   source_type: string;
-  title: string;
+  title?: string;
   url?: string;
+  source_name?: string;
+  source_url?: string;
+  claim_scope?: string;
+  checked_at?: string;
+  license_notes?: string;
+  attribution_required?: boolean;
 }
 
 export interface DestinationMedia {
@@ -310,6 +316,31 @@ export interface ItineraryStop {
   locked?: boolean;
 }
 
+export interface CulturalEvent {
+  id: string;
+  name_en: string;
+  name_kn: string;
+  description_en: string;
+  description_kn: string;
+  location_name: string;
+  district_code: string;
+  latitude: number;
+  longitude: number;
+  start_month: number;
+  end_month: number;
+  typical_start_date?: string | null;
+  typical_end_date?: string | null;
+  date_status: string;
+  source_name: string;
+  source_url: string;
+  verification_status: string;
+  ticket_cost_min_inr: number;
+  ticket_cost_max_inr: number;
+  ticket_cost_status: string;
+  event_category: string;
+  travel_advisory?: string | null;
+}
+
 export interface DayPlan {
   day_number: number;
   date?: string | null;
@@ -326,6 +357,7 @@ export interface DayPlan {
   meals_covered: string[];
   daily_cost_min_inr?: number | null;
   daily_cost_max_inr?: number | null;
+  recommended_events?: CulturalEvent[];
   warnings: string[];
 }
 
@@ -375,6 +407,7 @@ export interface PlanningRecommendationResponse {
   budget_breakdown?: CompleteBudgetBreakdown;
   origin_label?: string;
   corridor_name?: string;
+  recommended_festivals?: CulturalEvent[];
   assumptions?: string[];
   data_limitations?: string[];
   warnings?: string[];
@@ -467,6 +500,9 @@ export interface DestinationNearbyResponse {
   destination_id: string;
   destination_slug: string;
   radius_km: number;
+  effective_radius_km?: number;
+  radius_expanded?: boolean;
+  radius_note?: string;
   nearby_attractions: NearbyAttractionItem[];
   nearby_transit: NearbyTransitItem[];
   nearby_restaurants: Record<string, unknown>[];
@@ -725,11 +761,32 @@ export interface VisualDiscoveryCandidate {
   summary_en?: string | null;
   summary_kn?: string | null;
   match_score: number;
+  confidence?: number;
   confidence_label: ConfidenceLabel;
   matching_reasons: string[];
   visual_evidence?: VisualEvidence | null;
   uncertainty_notes?: string | null;
   image_url?: string | null;
+}
+
+export interface ExternalPlaceRecognition {
+  place_name: string;
+  location_summary?: string | null;
+  state_or_region?: string | null;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  country?: string | null;
+  is_karnataka: boolean;
+  confidence_label: ConfidenceLabel;
+  match_score: number;
+  confidence?: number;
+  visual_evidence?: VisualEvidence | string[] | null;
+  summary?: string | null;
+  source_url?: string | null;
+  catalogue_status: string;
+  notes?: string | null;
+  unverified_disclosure?: string | null;
 }
 
 export interface VisualDiscoveryResponse {
@@ -738,8 +795,10 @@ export interface VisualDiscoveryResponse {
   message_en: string;
   message_kn: string;
   candidates: VisualDiscoveryCandidate[];
+  external_place?: ExternalPlaceRecognition | null;
   sampled_frame_count?: number | null;
   analyzed_at: string;
+  analysis_engine?: 'ai_multimodal' | 'visual_similarity_engine' | 'deterministic_fallback' | 'open_world_landmark_registry' | string;
   privacy_notice: string;
 }
 

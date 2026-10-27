@@ -65,7 +65,12 @@ class RouteOptimizer:
             "heritage": {"heritage", "architecture", "museum", "spiritual_cultural", "town_city"},
             "architecture": {"architecture", "heritage", "spiritual_cultural"},
             "nature": {"nature", "wildlife", "waterfall", "hill_station", "viewpoint"},
-            "spiritual_cultural": {"spiritual_cultural", "heritage", "architecture", "food_culture"},
+            "spiritual_cultural": {
+                "spiritual_cultural",
+                "heritage",
+                "architecture",
+                "food_culture",
+            },
             "wildlife": {"wildlife", "nature"},
             "waterfall": {"waterfall", "nature", "viewpoint"},
             "hill_station": {"hill_station", "viewpoint", "nature", "adventure"},
@@ -128,7 +133,9 @@ class RouteOptimizer:
             backtrack_penalty = 0.0
             if len(previous_visited_locs) > 1:
                 for prev in previous_visited_locs[:-1]:
-                    d_prev = haversine_distance_km(dest.coordinates.lat, dest.coordinates.lon, prev.lat, prev.lon)
+                    d_prev = haversine_distance_km(
+                        dest.coordinates.lat, dest.coordinates.lon, prev.lat, prev.lon
+                    )
                     if d_prev < 20.0 and dist_km > 40.0:
                         backtrack_penalty += 75.0
 

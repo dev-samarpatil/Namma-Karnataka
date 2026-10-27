@@ -306,26 +306,134 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
             <div className="discovery-results-section" data-testid="discovery-results">
               <div className="results-header-summary">
                 <h4>
-                  {discoveryResult.is_confident ? '🎯 Grounded Match Found' : `ℹ️ ${t('noVisualMatchTitle')}`}
+                  {discoveryResult.external_place
+                    ? '🌐 Open-World Place Recognition'
+                    : discoveryResult.is_confident
+                    ? '🎯 Grounded Match Found'
+                    : `ℹ️ ${t('noVisualMatchTitle')}`}
                 </h4>
                 <p className="summary-text">
                   {language === 'kn' ? discoveryResult.message_kn : discoveryResult.message_en}
                 </p>
               </div>
 
+              {/* Workstream 2: Path B - External Place Outside Curated Catalogue */}
+              {discoveryResult.external_place && (
+                <div
+                  data-testid="external-place-recognition"
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.85)',
+                    border: '1px solid rgba(245, 158, 11, 0.5)',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#f59e0b', fontWeight: 700 }}>
+                        {language === 'kn' ? '🌐 ಗುರುತಿಸಲಾದ ಸ್ಥಳ — ಪಟ್ಟಿಮಾಡಲಾದ ಜಾಗವಲ್ಲ' : '🌐 Recognised Place — Outside Curated Catalogue'}
+                      </span>
+                      <h4 style={{ margin: '4px 0 2px 0', fontSize: '1.2rem', color: '#f8fafc', fontWeight: 700 }}>
+                        {discoveryResult.external_place.place_name}
+                      </h4>
+                      <div style={{ fontSize: '0.82rem', color: '#cbd5e1' }}>
+                        📍 {discoveryResult.external_place.location_summary || [
+                          discoveryResult.external_place.city,
+                          discoveryResult.external_place.district,
+                          discoveryResult.external_place.state || discoveryResult.external_place.state_or_region,
+                          discoveryResult.external_place.country,
+                        ].filter(Boolean).join(', ')}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '4px 10px',
+                        borderRadius: '9999px',
+                        background: 'rgba(245, 158, 11, 0.2)',
+                        color: '#fbbf24',
+                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {discoveryResult.external_place.confidence || (discoveryResult.external_place.confidence_label === 'strong_match' ? 'Strong Match' : 'Possible Identification')}
+                    </span>
+                  </div>
+
+                  {discoveryResult.external_place.summary && (
+                    <p style={{ margin: '10px 0 8px 0', fontSize: '0.85rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                      {discoveryResult.external_place.summary}
+                    </p>
+                  )}
+
+                  <div style={{ background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '6px', padding: '10px 12px', marginTop: '10px', fontSize: '0.78rem', color: '#94a3b8' }}>
+                    ⚠️ {discoveryResult.external_place.unverified_disclosure || discoveryResult.external_place.notes || (language === 'kn'
+                      ? 'ಈ ಸ್ಥಳವು ಪ್ರಸ್ತುತ ನಮ್ಮ ಪರಿಶೀಲಿತ ಕರ್ನಾಟಕ ತಾಣಗಳ ಕ್ಯಾಟಲಾಗ್‌ನಲ್ಲಿಲ್ಲ. ಅಧಿಕೃತ ಪ್ರವಾಸ ಕಾರ್ಯಕ್ರಮ ಮತ್ತು ಬಜೆಟ್ ವಿವರಗಳು ಲಭ್ಯವಿಲ್ಲದಿರಬಹುದು.'
+                      : 'This place is not currently in our verified destination catalogue. Some travel information and itinerary booking may be unavailable.')}
+                  </div>
+
+                  {(() => {
+                    const evidenceList: string[] = Array.isArray(discoveryResult.external_place.visual_evidence)
+                      ? discoveryResult.external_place.visual_evidence
+                      : discoveryResult.external_place.visual_evidence?.observed_features || [];
+                    return evidenceList.length > 0 ? (
+                      <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                        <strong style={{ color: '#94a3b8' }}>{t('observedFeatures')}:</strong>
+                        <ul style={{ margin: '4px 0 0 16px', padding: 0, lineHeight: 1.4 }}>
+                          {evidenceList.map((ev, i) => (
+                            <li key={i}>{ev}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
+                    {discoveryResult.external_place.source_url && (
+                      <a
+                        href={discoveryResult.external_place.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: '6px',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          color: '#38bdf8',
+                          fontWeight: 600,
+                          fontSize: '0.8rem',
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        🔗 {language === 'kn' ? 'ಮೂಲ ಮಾಹಿತಿ ವೀಕ್ಷಿಸಿ' : 'View Source Information'}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {discoveryResult.candidates.length > 0 ? (
                 <div className="candidates-grid">
                   {discoveryResult.candidates.map((cand, idx) => {
                     const name = language === 'kn' && cand.name_kn ? cand.name_kn : cand.name_en;
                     const summary = language === 'kn' && cand.summary_kn ? cand.summary_kn : cand.summary_en;
+                    const confPercent = Math.round(cand.match_score <= 1.0 ? cand.match_score * 100 : cand.match_score);
+                    const qualLabel = cand.confidence_label
+                      ? (cand.confidence_label === 'strong_match' ? 'Strong Match' : cand.confidence_label === 'possible_match' ? 'Possible Match' : 'Uncertain Suggestion')
+                      : (confPercent >= 85 ? 'Strong Match' : confPercent >= 70 ? 'Possible Match' : 'Uncertain Suggestion');
 
                     return (
                       <div key={cand.destination_id || cand.slug || idx} className="candidate-card" data-testid={`candidate-card-${cand.slug}`}>
                         {cand.image_url && (
                           <div className="cand-thumb-wrapper">
                             <img src={cand.image_url} alt={name} className="cand-thumb" />
-                            <span className={`cand-confidence-badge ${cand.confidence_label}`}>
-                              {cand.confidence_label === 'strong_match' ? `🌟 ${t('strongMatch')}` : `💡 ${t('possibleMatch')}`}
+                            <span className={`cand-confidence-badge ${cand.confidence_label || 'possible_match'}`}>
+                              {qualLabel} ({confPercent}%)
                             </span>
                           </div>
                         )}

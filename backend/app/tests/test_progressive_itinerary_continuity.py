@@ -13,19 +13,18 @@ Validates Requirements from Workstreams A through I:
 """
 
 import pytest
-from app.schemas.planning import (
-    PlanningRequest,
-    LanguageCode,
-    Coordinates,
-    StopType,
-    CostStatus,
-)
-from app.services.transport_cost import SupportedTransportMode
-from app.services.scheduler import DeterministicScheduler
-from app.services.routing.optimizer import RouteOptimizer
-from app.services.budget import BudgetCalculator
+
 from app.repositories.destinations import InMemoryDestinationRepository
 from app.schemas.destinations import DestinationFilterParams
+from app.schemas.planning import (
+    LanguageCode,
+    PlanningRequest,
+    StopType,
+)
+from app.services.budget import BudgetCalculator
+from app.services.routing.optimizer import RouteOptimizer
+from app.services.scheduler import DeterministicScheduler
+from app.services.transport_cost import SupportedTransportMode
 
 
 @pytest.fixture
@@ -254,6 +253,7 @@ def test_suite_test_g_budget_transport_no_double_counting(repo):
     )
 
     trans_item = next(c for c in budget.categories if "Transportation" in c.category_name)
+    assert trans_item is not None
     total_stop_km = sum(s.distance_from_prev_km or 0 for d in days for s in d.stops)
     note = next(n for n in budget.calculation_notes if "Transport:" in n)
     assert f"{total_stop_km:.1f} billable km" in note
@@ -316,4 +316,6 @@ def test_suite_test_i_infeasible_trip_warning():
     assert len(days) == 1
     day_1 = days[0]
     # Driving duration will be > 240 mins, so warning must be present
-    assert any("driving duration" in w.lower() or "travel duration" in w.lower() for w in day_1.warnings)
+    assert any(
+        "driving duration" in w.lower() or "travel duration" in w.lower() for w in day_1.warnings
+    )

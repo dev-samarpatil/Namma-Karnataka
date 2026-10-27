@@ -114,7 +114,9 @@ class CuratedTransitProvider(TransitProvider):
 
         # Catchment radius scaled proportionally to journey distance
         catchment_km = min(40.0, max(10.0, direct_dist_km * 0.40))
-        origin_stops = self.search_nearby_stops(origin_lat, origin_lon, radius_km=catchment_km, limit=5)
+        origin_stops = self.search_nearby_stops(
+            origin_lat, origin_lon, radius_km=catchment_km, limit=5
+        )
         dest_stops = self.search_nearby_stops(dest_lat, dest_lon, radius_km=catchment_km, limit=5)
 
         if not origin_stops or not dest_stops:

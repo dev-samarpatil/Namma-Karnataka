@@ -12,6 +12,7 @@ def test_ai_settings_default_safe_state(monkeypatch):
         "GROQ_API_KEY",
         "GEMINI_API_KEY",
         "AI_PREFERRED_PROVIDER",
+        "AI_MAX_RETRIES",
     ]:
         monkeypatch.delenv(key, raising=False)
     cfg = Settings(_env_file=None)

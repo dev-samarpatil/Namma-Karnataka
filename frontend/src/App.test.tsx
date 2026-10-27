@@ -212,8 +212,8 @@ describe('Namma Karnataka Phase 4 Complete Journey', () => {
     // Switch to planner
     fireEvent.click(screen.getByTestId('nav-tab-planner'));
 
-    // Select 1 day duration
-    fireEvent.click(screen.getByTestId('duration-btn-1'));
+    // Set 1 day duration via numeric input
+    fireEvent.change(screen.getByTestId('planner-duration-input'), { target: { value: '1' } });
 
     // Submit plan
     const submitBtn = screen.getByTestId('submit-plan-button');

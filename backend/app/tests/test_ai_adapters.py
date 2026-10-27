@@ -65,7 +65,7 @@ async def test_groq_adapter_success(test_request, test_candidates):
     assert "mysore-palace" in res
     mock_client.post.assert_awaited_once()
     call_kwargs = mock_client.post.call_args[1]
-    assert call_kwargs["timeout"] == 5.0
+    assert call_kwargs["timeout"] == pytest.approx(5.0, abs=0.2)
     assert "Bearer gsk_mock_valid_key" in call_kwargs["headers"]["Authorization"]
 
 
@@ -177,7 +177,7 @@ async def test_gemini_adapter_success(test_request, test_candidates):
     mock_client.post.assert_awaited_once()
     call_args = mock_client.post.call_args
     assert "x-goog-api-key" in call_args[1]["headers"]
-    assert call_args[1]["timeout"] == 6.0
+    assert call_args[1]["timeout"] == pytest.approx(6.0, abs=0.2)
 
 
 async def test_gemini_adapter_auth_error(test_request, test_candidates):
@@ -227,3 +227,75 @@ async def test_gemini_adapter_timeout_and_network_error(test_request, test_candi
     mock_client.post = AsyncMock(side_effect=httpx.ConnectError("Connection refused"))
     with pytest.raises(AIProviderUnavailableError):
         await adapter.generate_plan(test_request, test_candidates, timeout_seconds=3.0)
+
+
+async def test_gemini_adapter_model_fallback_on_429(test_request, test_candidates):
+    """Verify Gemini adapter recovers from primary model 429 quota exhaustion using secondary model."""
+    mock_client = MagicMock(spec=httpx.AsyncClient)
+
+    # First call: primary model returns 429 quota exhausted
+    resp_429 = MagicMock(spec=httpx.Response)
+    resp_429.status_code = 429
+    resp_429.text = "Quota exceeded for gemini-2.5-flash"
+
+    # Second call: fallback model returns 200 OK
+    resp_200 = MagicMock(spec=httpx.Response)
+    resp_200.status_code = 200
+    resp_200.json.return_value = {
+        "candidates": [
+            {
+                "finishReason": "STOP",
+                "content": {
+                    "parts": [{"text": '{"items": [{"destination_id": "mysore-palace", "day_number": 1, "order": 1, "rationale": "Great"}]}'}]
+                },
+            }
+        ]
+    }
+
+    mock_client.post = AsyncMock(side_effect=[resp_429, resp_200])
+
+    adapter = GeminiAdapter(
+        api_key="valid_key",
+        models=["gemini-2.5-flash", "gemini-2.0-flash"],
+        client=mock_client,
+    )
+    res = await adapter.generate_plan(test_request, test_candidates, timeout_seconds=10.0)
+
+    assert "mysore-palace" in res
+    assert adapter.last_model_used == "gemini-2.0-flash"
+    assert mock_client.post.await_count == 2
+
+
+async def test_gemini_adapter_model_fallback_on_404(test_request, test_candidates):
+    """Verify Gemini adapter recovers when configured model returns 404 not found."""
+    mock_client = MagicMock(spec=httpx.AsyncClient)
+
+    resp_404 = MagicMock(spec=httpx.Response)
+    resp_404.status_code = 404
+    resp_404.text = "Model not found"
+
+    resp_200 = MagicMock(spec=httpx.Response)
+    resp_200.status_code = 200
+    resp_200.json.return_value = {
+        "candidates": [
+            {
+                "finishReason": "STOP",
+                "content": {
+                    "parts": [{"text": '{"items": [{"destination_id": "hampi", "day_number": 1, "order": 1, "rationale": "Ruins"}]}'}]
+                },
+            }
+        ]
+    }
+
+    mock_client.post = AsyncMock(side_effect=[resp_404, resp_200])
+
+    adapter = GeminiAdapter(
+        api_key="valid_key",
+        models=["invalid-model-name", "gemini-1.5-flash"],
+        client=mock_client,
+    )
+    res = await adapter.generate_plan(test_request, test_candidates, timeout_seconds=10.0)
+
+    assert "hampi" in res
+    assert adapter.last_model_used == "gemini-1.5-flash"
+

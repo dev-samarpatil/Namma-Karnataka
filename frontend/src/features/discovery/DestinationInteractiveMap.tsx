@@ -233,14 +233,14 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
 
         if (typeof marker.bindPopup === 'function') {
           marker.bindPopup(popupHtml, { maxWidth: 260 });
-          marker.on('popupopen', (e: any) => {
+          marker.on('popupopen', (e: L.PopupEvent) => {
             const el = e.popup?.getElement ? e.popup.getElement() : null;
             if (el) {
-              const detailsBtn = el.querySelector('[data-action="details"]');
+              const detailsBtn = el.querySelector<HTMLElement>('[data-action="details"]');
               if (detailsBtn) {
                 detailsBtn.onclick = () => onOpenDetails && onOpenDetails(dest);
               }
-              const planBtn = el.querySelector('[data-action="plan"]');
+              const planBtn = el.querySelector<HTMLElement>('[data-action="plan"]');
               if (planBtn) {
                 planBtn.onclick = () => onPlanWithDestination && onPlanWithDestination(dest);
               }

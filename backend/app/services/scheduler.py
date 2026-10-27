@@ -19,6 +19,7 @@ from app.schemas.destinations import (
     DestinationRead,
     LanguageCode,
 )
+from app.schemas.events import EventRead
 from app.schemas.planning import (
     AccessStatus,
     CostStatus,
@@ -156,7 +157,9 @@ def build_travel_leg_details(
                 mode_label_kn=f"ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ({t_operator})",
                 duration_minutes=best_t.total_duration_minutes,
                 cost_inr=t_group,
-                cost_status=CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED,
+                cost_status=CostStatus.VERIFIED
+                if best_t.fare_status == "verified"
+                else CostStatus.ESTIMATED,
                 notes=f"Scheduled service fare (₹{t_per_person:.0f}/person)",
                 notes_kn=f"ನಿಗದಿತ ಸಾರಿಗೆ ದರ (ತಲಾ ₹{t_per_person:.0f})",
             )
@@ -170,7 +173,7 @@ def build_travel_leg_details(
                 duration_minutes=max(10, duration_mins),
                 cost_inr=15.0 * travelers,
                 cost_status=CostStatus.ESTIMATED,
-                notes=f"Local city transit stop-to-stop (~₹15/person)",
+                notes="Local city transit stop-to-stop (~₹15/person)",
                 notes_kn="ಸ್ಥಳೀಯ ನಗರ ಸಾರಿಗೆ (ತಲಾ ~₹15)",
             )
         )
@@ -217,7 +220,7 @@ def build_travel_leg_details(
                 duration_minutes=best_t.total_duration_minutes + 20,
                 cost_inr=round(mixed_cost_group, 2),
                 cost_status=CostStatus.ESTIMATED,
-                notes=f"Scheduled {best_t.operator_name} (₹{best_t.total_fare_min_inr:.0f}×{travelers}) + ₹{local_transfer_fare*2:.0f} local auto transfers",
+                notes=f"Scheduled {best_t.operator_name} (₹{best_t.total_fare_min_inr:.0f}×{travelers}) + ₹{local_transfer_fare * 2:.0f} local auto transfers",
                 notes_kn=f"ನಿಗದಿತ {best_t.operator_name} + ಸ್ಥಳೀಯ ಆಟೋ ಸಂಪರ್ಕಗಳು",
             )
         )
@@ -233,7 +236,7 @@ def build_travel_leg_details(
                 duration_minutes=duration_mins + 25,
                 cost_inr=round(est_mixed_group, 2),
                 cost_status=CostStatus.ESTIMATED,
-                notes=f"Estimated regional bus (~₹{est_bus_pp:.0f}/person) + ₹{local_transfer_fare*2:.0f} first/last-mile autos",
+                notes=f"Estimated regional bus (~₹{est_bus_pp:.0f}/person) + ₹{local_transfer_fare * 2:.0f} first/last-mile autos",
                 notes_kn="ಅಂದಾಜು ಪ್ರಾದೇಶಿಕ ಬಸ್ + ಸ್ಥಳೀಯ ಆಟೋ",
             )
         )
@@ -262,7 +265,9 @@ def build_travel_leg_details(
                 duration_minutes=walking_mins,
                 cost_inr=0.0,
                 cost_status=CostStatus.VERIFIED,
-                notes="Feasible pedestrian connection" if walking_feasible else "Extended walk, exercise caution",
+                notes="Feasible pedestrian connection"
+                if walking_feasible
+                else "Extended walk, exercise caution",
                 notes_kn="ಕಾಲ್ನಡಿಗೆ ಮಾರ್ಗ" if walking_feasible else "ಹೆಚ್ಚಿನ ದೂರದ ನಡಿಗೆ",
             )
         )
@@ -312,8 +317,14 @@ def build_travel_leg_details(
             best_t = transit_options[0]
             op_name = best_t.operator_name
             route_num = best_t.legs[0].line_name if best_t.legs else None
-            orig_term = best_t.legs[0].origin_stop.name_en if best_t.legs else f"{origin_name} Bus Stand"
-            dest_term = best_t.legs[-1].destination_stop.name_en if best_t.legs else f"{dest_name} Bus Stand"
+            orig_term = (
+                best_t.legs[0].origin_stop.name_en if best_t.legs else f"{origin_name} Bus Stand"
+            )
+            dest_term = (
+                best_t.legs[-1].destination_stop.name_en
+                if best_t.legs
+                else f"{dest_name} Bus Stand"
+            )
 
             t_fare_pp = best_t.total_fare_min_inr
             t_fare_group = t_fare_pp * travelers
@@ -327,9 +338,7 @@ def build_travel_leg_details(
                 f"Mixed multimodal connection: First-mile local auto to {orig_term}, "
                 f"scheduled {op_name} transit corridor to {dest_term}, and last-mile auto to {dest_name}."
             )
-            rec_reason_kn = (
-                f"ಮಿಶ್ರ ಸಾರಿಗೆ: {orig_term} ವರೆಗೆ ಸ್ಥಳೀಯ ಆಟೋ, {op_name} ಸಾರ್ವಜನಿಕ ಬಸ್ ಮತ್ತು {dest_name} ವರೆಗೆ ಅಂತಿಮ ಹಂತದ ಆಟೋ."
-            )
+            rec_reason_kn = f"ಮಿಶ್ರ ಸಾರಿಗೆ: {orig_term} ವರೆಗೆ ಸ್ಥಳೀಯ ಆಟೋ, {op_name} ಸಾರ್ವಜನಿಕ ಬಸ್ ಮತ್ತು {dest_name} ವರೆಗೆ ಅಂತಿಮ ಹಂತದ ಆಟೋ."
             calc_basis = (
                 f"Scheduled {op_name} fare ₹{t_fare_pp:.0f}×{travelers} + "
                 f"₹{first_mile_cost + last_mile_cost:.0f} first/last-mile local auto transfers"
@@ -367,7 +376,9 @@ def build_travel_leg_details(
                     distance_km=dist,
                     duration_minutes=best_t.total_duration_minutes,
                     cost_inr=t_fare_group,
-                    cost_status=CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED,
+                    cost_status=CostStatus.VERIFIED
+                    if best_t.fare_status == "verified"
+                    else CostStatus.ESTIMATED,
                     is_per_person=True,
                 ),
                 TravelLegSegment(
@@ -403,14 +414,14 @@ def build_travel_leg_details(
                 f"Mixed transit: Local auto to regional bus station, intercity state bus (~{dist:.1f} km), "
                 f"and local auto connection to destination."
             )
-            rec_reason_kn = (
-                f"ಮಿಶ್ರ ಸಾರಿಗೆ: ಪ್ರಾದೇಶಿಕ ಬಸ್ ನಿಲ್ದಾಣಕ್ಕೆ ಆಟೋ, ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಬಸ್ ಪ್ರಯಾಣ ಮತ್ತು ಸ್ಥಳೀಯ ಆಟೋ ಸಂಪರ್ಕ."
-            )
+            rec_reason_kn = "ಮಿಶ್ರ ಸಾರಿಗೆ: ಪ್ರಾದೇಶಿಕ ಬಸ್ ನಿಲ್ದಾಣಕ್ಕೆ ಆಟೋ, ಕೆಎಸ್‌ಆರ್‌ಟಿಸಿ ಬಸ್ ಪ್ರಯಾಣ ಮತ್ತು ಸ್ಥಳೀಯ ಆಟೋ ಸಂಪರ್ಕ."
             calc_basis = (
                 f"Estimated regional transit fare (~₹{est_bus_pp:.0f}/person) + "
                 f"₹{first_mile_cost + last_mile_cost:.0f} local auto transfers"
             )
-            warnings.append("Direct timetable schedule unverified for this corridor; board at local KSRTC bus stand.")
+            warnings.append(
+                "Direct timetable schedule unverified for this corridor; board at local KSRTC bus stand."
+            )
             segments = [
                 TravelLegSegment(
                     segment_order=1,
@@ -471,7 +482,9 @@ def build_travel_leg_details(
             route_num = None
             orig_term = None
             dest_term = None
-            rec_reason = f"Short local connection ({dist:.1f} km): Local metered auto-rickshaw transfer."
+            rec_reason = (
+                f"Short local connection ({dist:.1f} km): Local metered auto-rickshaw transfer."
+            )
             rec_reason_kn = f"ಸ್ಥಳೀಯ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ): ಸ್ಥಳೀಯ ಆಟೋ ರಿಕ್ಷಾ ಸಂಪರ್ಕ."
             calc_basis = f"Metered local auto-rickshaw (₹30 base for 1.5km + ₹16/km for {autos_count} auto(s))"
             segments = [
@@ -502,7 +515,9 @@ def build_travel_leg_details(
             dest_term = best_t.legs[-1].destination_stop.name_en if best_t.legs else None
             per_person_inr = best_t.total_fare_min_inr
             group_inr = per_person_inr * travelers
-            fare_status = CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED
+            fare_status = (
+                CostStatus.VERIFIED if best_t.fare_status == "verified" else CostStatus.ESTIMATED
+            )
             rec_reason = f"Verified scheduled {op_name} service connecting {origin_name} corridor to {dest_name}."
             rec_reason_kn = f"{op_name} ಪರಿಶೀಲಿಸಿದ ಸಾರ್ವಜನಿಕ ಸಾರಿಗೆ ಸಂಪರ್ಕ."
             calc_basis = f"Published schedule fare ₹{per_person_inr:.0f} per traveler"
@@ -534,7 +549,9 @@ def build_travel_leg_details(
             route_num = None
             orig_term = None
             dest_term = None
-            rec_reason = f"Short urban transit hop ({dist:.1f} km): Local city bus or pedestrian walk."
+            rec_reason = (
+                f"Short urban transit hop ({dist:.1f} km): Local city bus or pedestrian walk."
+            )
             rec_reason_kn = f"ಸ್ಥಳೀಯ ನಗರ ಸಾರಿಗೆ ({dist:.1f} ಕಿ.ಮೀ): ಸ್ಥಳೀಯ ಬಸ್."
             calc_basis = f"Standard local stage fare ₹{per_person_inr:.0f} per traveler"
             segments = [
@@ -658,7 +675,9 @@ def build_travel_leg_details(
         per_person_inr = cab_est.per_person_min_inr
         group_inr = cab_est.total_cost_min_inr
         fare_status = CostStatus.ESTIMATED
-        rec_reason = f"Point-to-point road taxi / auto transfer ({dist:.1f} km, ~{duration_mins} mins)."
+        rec_reason = (
+            f"Point-to-point road taxi / auto transfer ({dist:.1f} km, ~{duration_mins} mins)."
+        )
         rec_reason_kn = f"ನೇರ ಟ್ಯಾಕ್ಸಿ / ಆಟೋ ಸಂಪರ್ಕ ({dist:.1f} ಕಿ.ಮೀ, ಸುಮಾರು {duration_mins} ನಿಮಿಷಗಳು)."
         calc_basis = cab_est.calculation_basis
         op_name = "Local Taxi / Auto"
@@ -711,8 +730,12 @@ def build_travel_leg_details(
         parking_note=parking_note,
         parking_note_kn=parking_note_kn,
         walking_feasible=walking_feasible,
-        walking_notes=f"Pedestrian feasible ({dist:.1f} km)" if walking_feasible else f"Distance ({dist:.1f} km) is not recommended for walking",
-        walking_notes_kn=f"ಕಾಲ್ನಡಿಗೆಗೆ ಸೂಕ್ತ ({dist:.1f} ಕಿ.ಮೀ)" if walking_feasible else f"ದೂರವು ({dist:.1f} ಕಿ.ಮೀ) ಕಾಲ್ನಡಿಗೆಗೆ ಸೂಕ್ತವಲ್ಲ",
+        walking_notes=f"Pedestrian feasible ({dist:.1f} km)"
+        if walking_feasible
+        else f"Distance ({dist:.1f} km) is not recommended for walking",
+        walking_notes_kn=f"ಕಾಲ್ನಡಿಗೆಗೆ ಸೂಕ್ತ ({dist:.1f} ಕಿ.ಮೀ)"
+        if walking_feasible
+        else f"ದೂರವು ({dist:.1f} ಕಿ.ಮೀ) ಕಾಲ್ನಡಿಗೆಗೆ ಸೂಕ್ತವಲ್ಲ",
         source_reference="Karnataka Transit Network / Transport Cost Calculator",
         segments=segments,
         alternatives=alternatives,
@@ -1086,7 +1109,8 @@ class DeterministicScheduler:
                 day_cost_max += lunch_unit * 1.5 * request.travelers_count
                 current_time = lunch_end + timedelta(minutes=30)
 
-            # Check for Cultural Festival / Event nearby
+            # Check for Cultural Festival / Event recommendations nearby (Workstream 6: Optional recommendation, NOT forced stop)
+            day_recommended_events: list[EventRead] = []
             events_svc = get_events_service()
             event_check_coords = prev_coords or (
                 Coordinates(
@@ -1095,111 +1119,18 @@ class DeterministicScheduler:
                 if day_destinations and getattr(day_destinations[0], "coordinates", None)
                 else None
             )
-            matched_event = None
             if event_check_coords:
                 travel_month = base_date.month if base_date else None
                 candidate_events = events_svc.get_events_near(
                     event_check_coords.lat,
                     event_check_coords.lon,
-                    radius_km=25.0,
+                    radius_km=45.0,
                     month=travel_month,
                 )
-                if candidate_events and candidate_events[0].event_id not in scheduled_event_ids:
-                    matched_event = candidate_events[0]
-                    scheduled_event_ids.add(matched_event.event_id)
-
-            if matched_event:
-                event_name = (
-                    matched_event.name_en
-                    if request.language == LanguageCode.EN
-                    else matched_event.name_kn
-                )
-                event_desc = (
-                    matched_event.description_en
-                    if request.language == LanguageCode.EN
-                    else matched_event.description_kn
-                )
-                event_coords = Coordinates(
-                    lat=matched_event.latitude, lon=matched_event.longitude
-                )
-                event_dist_km: float | None = None
-                event_transit_mins: int | None = None
-                event_transit_method: str | None = None
-                if prev_coords and event_coords:
-                    routing_svc = get_routing_service()
-                    route_est = routing_svc.estimate_travel(
-                        prev_coords.lat, prev_coords.lon, event_coords.lat, event_coords.lon
-                    )
-                    event_dist_km = route_est.estimated_road_distance_km
-                    event_transit_mins = route_est.duration_minutes
-                    event_transit_method = "terrain_adjusted_estimate"
-                    total_transit_mins += event_transit_mins
-                    day_driving_km += event_dist_km
-                    current_time += timedelta(minutes=event_transit_mins)
-
-                event_start = current_time
-                event_end = current_time + timedelta(minutes=90)
-                event_cost_min = (
-                    matched_event.ticket_cost_min_inr * request.travelers_count
-                    if matched_event.ticket_cost_min_inr is not None
-                    else None
-                )
-                event_cost_max = (
-                    matched_event.ticket_cost_max_inr * request.travelers_count
-                    if matched_event.ticket_cost_max_inr is not None
-                    else event_cost_min
-                )
-                event_cost_status = (
-                    CostStatus.VERIFIED
-                    if matched_event.ticket_cost_status == "verified"
-                    else (
-                        CostStatus.ESTIMATED
-                        if matched_event.ticket_cost_status == "estimated"
-                        else CostStatus.UNKNOWN
-                    )
-                )
-                event_leg_data = None
-                if event_dist_km is not None and event_transit_mins is not None and prev_coords and event_coords:
-                    prev_name = stops[-1].name if stops else start_location_name
-                    event_leg_data = build_travel_leg_details(
-                        origin_name=prev_name,
-                        dest_name=event_name,
-                        dist_km=event_dist_km,
-                        duration_mins=event_transit_mins,
-                        prev_coords=prev_coords,
-                        dest_coords=event_coords,
-                        request=request,
-                    )
-
-                stops.append(
-                    ItineraryStop(
-                        stop_id=f"stop-d{day_num}-event-{matched_event.event_id}",
-                        destination_id=None,
-                        stop_type=StopType.EVENT,
-                        name=f"🎪 {event_name}",
-                        description=f"{event_desc} (Source: {matched_event.source_name})",
-                        start_time=event_start.strftime("%H:%M"),
-                        end_time=event_end.strftime("%H:%M"),
-                        duration_minutes=90,
-                        coordinates=event_coords,
-                        distance_from_prev_km=event_dist_km,
-                        transit_from_prev_minutes=event_transit_mins,
-                        transit_method=event_transit_method,
-                        travel_leg=event_leg_data,
-                        cost_min_inr=event_cost_min,
-                        cost_max_inr=event_cost_max,
-                        currency="INR",
-                        cost_status=event_cost_status,
-                        source_reference=matched_event.source_url,
-                        rationale=f"Verified cultural festival in {matched_event.location_name}.",
-                    )
-                )
-                if event_cost_min:
-                    day_cost_min += event_cost_min
-                if event_cost_max:
-                    day_cost_max += event_cost_max
-                current_time = event_end + timedelta(minutes=15)
-                prev_coords = event_coords
+                for cand_ev in candidate_events:
+                    if cand_ev.event_id not in scheduled_event_ids:
+                        day_recommended_events.append(cand_ev)
+                        scheduled_event_ids.add(cand_ev.event_id)
 
             # 3. Dinner (20:00 - 21:15)
             if current_time.hour < 20:
@@ -1356,7 +1287,9 @@ class DeterministicScheduler:
                     stay_cost_max = round(stay_unit_max * rooms, 2)
                     stay_cost_status = CostStatus.ESTIMATED
                     stay_source = None
-                    stay_coords = dinner_ref_coords or prev_coords or Coordinates(lat=12.9716, lon=77.5946)
+                    stay_coords = (
+                        dinner_ref_coords or prev_coords or Coordinates(lat=12.9716, lon=77.5946)
+                    )
 
                 stay_dist_km: float | None = None
                 stay_transit_mins: int | None = None
@@ -1374,7 +1307,12 @@ class DeterministicScheduler:
                     current_time += timedelta(minutes=stay_transit_mins)
 
                 stay_leg_data = None
-                if stay_dist_km is not None and stay_transit_mins is not None and prev_coords and stay_coords:
+                if (
+                    stay_dist_km is not None
+                    and stay_transit_mins is not None
+                    and prev_coords
+                    and stay_coords
+                ):
                     prev_name = stops[-1].name if stops else start_location_name
                     stay_leg_data = build_travel_leg_details(
                         origin_name=prev_name,
@@ -1517,6 +1455,7 @@ class DeterministicScheduler:
                     meals_covered=meals_covered,
                     daily_cost_min_inr=round(day_cost_min, 2),
                     daily_cost_max_inr=round(day_cost_max, 2),
+                    recommended_events=day_recommended_events,
                     warnings=day_warnings,
                 )
             )
@@ -2016,7 +1955,12 @@ class DeterministicScheduler:
                     current_time += timedelta(minutes=stay_transit_mins)
 
                 stay_leg_data = None
-                if stay_dist_km is not None and stay_transit_mins is not None and prev_coords and stay_coords:
+                if (
+                    stay_dist_km is not None
+                    and stay_transit_mins is not None
+                    and prev_coords
+                    and stay_coords
+                ):
                     prev_name = stops[-1].name if stops else start_location_name
                     stay_leg_data = build_travel_leg_details(
                         origin_name=prev_name,
@@ -2158,6 +2102,7 @@ class DeterministicScheduler:
                     meals_covered=meals_covered,
                     daily_cost_min_inr=round(day_cost_min, 2),
                     daily_cost_max_inr=round(day_cost_max, 2),
+                    recommended_events=getattr(day, "recommended_events", []),
                     warnings=day_warnings,
                 )
             )
@@ -2204,15 +2149,20 @@ class DeterministicScheduler:
                 status_code=400,
             )
 
-        # Collect all destination IDs already used in the trip
+        # Collect all destination IDs already used in the trip (resolving canonical identities)
+        canonical_id_map = getattr(dest_repo, "CANONICAL_ID_MAPPINGS", {})
+        canonical_slug_map = getattr(dest_repo, "CANONICAL_SLUG_MAPPINGS", {})
         used_ids: set[str] = set()
         for d in current_plan.days:
             for s in d.stops:
                 if s.destination_id:
                     used_ids.add(s.destination_id)
+                    used_ids.add(canonical_id_map.get(s.destination_id, s.destination_id))
         for item in current_plan.items:
             used_ids.add(item.id)
             used_ids.add(item.slug)
+            used_ids.add(canonical_id_map.get(item.id, item.id))
+            used_ids.add(canonical_slug_map.get(item.slug, item.slug))
 
         # Determine preceding and following coordinates
         attr_stops = [
@@ -2366,13 +2316,17 @@ class DeterministicScheduler:
         ]
         locked_ids = {s.destination_id for s in locked_stops if s.destination_id}
 
-        # Destinations on other days are excluded
+        # Destinations on other days are excluded (resolving canonical identities)
+        canonical_id_map = getattr(dest_repo, "CANONICAL_ID_MAPPINGS", {})
         used_other_day_ids: set[str] = set()
         for d in current_plan.days:
             if d.day_number != day_number:
                 for s in d.stops:
                     if s.destination_id:
                         used_other_day_ids.add(s.destination_id)
+                        used_other_day_ids.add(
+                            canonical_id_map.get(s.destination_id, s.destination_id)
+                        )
 
         target_count = 2 if request.pace == "relaxed" else (4 if request.pace == "packed" else 3)
         needed = max(1, target_count - len(locked_stops))

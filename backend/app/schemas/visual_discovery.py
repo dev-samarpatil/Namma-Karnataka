@@ -76,6 +76,33 @@ class VisualDiscoveryCandidate(StrictSchema):
     )
 
 
+class ExternalPlaceRecognition(StrictSchema):
+    """Recognized landmark or destination outside the verified catalogue."""
+
+    place_name: str = Field(..., description="Recognized place or landmark name")
+    location_summary: str | None = Field(
+        None, description="City, district, state, country if identified"
+    )
+    state_or_region: str | None = Field(None, description="State, province, or region")
+    country: str | None = Field(default="India", description="Country name")
+    is_karnataka: bool = Field(
+        default=False, description="Whether the place is located within Karnataka"
+    )
+    confidence_label: ConfidenceLabel = Field(default=ConfidenceLabel.POSSIBLE_MATCH)
+    match_score: Annotated[float, Field(ge=0.0, le=1.0)] = Field(default=0.75)
+    visual_evidence: VisualEvidence | None = None
+    summary: str | None = Field(None, description="Reliable contextual summary of the place")
+    source_url: str | None = Field(None, description="Legitimate public source or reference link")
+    catalogue_status: str = Field(
+        default="outside_catalogue",
+        description="Explicit status indicator e.g. 'outside_catalogue' or 'unverified_external'",
+    )
+    notes: str | None = Field(
+        default="This place is not currently part of the curated Karnataka destination catalogue.",
+        description="Disclosure that this place is not yet in the curated travel catalogue",
+    )
+
+
 class VisualDiscoveryResponse(StrictSchema):
     """Structured response for visual discovery queries."""
 
@@ -88,12 +115,20 @@ class VisualDiscoveryResponse(StrictSchema):
     candidates: list[VisualDiscoveryCandidate] = Field(
         default_factory=list, description="Ranked catalogue candidates (empty if no match)"
     )
+    external_place: ExternalPlaceRecognition | None = Field(
+        default=None,
+        description="Recognition of a place outside the curated catalogue (when identified)",
+    )
     sampled_frame_count: int | None = Field(
         None, description="Number of video frames sampled (for video queries)"
     )
     analyzed_at: str | datetime = Field(
         default_factory=lambda: datetime.now(UTC).isoformat(),
         description="Timestamp of analysis",
+    )
+    analysis_engine: str = Field(
+        default="visual_similarity_engine",
+        description="Identification engine used: 'ai_multimodal', 'visual_similarity_engine', or 'deterministic_fallback'",
     )
     privacy_notice: str = Field(
         default=(

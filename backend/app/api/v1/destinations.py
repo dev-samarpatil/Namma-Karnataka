@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from typing import Any
+import httpx
 
 from fastapi import APIRouter, Depends, Query
 
@@ -13,12 +14,14 @@ from app.schemas.destinations import (
     DestinationCategory,
     DestinationFilterParams,
     DestinationListResponse,
+    DestinationMedia,
     DestinationNearbyResponse,
     DestinationRead,
     LanguageCode,
     NearbyAttractionItem,
     NearbyTransitItem,
 )
+from app.services.media.image_search import DestinationImageSearchService
 from app.services.places.service import PlacesService
 from app.services.transit.curated_provider import CuratedTransitProvider
 
@@ -157,6 +160,10 @@ def get_destination_nearby(
             pass
 
         # 3. Nearby Food & Stay via Places Service
+        effective_radius_km: float | None = None
+        radius_expanded = False
+        radius_note: str | None = None
+
         try:
             places_svc = PlacesService()
             rests = places_svc.get_restaurants_near(lat, lon, radius_km=radius_km, max_results=6)
@@ -165,6 +172,25 @@ def get_destination_nearby(
             accs = places_svc.get_accommodations_near(lat, lon, radius_km=radius_km, max_results=6)
             for a in accs:
                 nearby_accommodations.append(a.model_dump())
+
+            # If no places found within initial radius, perform transparent radius expansion
+            if not nearby_restaurants and not nearby_accommodations:
+                expanded_radius = min(max(radius_km * 2.0, 35.0), 60.0)
+                expanded_rests = places_svc.get_restaurants_near(lat, lon, radius_km=expanded_radius, max_results=6)
+                expanded_accs = places_svc.get_accommodations_near(lat, lon, radius_km=expanded_radius, max_results=6)
+                if expanded_rests or expanded_accs:
+                    for r in expanded_rests:
+                        nearby_restaurants.append(r.model_dump())
+                    for a in expanded_accs:
+                        nearby_accommodations.append(a.model_dump())
+                    radius_expanded = True
+                    effective_radius_km = expanded_radius
+                    radius_note = (
+                        f"No verified food or stays found within {radius_km} km. "
+                        f"Showing closest verified options within {expanded_radius} km."
+                    )
+                else:
+                    radius_note = f"No curated food or lodging records within {radius_km} km radius."
         except Exception:
             pass
 
@@ -172,6 +198,9 @@ def get_destination_nearby(
         destination_id=destination.id,
         destination_slug=destination.slug,
         radius_km=radius_km,
+        effective_radius_km=effective_radius_km,
+        radius_expanded=radius_expanded,
+        radius_note=radius_note,
         nearby_attractions=nearby_attractions,
         nearby_transit=nearby_transit,
         nearby_restaurants=nearby_restaurants,
@@ -179,7 +208,32 @@ def get_destination_nearby(
     )
 
 
+
+import asyncio
+import hashlib
+from pathlib import Path
+from fastapi.responses import Response
+
 _MEDIA_CACHE: dict[str, tuple[bytes, str]] = {}
+_MEDIA_DISK_CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "static" / "media_cache"
+_MEDIA_DISK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+_PROXY_SEMAPHORE = asyncio.Semaphore(6)
+_SHARED_PROXY_CLIENT: httpx.AsyncClient | None = None
+
+
+def _get_proxy_client() -> httpx.AsyncClient:
+    global _SHARED_PROXY_CLIENT
+    if _SHARED_PROXY_CLIENT is None or _SHARED_PROXY_CLIENT.is_closed:
+        _SHARED_PROXY_CLIENT = httpx.AsyncClient(
+            timeout=12.0,
+            follow_redirects=True,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            headers={
+                "User-Agent": "NammaKarnatakaTravelApp/1.0 (https://karnataka.gov.in; tourism@nammakarnataka.org)",
+                "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+            },
+        )
+    return _SHARED_PROXY_CLIENT
 
 
 @router.get("/media/proxy")
@@ -188,10 +242,33 @@ async def proxy_destination_media(
 ) -> Any:
     """Proxy authentic destination media from verified Wikimedia domains to avoid
     CORS, network sandboxing, or client-side referrer restriction failures.
+    Includes memory + persistent disk caching and unscaled thumbnail fallback.
     """
-    from fastapi.responses import Response
-
     clean_url = url.split("?")[0].replace("thumb.wikimedia.org", "upload.wikimedia.org")
+
+    # 1. Local filesystem assets
+    if clean_url.startswith(("/images/", "/static/")):
+        filename = Path(clean_url).name
+        local_path = Path(__file__).resolve().parent.parent.parent / "static" / "destinations" / filename
+        frontend_path = (
+            Path(__file__).resolve().parent.parent.parent.parent.parent
+            / "frontend"
+            / "public"
+            / "images"
+            / "destinations"
+            / filename
+        )
+        target_path = local_path if local_path.exists() else (frontend_path if frontend_path.exists() else None)
+        if target_path:
+            data = target_path.read_bytes()
+            content_type = "image/jpeg" if filename.lower().endswith((".jpg", ".jpeg")) else "image/png"
+            return Response(
+                content=data,
+                media_type=content_type,
+                headers={"Cache-Control": "public, max-age=604800"},
+            )
+
+    # 2. Domain verification
     if not (
         clean_url.startswith("https://upload.wikimedia.org/")
         or clean_url.startswith("https://commons.wikimedia.org/")
@@ -202,39 +279,97 @@ async def proxy_destination_media(
             status_code=403,
         )
 
+    # 3. Check In-Memory Cache
     if clean_url in _MEDIA_CACHE:
         data, content_type = _MEDIA_CACHE[clean_url]
         return Response(
             content=data,
             media_type=content_type,
-            headers={"Cache-Control": "public, max-age=86400"},
+            headers={"Cache-Control": "public, max-age=604800"},
         )
 
-    headers = {
-        "User-Agent": "NammaKarnatakaTravelApp/1.0 (https://karnataka.gov.in; tourism@nammakarnataka.org)",
-        "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
-    }
-    import httpx
+    # 4. Check Disk Cache
+    url_hash = hashlib.sha256(clean_url.encode("utf-8")).hexdigest()
+    bin_file = _MEDIA_DISK_CACHE_DIR / f"{url_hash}.bin"
+    meta_file = _MEDIA_DISK_CACHE_DIR / f"{url_hash}.meta"
 
-    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+    if bin_file.exists() and meta_file.exists() and bin_file.stat().st_size > 500:
         try:
-            resp = await client.get(clean_url, headers=headers)
-            if resp.status_code == 200:
-                content_type = resp.headers.get("content-type", "image/jpeg")
-                _MEDIA_CACHE[clean_url] = (resp.content, content_type)
-                return Response(
-                    content=resp.content,
-                    media_type=content_type,
-                    headers={"Cache-Control": "public, max-age=86400"},
-                )
+            data = bin_file.read_bytes()
+            content_type = meta_file.read_text(encoding="utf-8").strip() or "image/jpeg"
+            _MEDIA_CACHE[clean_url] = (data, content_type)
+            return Response(
+                content=data,
+                media_type=content_type,
+                headers={"Cache-Control": "public, max-age=604800"},
+            )
         except Exception:
             pass
+
+    # 5. Remote fetch with semaphore & fallback to unscaled
+    client = _get_proxy_client()
+    urls_to_try = [clean_url]
+    if "/thumb/" in clean_url:
+        import re
+
+        unscaled = re.sub(
+            r"/wikipedia/commons/thumb/([a-f0-9]/[a-f0-9]{2}/[^/]+)/.*",
+            r"/wikipedia/commons/\1",
+            clean_url,
+        )
+        if unscaled != clean_url:
+            urls_to_try.append(unscaled)
+
+    async with _PROXY_SEMAPHORE:
+        for candidate_url in urls_to_try:
+            try:
+                resp = await client.get(candidate_url)
+                if resp.status_code == 200 and len(resp.content) > 500:
+                    content_type = resp.headers.get("content-type", "image/jpeg")
+                    _MEDIA_CACHE[clean_url] = (resp.content, content_type)
+                    try:
+                        bin_file.write_bytes(resp.content)
+                        meta_file.write_text(content_type, encoding="utf-8")
+                    except Exception:
+                        pass
+                    return Response(
+                        content=resp.content,
+                        media_type=content_type,
+                        headers={"Cache-Control": "public, max-age=604800"},
+                    )
+            except Exception:
+                continue
 
     raise AppError(
         code="MEDIA_FETCH_FAILED",
         message="Unable to proxy authentic destination photograph.",
         status_code=502,
     )
+
+
+@router.get("/{id_or_slug}/images", response_model=list[DestinationMedia])
+async def get_destination_images(
+    id_or_slug: str,
+    limit: int = Query(8, ge=1, le=15, description="Maximum images to retrieve"),
+    refresh: bool = Query(False, description="Bypass cache and query provider fresh"),
+    repo: DestinationRepository = Depends(get_destination_repository),
+) -> list[DestinationMedia]:
+    """Retrieve 5-8 verified, distinct photographs for a destination."""
+    dest = repo.get_by_slug(id_or_slug) or repo.get_by_id(id_or_slug)
+    if not dest or dest.content_status != "published" or not dest.active:
+        raise AppError(
+            code="DESTINATION_NOT_FOUND",
+            message=f"Destination '{id_or_slug}' was not found or is not published.",
+            status_code=404,
+        )
+
+    search_svc = DestinationImageSearchService(repository=repo)
+    images = await search_svc.search_destination_images(
+        id_or_slug=id_or_slug,
+        target_count=limit,
+        force_refresh=refresh,
+    )
+    return images
 
 
 @router.get("/{id_or_slug}", response_model=DestinationRead)

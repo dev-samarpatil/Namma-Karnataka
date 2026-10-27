@@ -304,6 +304,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                 <button
                   type="button"
                   aria-label="Decrease duration"
+                  data-testid="decrease-duration-btn"
                   onClick={() => {
                     const next = Math.max(1, (parseInt(durationInput, 10) || 2) - 1);
                     setDurationInput(String(next));
@@ -333,6 +334,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                 <button
                   type="button"
                   aria-label="Increase duration"
+                  data-testid="increase-duration-btn"
                   onClick={() => {
                     const next = Math.min(7, (parseInt(durationInput, 10) || 1) + 1);
                     setDurationInput(String(next));
@@ -348,24 +350,6 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                   ⚠️ {t('durationError')}
                 </div>
               )}
-              {/* Quick Presets */}
-              <div className="duration-selector" style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
-                {[1, 2, 3, 4, 5, 7].map((days) => (
-                  <button
-                    key={days}
-                    type="button"
-                    className={`btn-duration ${duration === days ? 'active' : ''}`}
-                    onClick={() => {
-                      setDurationInput(String(days));
-                      setValidationError(null);
-                    }}
-                    data-testid={`duration-btn-${days}`}
-                    style={{ flex: 1, padding: '4px 0', fontSize: '0.8rem' }}
-                  >
-                    {days}d
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -381,6 +365,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                 <button
                   type="button"
                   aria-label="Decrease travelers"
+                  data-testid="decrease-travelers-btn"
                   onClick={() => {
                     const next = Math.max(1, (parseInt(travelersInput, 10) || 2) - 1);
                     setTravelersInput(String(next));
@@ -410,6 +395,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                 <button
                   type="button"
                   aria-label="Increase travelers"
+                  data-testid="increase-travelers-btn"
                   onClick={() => {
                     const next = Math.min(20, (parseInt(travelersInput, 10) || 1) + 1);
                     setTravelersInput(String(next));
@@ -425,24 +411,6 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                   ⚠️ {t('travelersError')}
                 </div>
               )}
-              {/* Quick Presets */}
-              <div className="duration-selector" style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
-                {[1, 2, 4, 6, 8, 12].map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    className={`btn-duration ${travelers === count ? 'active' : ''}`}
-                    onClick={() => {
-                      setTravelersInput(String(count));
-                      setValidationError(null);
-                    }}
-                    data-testid={`travelers-btn-${count}`}
-                    style={{ flex: 1, padding: '4px 0', fontSize: '0.8rem' }}
-                  >
-                    {count}p
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className="form-field">

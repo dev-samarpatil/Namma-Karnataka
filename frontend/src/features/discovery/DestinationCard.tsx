@@ -46,14 +46,17 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
   };
 
   const [imageError, setImageError] = React.useState(false);
+  const [useDirectFallback, setUseDirectFallback] = React.useState(false);
   const rawImageUrl = destination.primary_image_url || destination.media?.[0]?.thumbnail_url || destination.media?.[0]?.url;
   const cleanUrl = rawImageUrl
     ? rawImageUrl.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0]
     : undefined;
   const baseUrl = getApiBaseUrl().replace(/\/+$/, '');
-  const imageUrl = cleanUrl
-    ? `${baseUrl}/destinations/media/proxy?url=${encodeURIComponent(cleanUrl)}`
+  const isLocalUrl = Boolean(cleanUrl && (cleanUrl.startsWith('/') || cleanUrl.startsWith('data:')));
+  const proxyUrl = cleanUrl
+    ? (isLocalUrl ? cleanUrl : `${baseUrl}/destinations/media/proxy?url=${encodeURIComponent(cleanUrl)}`)
     : undefined;
+  const imageUrl = useDirectFallback && cleanUrl && !isLocalUrl ? cleanUrl : proxyUrl;
   const primaryMedia = destination.media?.[0];
   const isVerifiedAuthentic = primaryMedia?.verification_status === 'verified_authentic';
 
@@ -84,7 +87,13 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
             loading="lazy"
             referrerPolicy="no-referrer"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={() => setImageError(true)}
+            onError={() => {
+              if (!useDirectFallback && cleanUrl && !isLocalUrl) {
+                setUseDirectFallback(true);
+              } else {
+                setImageError(true);
+              }
+            }}
           />
           {isVerifiedAuthentic ? (
             <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#34d399', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)', fontWeight: 600 }}>

@@ -7,6 +7,7 @@ import {
   DestinationFilterParams,
   DestinationListResponse,
   DestinationRead,
+  DestinationMedia,
   DestinationNearbyResponse,
   PlanningRequest,
   PlanningRecommendationResponse,
@@ -227,6 +228,20 @@ export async function getDestination(
   signal?: AbortSignal
 ): Promise<DestinationRead> {
   return fetchApi<DestinationRead>(`/destinations/${encodeURIComponent(idOrSlug)}`, { signal });
+}
+
+/**
+ * Retrieve 5-8 verified, distinct photographs for a destination.
+ */
+export async function fetchDestinationImages(
+  idOrSlug: string,
+  limit: number = 8,
+  signal?: AbortSignal
+): Promise<DestinationMedia[]> {
+  return fetchApi<DestinationMedia[]>(
+    `/destinations/${encodeURIComponent(idOrSlug)}/images?limit=${limit}`,
+    { signal }
+  );
 }
 
 /**

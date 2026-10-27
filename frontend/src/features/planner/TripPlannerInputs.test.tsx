@@ -135,4 +135,55 @@ describe('TripPlannerForm Numeric Inputs & Transport Mode (Workstreams A, C, D)'
 
     expect(screen.getByText(/ಪ್ರವಾಸದ ದಿನಗಳು ೧ ರಿಂದ ೭ ದಿನಗಳ ನಡುವೆ ಇರಬೇಕು/i)).toBeInTheDocument();
   });
+
+  it('increments and decrements duration and travelers count via +/- buttons', () => {
+    const handleSubmit = vi.fn();
+    render(
+      <TripPlannerForm
+        language="en"
+        onSubmit={handleSubmit}
+        isSubmitting={false}
+      />
+    );
+
+    const durationInput = screen.getByTestId('planner-duration-input') as HTMLInputElement;
+    const travelersInput = screen.getByTestId('planner-travelers-input') as HTMLInputElement;
+
+    const decDuration = screen.getByTestId('decrease-duration-btn');
+    const incDuration = screen.getByTestId('increase-duration-btn');
+    const decTravelers = screen.getByTestId('decrease-travelers-btn');
+    const incTravelers = screen.getByTestId('increase-travelers-btn');
+
+    // Default duration is 2
+    expect(durationInput.value).toBe('2');
+    fireEvent.click(incDuration);
+    expect(durationInput.value).toBe('3');
+    fireEvent.click(decDuration);
+    expect(durationInput.value).toBe('2');
+
+    // Default travelers is 2
+    expect(travelersInput.value).toBe('2');
+    fireEvent.click(incTravelers);
+    expect(travelersInput.value).toBe('3');
+    fireEvent.click(decTravelers);
+    expect(travelersInput.value).toBe('2');
+  });
+
+  it('confirms redundant preset cards (1d, 2d, 1p, 2p, etc.) are removed from the DOM', () => {
+    const handleSubmit = vi.fn();
+    render(
+      <TripPlannerForm
+        language="en"
+        onSubmit={handleSubmit}
+        isSubmitting={false}
+      />
+    );
+
+    // Old preset button testids or text nodes must not exist
+    expect(screen.queryByTestId('duration-btn-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('duration-btn-2')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('travelers-btn-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('travelers-btn-4')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('travelers-btn-12')).not.toBeInTheDocument();
+  });
 });

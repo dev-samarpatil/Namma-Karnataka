@@ -162,12 +162,8 @@ def test_scheduler_attaches_travel_leg_to_all_transitions():
     d1 = create_mock_destination(
         "dest-1", "lalbagh", "Lalbagh Botanical Garden", 1, 1, 12.9507, 77.5848
     )
-    d2 = create_mock_destination(
-        "dest-2", "palace", "Bangalore Palace", 1, 2, 12.9982, 77.5921
-    )
-    d3 = create_mock_destination(
-        "dest-3", "nandi-hills", "Nandi Hills", 2, 1, 13.3702, 77.6835
-    )
+    d2 = create_mock_destination("dest-2", "palace", "Bangalore Palace", 1, 2, 12.9982, 77.5921)
+    d3 = create_mock_destination("dest-3", "nandi-hills", "Nandi Hills", 2, 1, 13.3702, 77.6835)
 
     day_plans, _, _ = DeterministicScheduler.build_schedule(req, [d1, d2, d3])
 
@@ -179,7 +175,12 @@ def test_scheduler_attaches_travel_leg_to_all_transitions():
         if stop.distance_from_prev_km and stop.distance_from_prev_km > 0:
             assert stop.travel_leg is not None
             assert stop.travel_leg.distance_km == pytest.approx(stop.distance_from_prev_km, abs=0.2)
-            assert stop.travel_leg.recommended_mode in ("driving_car", "cab_taxi", "walking", "public_transit")
+            assert stop.travel_leg.recommended_mode in (
+                "driving_car",
+                "cab_taxi",
+                "walking",
+                "public_transit",
+            )
             assert len(stop.travel_leg.alternatives) > 0
 
     # Overnight stay has travel_leg
@@ -302,4 +303,3 @@ def test_planning_request_travelers_and_duration_bounds():
     # Invalid duration > 7
     with pytest.raises(Exception):
         PlanningRequest(origin_label="Bengaluru", duration_days=8)
-

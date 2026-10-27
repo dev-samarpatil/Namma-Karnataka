@@ -97,18 +97,19 @@ class AIOrchestrator:
         corridor_candidates = [c for c in candidates if c.district_code in corridor.districts]
         prompt_candidates = corridor_candidates if len(corridor_candidates) >= 5 else candidates
 
-        # 3. Determine provider order (Preferred provider first, then alternative)
+        # 3. Determine provider order (Primary Gemini -> Secondary Gemini -> Groq -> Deterministic)
         preferred = settings.AI_PREFERRED_PROVIDER.lower()
         provider_order: list[str] = [preferred]
-        for name in ("groq", "gemini"):
-            if name != preferred:
+        for name in ("gemini", "groq"):
+            if name not in provider_order:
                 provider_order.append(name)
 
-        # 4. Initialize Global Deadline Timer
+        # 4. Initialize Global Deadline Timer & Observability Audit Log
         start_time = time.monotonic()
         global_deadline = float(settings.AI_GLOBAL_DEADLINE_SECONDS)
         max_call_timeout = float(settings.AI_PROVIDER_TIMEOUT_SECONDS)
         req_id = request_id_ctx.get()
+        fallback_audit_log: list[dict[str, str | float]] = []
 
         for provider_name in provider_order:
             provider = self._providers.get(provider_name)
@@ -121,9 +122,15 @@ class AIOrchestrator:
             # If remaining time is less than minimum viable threshold (2s), break to fallback
             if remaining_deadline <= 2.0:
                 logger.warning(
-                    "Global deadline nearly exhausted (%.1fs remaining). Halting provider calls.",
+                    "Global deadline nearly exhausted (%.1fs remaining). Halting provider calls. (req_id=%s)",
                     remaining_deadline,
+                    req_id,
                 )
+                fallback_audit_log.append({
+                    "provider": provider_name,
+                    "failure_category": "DEADLINE_EXHAUSTED",
+                    "duration_seconds": round(elapsed, 2),
+                })
                 break
 
             call_timeout = min(remaining_deadline, max_call_timeout)
@@ -134,6 +141,7 @@ class AIOrchestrator:
                 req_id,
             )
 
+            provider_start = time.monotonic()
             try:
                 raw_text = await asyncio.wait_for(
                     provider.generate_plan(
@@ -151,11 +159,22 @@ class AIOrchestrator:
                     language=request.language,
                 )
 
+                call_duration = round(time.monotonic() - provider_start, 2)
+                model_used = getattr(provider, "last_model_used", None) or "default"
                 logger.info(
-                    "Provider '%s' successfully generated and grounded %d stops",
+                    "Provider '%s' (model: '%s') successfully generated and grounded %d stops in %.2fs (req_id=%s)",
                     provider_name,
+                    model_used,
                     len(raw_grounded_items),
+                    call_duration,
+                    req_id,
                 )
+                fallback_audit_log.append({
+                    "provider": provider_name,
+                    "model": model_used,
+                    "status": "success",
+                    "duration_seconds": call_duration,
+                })
 
                 # Post-AI Geographic Optimization:
                 # Ensure Day 1 starts at origin and sequential continuity
@@ -174,12 +193,21 @@ class AIOrchestrator:
                 )
 
                 all_warnings = corridor_warnings + schedule_warnings
+                provider_display = f"{provider_name} ({model_used})" if model_used != "default" else provider_name
+
+                fest_seen = set()
+                trip_festivals = []
+                for d in days:
+                    for ev in getattr(d, "recommended_events", []):
+                        if ev.event_id not in fest_seen:
+                            fest_seen.add(ev.event_id)
+                            trip_festivals.append(ev)
 
                 return PlanningRecommendationResponse(
                     request_id=req_id,
                     language=request.language,
                     generation_mode="ai",
-                    provider_used=provider_name,
+                    provider_used=provider_display,
                     items=grounded_items,
                     total_destinations=len(grounded_items),
                     duration_days=request.duration_days,
@@ -187,12 +215,14 @@ class AIOrchestrator:
                     budget_breakdown=budget,
                     origin_label=request.origin_label,
                     corridor_name=corridor.name_en,
+                    recommended_festivals=trip_festivals,
                     assumptions=assumptions,
                     data_limitations=[],
                     warnings=all_warnings,
                 )
 
             except TimeoutError as exc:
+                call_duration = round(time.monotonic() - provider_start, 2)
                 logger.warning(
                     "Provider '%s' timed out after %.1fs (req_id=%s): %s",
                     provider_name,
@@ -200,28 +230,48 @@ class AIOrchestrator:
                     req_id,
                     exc,
                 )
+                fallback_audit_log.append({
+                    "provider": provider_name,
+                    "failure_category": "TIMEOUT",
+                    "duration_seconds": call_duration,
+                })
                 continue
             except (AIProviderError, AIValidationError) as exc:
+                call_duration = round(time.monotonic() - provider_start, 2)
                 error_code = getattr(exc, "code", "AI_EXECUTION_FAILURE")
                 logger.warning(
-                    "Provider '%s' failed with %s: %s. Proceeding to next provider or fallback.",
+                    "Provider '%s' failed with %s in %.2fs: %s. Proceeding to next provider or fallback.",
                     provider_name,
                     error_code,
+                    call_duration,
                     exc,
                 )
+                fallback_audit_log.append({
+                    "provider": provider_name,
+                    "failure_category": error_code,
+                    "duration_seconds": call_duration,
+                })
                 continue
             except Exception as exc:
+                call_duration = round(time.monotonic() - provider_start, 2)
                 logger.exception(
-                    "Unexpected error executing provider '%s': %s",
+                    "Unexpected error executing provider '%s' in %.2fs: %s",
                     provider_name,
+                    call_duration,
                     exc,
                 )
+                fallback_audit_log.append({
+                    "provider": provider_name,
+                    "failure_category": "UNEXPECTED_ERROR",
+                    "duration_seconds": call_duration,
+                })
                 continue
 
         # 5. Deterministic Offline Fallback
-        logger.info(
-            "Invoking deterministic fallback engine for %d-day request (req_id=%s)",
-            request.duration_days,
+        logger.warning(
+            "All AI providers exhausted. Invoking deterministic fallback engine (attempts=%d, audit=%s, req_id=%s)",
+            len(fallback_audit_log),
+            fallback_audit_log,
             req_id,
         )
         (
@@ -251,6 +301,14 @@ class AIOrchestrator:
 
         all_warnings = [warning_msg] + corridor_warnings + fallback_warnings + schedule_warnings
 
+        fest_seen = set()
+        fallback_festivals = []
+        for d in days:
+            for ev in getattr(d, "recommended_events", []):
+                if ev.event_id not in fest_seen:
+                    fest_seen.add(ev.event_id)
+                    fallback_festivals.append(ev)
+
         return PlanningRecommendationResponse(
             request_id=req_id,
             language=request.language,
@@ -263,6 +321,7 @@ class AIOrchestrator:
             budget_breakdown=budget,
             origin_label=request.origin_label,
             corridor_name=corridor_result.name_en,
+            recommended_festivals=fallback_festivals,
             assumptions=assumptions,
             data_limitations=[
                 (

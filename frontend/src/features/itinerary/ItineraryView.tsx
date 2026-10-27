@@ -30,6 +30,7 @@ import { BudgetSummary } from './BudgetSummary';
 import { MapView } from './MapView';
 import { TransitComparisonCard } from './TransitComparisonCard';
 import { TravelLegCard } from './TravelLegCard';
+import { FestivalRecommendations } from './FestivalRecommendations';
 
 interface ItineraryViewProps {
   plan: PlanningRecommendationResponse | null;
@@ -802,6 +803,16 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
       {/* Embedded Budget Breakdown Section */}
       <BudgetSummary stops={plan.items} language={language} budget={plan.budget_breakdown} />
+
+      {/* Workstream 6: Festivals & Cultural Events Near Traveler Route */}
+      <FestivalRecommendations
+        events={
+          plan.recommended_festivals && plan.recommended_festivals.length > 0
+            ? plan.recommended_festivals
+            : (plan.days || []).flatMap((d) => d.recommended_events || [])
+        }
+        language={language}
+      />
 
       {/* Day Navigator Bar (for multi-day trips) */}
       {effectiveDays.length > 1 && (

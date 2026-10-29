@@ -80,7 +80,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
   return (
     <article className="destination-card" data-testid={`destination-card-${destination.slug}`}>
       {imageUrl && !imageError ? (
-        <div className="card-image-wrap" style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', background: '#0f172a' }}>
+        <div className="card-image-wrap" style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', background: '#F1F5F9' }}>
           <img
             src={imageUrl}
             alt={destination.media?.[0]?.alt_en || name}
@@ -106,9 +106,9 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
           )}
         </div>
       ) : (
-        <div className="card-image-wrap card-image-fallback" style={{ width: '100%', height: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#1e293b', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', color: '#94a3b8' }}>
+        <div className="card-image-wrap card-image-fallback" style={{ width: '100%', height: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', color: '#64748B' }}>
           <span style={{ fontSize: '2rem' }}>{CATEGORY_FALLBACK_ICONS[destination.category] || '📍'}</span>
-          <span style={{ fontSize: '0.72rem', marginTop: '4px', color: '#64748b' }}>
+          <span style={{ fontSize: '0.72rem', marginTop: '4px', color: '#64748B' }}>
             {language === 'kn' ? 'ಛಾಯಾಚಿತ್ರ ಲಭ್ಯವಿಲ್ಲ' : 'Photo unavailable'}
           </span>
         </div>

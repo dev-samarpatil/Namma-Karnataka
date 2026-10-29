@@ -698,20 +698,20 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              background: 'linear-gradient(135deg, #EAF5FF 0%, #E6FBF7 100%)',
               borderTopLeftRadius: '12px',
               borderTopRightRadius: '12px',
-              color: '#94a3b8',
+              color: '#172033',
               padding: '24px 16px',
               textAlign: 'center',
             }}
           >
 
             <span style={{ fontSize: '2.5rem' }}>📷</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '8px', color: '#e2e8f0' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '8px', color: '#172033' }}>
               {language === 'kn' ? 'ಛಾಯಾಚಿತ್ರ ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ' : 'Editorial Record — Media Verification Pending'}
             </span>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px', maxWidth: '440px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px', maxWidth: '440px' }}>
               {language === 'kn'
                 ? `${districtName} ಜಿಲ್ಲೆಯ ಈ ತಾಣದ ಅಧಿಕೃತ ಪರವಾನಗಿ ಹೊಂದಿದ ಛಾಯಾಚಿತ್ರ ಪರಿಶೀಲನೆ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ.`
                 : `Authentic CC-licensed photograph verification is in progress for this destination in ${districtName}.`}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 
-export type ActiveTab = 'discovery' | 'planner' | 'itinerary' | 'saved-trips';
+export type ActiveTab = 'home' | 'discovery' | 'planner' | 'itinerary' | 'saved-trips';
 
 interface HeaderProps {
   currentTab: ActiveTab;
@@ -33,10 +33,10 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="header-top">
           <div
             className="brand"
-            onClick={() => onTabChange('discovery')}
+            onClick={() => onTabChange('home')}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && onTabChange('discovery')}
+            onKeyDown={(e) => e.key === 'Enter' && onTabChange('home')}
             aria-label="Namma Karnataka Home"
           >
             <div className="brand-icon" aria-hidden="true">🏛️</div>
@@ -65,6 +65,16 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Top Navigation Tabs (Hidden on viewports < 768px via CSS) */}
         <nav className="header-nav desktop-nav" aria-label="Main Navigation">
+          <button
+            type="button"
+            className={`nav-tab ${currentTab === 'home' ? 'active' : ''}`}
+            onClick={() => onTabChange('home')}
+            aria-current={currentTab === 'home' ? 'page' : undefined}
+            data-testid="nav-tab-home"
+          >
+            🏛️ {t('navHome')}
+          </button>
+
           <button
             type="button"
             className={`nav-tab ${currentTab === 'discovery' ? 'active' : ''}`}
@@ -111,6 +121,17 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Bottom Navigation Bar (Visible on viewports < 768px) */}
       <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mobile-nav-item ${currentTab === 'home' ? 'active' : ''}`}
+          onClick={() => onTabChange('home')}
+          aria-current={currentTab === 'home' ? 'page' : undefined}
+          data-testid="mobile-nav-tab-home"
+        >
+          <span className="mobile-nav-icon" aria-hidden="true">🏛️</span>
+          <span className="mobile-nav-label">{t('navHome')}</span>
+        </button>
+
         <button
           type="button"
           className={`mobile-nav-item ${currentTab === 'discovery' ? 'active' : ''}`}

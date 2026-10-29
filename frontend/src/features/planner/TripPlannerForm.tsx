@@ -271,8 +271,8 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
 
       <form onSubmit={handleSubmit} className="planner-form" noValidate>
         {/* SECTION 1: Trip Basics */}
-        <div className="form-section-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '1.1rem', color: '#f8fafc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="form-section-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>📍</span> {language === 'kn' ? 'ಪ್ರವಾಸದ ಮೂಲ ವಿವರಗಳು' : 'Trip Basics & Route Starting Point'}
           </h3>
 
@@ -296,7 +296,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
             <div className="form-field">
               <label htmlFor="planner-duration-input" className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>📅 {t('durationLabel')} *</span>
-                <span style={{ fontSize: '0.78rem', color: isDurationValid ? '#94a3b8' : '#f87171' }}>
+                <span style={{ fontSize: '0.78rem', color: isDurationValid ? 'var(--text-secondary)' : '#ef4444' }}>
                   {isDurationValid ? `${duration} ${language === 'kn' ? 'ದಿನಗಳು' : duration === 1 ? 'Day' : 'Days'}` : t('durationHelp')}
                 </span>
               </label>
@@ -310,7 +310,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                     setDurationInput(String(next));
                     setValidationError(null);
                   }}
-                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                  style={{ width: '38px', height: '38px', background: '#F1F5F9', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
                 >
                   −
                 </button>
@@ -340,13 +340,13 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                     setDurationInput(String(next));
                     setValidationError(null);
                   }}
-                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                  style={{ width: '38px', height: '38px', background: '#F1F5F9', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
                 >
                   +
                 </button>
               </div>
               {!isDurationValid && durationInput !== '' && (
-                <div id="planner-duration-hint" style={{ color: '#f87171', fontSize: '0.78rem', marginTop: '4px' }} role="alert">
+                <div id="planner-duration-hint" style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '4px' }} role="alert">
                   ⚠️ {t('durationError')}
                 </div>
               )}
@@ -357,7 +357,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
             <div className="form-field">
               <label htmlFor="planner-travelers-input" className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>👥 {t('travelersLabel')} *</span>
-                <span style={{ fontSize: '0.78rem', color: isTravelersValid ? '#94a3b8' : '#f87171' }}>
+                <span style={{ fontSize: '0.78rem', color: isTravelersValid ? 'var(--text-secondary)' : '#ef4444' }}>
                   {isTravelersValid ? `${travelers} ${language === 'kn' ? 'ಜನರು' : travelers === 1 ? 'Traveler' : 'Travelers'}` : t('travelersHelp')}
                 </span>
               </label>
@@ -371,7 +371,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                     setTravelersInput(String(next));
                     setValidationError(null);
                   }}
-                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                  style={{ width: '38px', height: '38px', background: '#F1F5F9', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
                 >
                   −
                 </button>
@@ -401,13 +401,13 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                     setTravelersInput(String(next));
                     setValidationError(null);
                   }}
-                  style={{ width: '38px', height: '38px', background: '#334155', border: '1px solid #475569', borderRadius: '6px', color: '#f8fafc', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                  style={{ width: '38px', height: '38px', background: '#F1F5F9', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
                 >
                   +
                 </button>
               </div>
               {!isTravelersValid && travelersInput !== '' && (
-                <div id="planner-travelers-hint" style={{ color: '#f87171', fontSize: '0.78rem', marginTop: '4px' }} role="alert">
+                <div id="planner-travelers-hint" style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '4px' }} role="alert">
                   ⚠️ {t('travelersError')}
                 </div>
               )}
@@ -457,33 +457,33 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
         </div>
 
         {/* SECTION 2: Trip Budget */}
-        <div className="form-section-card" data-testid="planner-budget-section" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+        <div className="form-section-card" data-testid="planner-budget-section" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-            <h3 style={{ fontSize: '1.1rem', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>💰</span> {t('tripBudgetTitle')}
             </h3>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', color: '#38bdf8', fontWeight: 600 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', color: '#0891B2', fontWeight: 600 }}>
               <input
                 type="checkbox"
                 checked={enableBudgetLimit}
                 onChange={(e) => setEnableBudgetLimit(e.target.checked)}
                 data-testid="enable-budget-limit-checkbox"
-                style={{ width: '16px', height: '16px', accentColor: '#0284c7' }}
+                style={{ width: '16px', height: '16px', accentColor: '#0891B2' }}
               />
               <span>{language === 'kn' ? 'ಗರಿಷ್ಠ ಬಜೆಟ್ ಮಿತಿ ನಿಗದಿಪಡಿಸಿ' : 'Set explicit spending limit'}</span>
             </label>
           </div>
-          <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '0 0 16px 0' }}>{t('tripBudgetSubtitle')}</p>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>{t('tripBudgetSubtitle')}</p>
 
           {enableBudgetLimit && (
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '8px', border: '1px solid #334155', marginBottom: '16px' }}>
+            <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-subtle)', marginBottom: '16px' }}>
               <div className="form-row two-col">
                 <div className="form-field">
-                  <label htmlFor="planner-budget-amount" className="form-label" style={{ color: '#38bdf8' }}>
+                  <label htmlFor="planner-budget-amount" className="form-label" style={{ color: '#0891B2' }}>
                     💵 {t('budgetLimitLabel')}
                   </label>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ position: 'absolute', left: '12px', color: '#94a3b8', fontWeight: 700, fontSize: '1rem' }}>₹</span>
+                    <span style={{ position: 'absolute', left: '12px', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>₹</span>
                     <input
                       id="planner-budget-amount"
                       type="number"
@@ -502,7 +502,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                 <div className="form-field">
                   <label className="form-label">{language === 'kn' ? 'ಬಜೆಟ್ ವ್ಯಾಪ್ತಿ' : 'Budget Applies To'}</label>
                   <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#f1f5f9', cursor: 'pointer' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
                       <input
                         type="radio"
                         name="budget_scope"
@@ -513,7 +513,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                       />
                       <span>{t('budgetScopeGroup')}</span>
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#f1f5f9', cursor: 'pointer' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
                       <input
                         type="radio"
                         name="budget_scope"
@@ -589,11 +589,11 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
         </div>
 
         {/* SECTION 4: Categories (Uncapped & Searchable) */}
-        <div className="form-section-card" data-testid="planner-categories-section" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+        <div className="form-section-card" data-testid="planner-categories-section" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-            <h3 style={{ fontSize: '1.1rem', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🏷️</span> {t('selectCategories')}
-              <span style={{ fontSize: '0.8rem', background: '#334155', color: '#38bdf8', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.8rem', background: '#F1F5F9', color: '#0891B2', padding: '2px 8px', borderRadius: '12px', fontWeight: 600, border: '1px solid var(--border-subtle)' }}>
                 {selectedCategories.length} {language === 'kn' ? 'ಆಯ್ಕೆಯಾಗಿದೆ' : 'selected'}
               </span>
             </h3>
@@ -602,7 +602,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
               <button
                 type="button"
                 onClick={handleSelectAllCategories}
-                style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
                 data-testid="categories-select-all"
               >
                 ✓ {t('selectAll')}
@@ -610,7 +610,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
               <button
                 type="button"
                 onClick={handleClearAllCategories}
-                style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
                 data-testid="categories-clear-all"
               >
                 ✕ {t('clearAll')}
@@ -653,8 +653,8 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
 
           {/* Thematic Category Discovery Helpers */}
           {!categorySearchQuery && (
-            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #334155' }}>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {language === 'kn' ? 'ವಿಷಯಾಧಾರಿತ ಗುಂಪುಗಳು' : 'Thematic Groups:'}
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -669,12 +669,12 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                         setSelectedCategories(newSelection);
                       }}
                       style={{
-                        background: allThemeSelected ? 'rgba(56, 189, 248, 0.15)' : '#0f172a',
-                        border: allThemeSelected ? '1px solid #38bdf8' : '1px solid #334155',
+                        background: allThemeSelected ? '#E0F2FE' : '#F8FAFC',
+                        border: allThemeSelected ? '1px solid #0891B2' : '1px solid var(--border-subtle)',
                         borderRadius: '20px',
                         padding: '4px 12px',
                         fontSize: '0.75rem',
-                        color: allThemeSelected ? '#38bdf8' : '#cbd5e1',
+                        color: allThemeSelected ? '#0891B2' : 'var(--text-primary)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -683,7 +683,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
                     >
                       <span>{theme.icon}</span>
                       <span>{language === 'kn' ? theme.labelKn : theme.labelEn}</span>
-                      <span style={{ fontSize: '0.65rem', color: '#64748b' }}>+{theme.categories.length}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>+{theme.categories.length}</span>
                     </button>
                   );
                 })}
@@ -693,11 +693,11 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
         </div>
 
         {/* SECTION 5: Districts (Uncapped & Searchable) */}
-        <div className="form-section-card" data-testid="planner-districts-section" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+        <div className="form-section-card" data-testid="planner-districts-section" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-            <h3 style={{ fontSize: '1.1rem', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🏛️</span> {t('selectDistricts')}
-              <span style={{ fontSize: '0.8rem', background: '#334155', color: '#38bdf8', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.8rem', background: '#F1F5F9', color: '#0891B2', padding: '2px 8px', borderRadius: '12px', fontWeight: 600, border: '1px solid var(--border-subtle)' }}>
                 {selectedDistricts.length}/31 {language === 'kn' ? 'ಆಯ್ಕೆಯಾಗಿದೆ' : 'selected'}
               </span>
             </h3>
@@ -706,7 +706,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
               <button
                 type="button"
                 onClick={handleSelectAllDistricts}
-                style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
                 data-testid="districts-select-all"
               >
                 ✓ {t('selectAll')} (31)
@@ -714,7 +714,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
               <button
                 type="button"
                 onClick={handleClearAllDistricts}
-                style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
                 data-testid="districts-clear-all"
               >
                 ✕ {t('clearAll')}
@@ -742,7 +742,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
             style={{ maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}
           >
             {filteredDistricts.length === 0 ? (
-              <div style={{ fontSize: '0.85rem', color: '#64748b', padding: '8px' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', padding: '8px' }}>
                 {language === 'kn' ? 'ಯಾವುದೇ ಜಿಲ್ಲೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ' : 'No matching districts found'}
               </div>
             ) : (
@@ -766,7 +766,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
         </div>
 
         {/* SECTION 6: Additional Preferences */}
-        <div className="form-section-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+        <div className="form-section-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
           <div className="form-field checkbox-field" style={{ marginBottom: '16px' }}>
             <label className="checkbox-label" htmlFor="planner-offbeat">
               <input
@@ -799,7 +799,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
 
         {/* SECTION 7: Generation Summary & Submit */}
         <div className="form-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#94a3b8', background: '#0f172a', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--text-secondary)', background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
             <span><strong>Trip:</strong> {isDurationValid ? `${duration}d` : '—'} from {origin} ({isTravelersValid ? `${travelers}p` : '—'})</span>
             <span>•</span>
             <span><strong>Transport:</strong> {travelMode.replace('_', ' ')}</span>

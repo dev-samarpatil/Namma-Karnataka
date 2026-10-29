@@ -1336,9 +1336,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                     width: '100%',
                     padding: '0.5rem',
                     borderRadius: '0.375rem',
-                    background: '#0f172a',
-                    border: '1px solid #334155',
-                    color: '#fff',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)',
                   }}
                   data-testid="edit-duration-input"
                 />
@@ -1358,9 +1358,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                     width: '100%',
                     padding: '0.5rem',
                     borderRadius: '0.375rem',
-                    background: '#0f172a',
-                    border: '1px solid #334155',
-                    color: '#fff',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)',
                   }}
                   data-testid="edit-notes-input"
                 />
@@ -1535,9 +1535,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 width: '100%',
                 padding: '0.5rem',
                 borderRadius: '0.375rem',
-                background: '#0f172a',
-                border: '1px solid #334155',
-                color: '#fff',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
               }}
               data-testid="catalog-search-input"
             />
@@ -1730,11 +1730,11 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               </button>
             </div>
 
-            <div style={{ background: 'var(--surface-color, #1e293b)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <h4 style={{ margin: '0 0 0.5rem', color: 'var(--primary-color, #fbbf24)', fontSize: '1.05rem' }}>
+            <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <h4 style={{ margin: '0 0 0.5rem', color: '#0891B2', fontSize: '1.05rem', fontWeight: 700 }}>
                 {request?.origin_label ? `${request.duration_days}-Day ${request.origin_label} Itinerary` : t('itineraryTitle')}
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted, #94a3b8)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 <div>📅 <strong>{plan.duration_days}</strong> {language === 'kn' ? 'ದಿನಗಳು' : 'Days'}</div>
                 <div>📍 <strong>{plan.total_destinations}</strong> {t('destinationsFound')}</div>
                 <div>💰 <strong>₹{plan.budget_breakdown?.grand_total_min_inr ? plan.budget_breakdown.grand_total_min_inr.toLocaleString() : '0'}</strong> ({activeReq.budget_scenario})</div>
@@ -1742,8 +1742,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               </div>
             </div>
 
-            <div style={{ margin: '0.75rem 0', fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '6px' }}>
-              <strong style={{ color: '#cbd5e1' }}>ℹ️ {t('reliabilityDisclosures')}</strong>
+            <div style={{ margin: '0.75rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)', background: '#F8FAFC', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>ℹ️ {t('reliabilityDisclosures')}</strong>
               <ul style={{ margin: '0.35rem 0 0 1.2rem', padding: 0, fontSize: '0.8rem', lineHeight: '1.4' }}>
                 <li>{t('routingEstimateNotice')}</li>
                 <li>{t('staticTransitNotice')}</li>
@@ -1751,7 +1751,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               </ul>
             </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#f1f5f9' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
               <input
                 type="checkbox"
                 checked={excludeNotes}
@@ -1871,8 +1871,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 </button>
 
                 {shareLinkGenerated && (
-                  <div style={{ marginTop: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                  <div style={{ marginTop: '0.5rem', background: '#F8FAFC', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
                       {t('shareLinkGeneratedNotice')}
                     </label>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1881,7 +1881,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                         readOnly
                         value={shareLinkGenerated}
                         data-testid="generated-share-link-input"
-                        style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '4px', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155' }}
+                        style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
                       />
                       <button
                         type="button"
@@ -1898,14 +1898,14 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                 {activeShares.length > 0 && (
                   <div style={{ marginTop: '0.5rem' }}>
-                    <h5 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                    <h5 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                       {t('activeSharesTitle')} ({activeShares.length})
                     </h5>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '140px', overflowY: 'auto' }}>
                       {activeShares.map((s) => (
                         <div
                           key={s.id}
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', fontSize: '0.8rem' }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: '#F8FAFC', border: '1px solid var(--border-subtle)', borderRadius: '4px', fontSize: '0.8rem' }}
                         >
                           <div>
                             <span style={{ fontWeight: 600, color: s.role === 'editor' ? '#4ade80' : '#60a5fa' }}>

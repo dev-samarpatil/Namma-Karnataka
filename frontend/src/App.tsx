@@ -19,10 +19,12 @@ import { loadGuestTrips, saveGuestTrip, deleteGuestTrip } from './services/guest
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { Header, ActiveTab } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
+import { ImmersiveLandingPage } from './features/landing/ImmersiveLandingPage';
 import { DestinationDiscovery } from './features/discovery/DestinationDiscovery';
 import { TripPlannerForm } from './features/planner/TripPlannerForm';
 import { ItineraryView } from './features/itinerary/ItineraryView';
 import { SavedTripsView } from './features/saved-trips/SavedTripsView';
+import { GradientDots } from './components/ui/gradient-dots';
 
 const AUTH_TOKEN_STORAGE_KEY = 'nk_auth_token';
 
@@ -30,7 +32,7 @@ export const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>(getSavedLanguage());
   const { t } = useTranslation(language);
   const { isOnline, wasOffline } = useOnlineStatus();
-  const [currentTab, setCurrentTab] = useState<ActiveTab>('discovery');
+  const [currentTab, setCurrentTab] = useState<ActiveTab>('home');
 
   // Preselected destination from discovery card
   const [preselectedDest, setPreselectedDest] = useState<DestinationRead | null>(null);
@@ -107,6 +109,18 @@ export const App: React.FC = () => {
           setTimeout(() => setToastMessage(null), 5000);
         });
     }
+  }, []);
+
+  // Apply light theme globally across all tabs
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('landing-body-light');
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('landing-body-light');
+      }
+    };
   }, []);
 
   const handleReloadSharedTrip = async () => {
@@ -300,7 +314,24 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${currentTab === 'home' ? 'app-landing-mode' : ''}`}>
+      {/* GLOBAL INTERACTIVE LIGHT GRADIENT DOTS BACKGROUND */}
+      <GradientDots
+        dotSize={1.5}
+        spacing={20}
+        duration={40}
+        colorCycleDuration={18}
+        backgroundColor="#F8FAFF"
+        className="opacity-85"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+        interactive={true}
+      />
+
       <Header
         currentTab={currentTab}
         onTabChange={setCurrentTab}
@@ -357,6 +388,14 @@ export const App: React.FC = () => {
       )}
 
       <main className="app-main">
+        {currentTab === 'home' && (
+          <ImmersiveLandingPage
+            language={language}
+            onNavigateTab={setCurrentTab}
+            onPlanWithDestination={handlePlanWithDestination}
+          />
+        )}
+
         {currentTab === 'discovery' && (
           <DestinationDiscovery
             language={language}

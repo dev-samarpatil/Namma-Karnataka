@@ -632,9 +632,9 @@ export const MapView: React.FC<MapViewProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: '#1e293b',
-                color: '#38bdf8',
-                border: '1px solid #38bdf8',
+                background: '#FFFFFF',
+                color: '#0891B2',
+                border: '1px solid #0891B2',
                 padding: '6px 12px',
                 borderRadius: '6px',
                 fontSize: '0.82rem',
@@ -663,8 +663,8 @@ export const MapView: React.FC<MapViewProps> = ({
         <div
           className="active-marker-card"
           style={{
-            background: 'var(--bg-card, #182238)',
-            border: '1px solid var(--accent-cyan, #38bdf8)',
+            background: 'var(--bg-card, #FFFFFF)',
+            border: '1px solid var(--accent-cyan, #0891B2)',
             borderRadius: '8px',
             padding: '10px 14px',
             marginBottom: '10px',
@@ -674,8 +674,8 @@ export const MapView: React.FC<MapViewProps> = ({
           }}
         >
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Selected Map Destination</div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary, #f8fafc)' }}>
+            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Selected Map Destination</div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary, #172033)' }}>
               {validStops.find((s) => s.id === activeStopId)?.name || 'Destination'}
             </div>
           </div>
@@ -685,7 +685,7 @@ export const MapView: React.FC<MapViewProps> = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: '#64748B',
               cursor: 'pointer',
               fontSize: '1rem',
             }}
@@ -704,9 +704,9 @@ export const MapView: React.FC<MapViewProps> = ({
             style={{
               padding: '4px 12px',
               borderRadius: '20px',
-              border: selectedDay === null ? '2px solid #38bdf8' : '1px solid #334155',
-              background: selectedDay === null ? '#0284c7' : '#1e293b',
-              color: '#ffffff',
+              border: selectedDay === null ? '2px solid #0891B2' : '1px solid #DCE6F2',
+              background: selectedDay === null ? '#0891B2' : '#FFFFFF',
+              color: selectedDay === null ? '#FFFFFF' : '#172033',
               fontSize: '0.8rem',
               fontWeight: 600,
               cursor: 'pointer',
@@ -722,9 +722,9 @@ export const MapView: React.FC<MapViewProps> = ({
               style={{
                 padding: '4px 12px',
                 borderRadius: '20px',
-                border: selectedDay === d ? '2px solid #38bdf8' : '1px solid #334155',
-                background: selectedDay === d ? '#0284c7' : '#1e293b',
-                color: '#ffffff',
+                border: selectedDay === d ? '2px solid #0891B2' : '1px solid #DCE6F2',
+                background: selectedDay === d ? '#0891B2' : '#FFFFFF',
+                color: selectedDay === d ? '#FFFFFF' : '#172033',
                 fontSize: '0.8rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -817,8 +817,8 @@ export const MapView: React.FC<MapViewProps> = ({
               height: '420px',
               borderRadius: '10px',
               overflow: 'hidden',
-              border: '1px solid #334155',
-              background: '#0f172a',
+              border: '1px solid #DCE6F2',
+              background: '#F8FAFC',
             }}
           />
 
@@ -828,13 +828,14 @@ export const MapView: React.FC<MapViewProps> = ({
               className="directions-panel"
               data-testid="route-directions-panel"
               style={{
-                background: '#1e293b',
-                border: '1px solid #334155',
+                background: '#FFFFFF',
+                border: '1px solid #DCE6F2',
                 borderRadius: '8px',
                 padding: '16px',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
-              <h5 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h5 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#172033', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>🧭</span> {language === 'kn' ? 'ಪ್ರವಾಸ ಮಾರ್ಗ ಸೂಚಿಗಳು' : 'Leg-by-Leg Road Directions'} ({directionsData.legs.length} legs)
               </h5>
 
@@ -845,8 +846,8 @@ export const MapView: React.FC<MapViewProps> = ({
                     <div
                       key={legIdx}
                       style={{
-                        background: '#0f172a',
-                        border: '1px solid #334155',
+                        background: '#F8FAFC',
+                        border: '1px solid #DCE6F2',
                         borderRadius: '6px',
                         overflow: 'hidden',
                       }}
@@ -862,31 +863,31 @@ export const MapView: React.FC<MapViewProps> = ({
                           padding: '10px 14px',
                           background: 'transparent',
                           border: 'none',
-                          color: '#f1f5f9',
+                          color: '#172033',
                           textAlign: 'left',
                           cursor: 'pointer',
                         }}
                       >
                         <div>
-                          <span style={{ color: '#38bdf8', fontWeight: 700, marginRight: '8px' }}>Leg {legIdx + 1}:</span>
+                          <span style={{ color: '#0891B2', fontWeight: 700, marginRight: '8px' }}>Leg {legIdx + 1}:</span>
                           <span style={{ fontWeight: 600 }}>{leg.origin.name} → {leg.destination.name}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
                             {leg.distance_km} km • {leg.duration_minutes} mins
                           </span>
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{isExpanded ? '▲' : '▼'}</span>
+                          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>{isExpanded ? '▲' : '▼'}</span>
                         </div>
                       </button>
 
                       {isExpanded && leg.steps.length > 0 && (
-                        <div style={{ padding: '8px 14px 12px 14px', borderTop: '1px solid #1e293b', background: '#0a0f1d' }}>
-                          <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                        <div style={{ padding: '8px 14px 12px 14px', borderTop: '1px solid #DCE6F2', background: '#FFFFFF' }}>
+                          <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8rem', color: '#334155' }}>
                             {leg.steps.map((st, stepIdx) => (
                               <li key={stepIdx} style={{ margin: '4px 0' }}>
                                 {st.instruction}
                                 {st.distance_meters > 0 && (
-                                  <span style={{ color: '#64748b', marginLeft: '6px' }}>
+                                  <span style={{ color: '#64748B', marginLeft: '6px' }}>
                                     ({st.distance_meters > 1000 ? `${(st.distance_meters / 1000).toFixed(1)} km` : `${Math.round(st.distance_meters)} m`})
                                   </span>
                                 )}

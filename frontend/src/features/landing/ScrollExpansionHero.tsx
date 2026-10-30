@@ -1,4 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Volume2,
+  VolumeX,
+  Compass,
+  Sparkles,
+  ArrowDown,
+} from 'lucide-react';
 import { Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 
@@ -265,15 +272,20 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
           <div
             className="hero-heading-line-top"
             style={{
-              fontSize: isMobile ? 'clamp(2.4rem, 10vw, 3.6rem)' : 'clamp(3.8rem, 7vw, 5.8rem)',
-              fontWeight: 900,
-              letterSpacing: '0.06em',
+              fontFamily:
+                language === 'kn'
+                  ? 'var(--font-kannada, "Noto Sans Kannada", sans-serif)'
+                  : 'var(--font-display, "Space Grotesk", sans-serif)',
+              fontSize: isMobile ? 'clamp(2.6rem, 11vw, 4rem)' : 'clamp(4.2rem, 7.8vw, 6.4rem)',
+              fontWeight: 800,
+              letterSpacing: language === 'kn' ? '-0.01em' : '-0.03em',
               textTransform: 'uppercase',
               color: '#FFFFFF',
-              textShadow: '0 4px 20px rgba(0, 0, 0, 0.85), 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.9)',
+              textShadow:
+                '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.9)',
               transform: `translateY(${18 + textTranslateY1}px) translateX(${textTranslateX1}px)`,
               transition: 'transform 0.1s linear',
-              lineHeight: 1,
+              lineHeight: 0.95,
               userSelect: 'none',
               zIndex: 10,
               textAlign: 'center',
@@ -293,7 +305,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
               overflow: 'hidden',
               boxShadow: '0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.22)',
               zIndex: 15,
-              background: '#0f172a',
+              background: 'transparent',
               transition: 'border-radius 0.15s ease-out, box-shadow 0.2s ease-out',
             }}
           >
@@ -309,6 +321,9 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
+                objectPosition: 'center center',
+                transform: 'scale(1.33)',
+                transformOrigin: 'center center',
               }}
             />
 
@@ -331,7 +346,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 bottom: '12px',
                 right: '12px',
                 zIndex: 25,
-                background: 'rgba(15, 23, 42, 0.7)',
+                background: 'rgba(15, 23, 42, 0.75)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
                 borderRadius: '9999px',
@@ -341,13 +356,12 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                fontSize: '0.95rem',
                 color: '#f8fafc',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
                 transition: 'background 0.2s ease, transform 0.15s ease',
               }}
             >
-              {isMuted ? '🔇' : '🔉'}
+              {isMuted ? <VolumeX size={17} strokeWidth={2.2} /> : <Volume2 size={17} strokeWidth={2.2} />}
             </button>
           </div>
 
@@ -355,15 +369,20 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
           <div
             className="hero-heading-line-bottom"
             style={{
-              fontSize: isMobile ? 'clamp(2.4rem, 10vw, 3.6rem)' : 'clamp(3.8rem, 7vw, 5.8rem)',
-              fontWeight: 900,
-              letterSpacing: '0.06em',
+              fontFamily:
+                language === 'kn'
+                  ? 'var(--font-kannada, "Noto Sans Kannada", sans-serif)'
+                  : 'var(--font-display, "Space Grotesk", sans-serif)',
+              fontSize: isMobile ? 'clamp(2.6rem, 11vw, 4rem)' : 'clamp(4.2rem, 7.8vw, 6.4rem)',
+              fontWeight: 800,
+              letterSpacing: language === 'kn' ? '-0.01em' : '-0.03em',
               textTransform: 'uppercase',
               color: '#FFFFFF',
-              textShadow: '0 4px 20px rgba(0, 0, 0, 0.85), 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.9)',
+              textShadow:
+                '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.9)',
               transform: `translateY(${-18 + textTranslateY2}px) translateX(${textTranslateX2}px)`,
               transition: 'transform 0.1s linear',
-              lineHeight: 1,
+              lineHeight: 0.95,
               userSelect: 'none',
               zIndex: 10,
               textAlign: 'center',
@@ -376,6 +395,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
           <div
             className="hero-supporting-line"
             style={{
+              fontFamily: 'var(--font-family)',
               maxWidth: '680px',
               textAlign: 'center',
               marginTop: isMobile ? '10px' : '16px',
@@ -411,7 +431,10 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 onClick={onExploreClick}
                 className="btn-primary"
                 style={{
-                  padding: '10px 24px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '11px 24px',
                   fontSize: '0.92rem',
                   fontWeight: 700,
                   background: '#0891B2',
@@ -422,7 +445,8 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                🔍 {t('landingBtnExplore')}
+                <Compass size={17} strokeWidth={2.2} />
+                <span>{t('landingBtnExplore')}</span>
               </button>
             )}
             {onPlanClick && (
@@ -431,7 +455,10 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 onClick={onPlanClick}
                 className="btn-secondary"
                 style={{
-                  padding: '10px 24px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '11px 24px',
                   fontSize: '0.92rem',
                   fontWeight: 600,
                   background: 'rgba(255, 255, 255, 0.92)',
@@ -442,7 +469,8 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                ✨ {t('landingBtnPlan')}
+                <Sparkles size={17} strokeWidth={2.2} />
+                <span>{t('landingBtnPlan')}</span>
               </button>
             )}
           </div>
@@ -475,7 +503,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '6px',
               fontSize: 'inherit',
               padding: '4px 8px',
             }}
@@ -484,12 +512,12 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
             <span>{t('heroScrollCue')}</span>
             <span
               style={{
-                display: 'inline-block',
+                display: 'inline-flex',
+                alignItems: 'center',
                 animation: 'bounceSlow 2s infinite',
-                fontSize: '0.95rem',
               }}
             >
-              ↓
+              <ArrowDown size={14} strokeWidth={2.2} />
             </span>
           </button>
         </div>

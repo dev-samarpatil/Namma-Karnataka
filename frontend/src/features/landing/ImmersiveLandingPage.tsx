@@ -1,4 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import {
+  Waves,
+  Trees,
+  Castle,
+  ArrowRight,
+  Compass,
+  Sparkles,
+  Map,
+  Bookmark,
+  Landmark,
+} from 'lucide-react';
 import { DestinationRead, Language } from '../../types';
 import { ActiveTab } from '../../components/layout/Header';
 import { useTranslation } from '../../lib/i18n';
@@ -157,11 +168,10 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.5rem',
                     marginBottom: '16px',
                   }}
                 >
-                  🌊
+                  <Waves size={24} color="#0891B2" strokeWidth={2.2} />
                 </div>
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '1.3rem', fontWeight: 700, color: '#172033' }}>
                   {t('landingKaravali')}
@@ -199,11 +209,10 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.5rem',
                     marginBottom: '16px',
                   }}
                 >
-                  🌲
+                  <Trees size={24} color="#059669" strokeWidth={2.2} />
                 </div>
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '1.3rem', fontWeight: 700, color: '#172033' }}>
                   {t('landingMalnad')}
@@ -241,11 +250,10 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.5rem',
                     marginBottom: '16px',
                   }}
                 >
-                  🏰
+                  <Castle size={24} color="#D97706" strokeWidth={2.2} />
                 </div>
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '1.3rem', fontWeight: 700, color: '#172033' }}>
                   {t('landingBayaluseeme')}
@@ -302,16 +310,17 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                 fontSize: '0.88rem',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '8px',
                 background: '#ffffff',
                 color: '#172033',
                 border: '1px solid #cbd5e1',
                 borderRadius: '8px',
                 boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
+                cursor: 'pointer',
               }}
             >
               <span>{language === 'kn' ? 'ಎಲ್ಲಾ ತಾಣಗಳನ್ನು ನೋಡಿ' : 'View Full Catalogue'}</span>
-              <span>→</span>
+              <ArrowRight size={15} strokeWidth={2.2} />
             </button>
           </div>
 
@@ -414,7 +423,20 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                   boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔍</div>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(8, 145, 178, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <Compass size={22} color="#0891B2" strokeWidth={2.2} />
+                </div>
                 <h4 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: '#172033', fontWeight: 700 }}>
                   {t('landingStepDiscover')}
                 </h4>
@@ -433,7 +455,20 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                   boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>✨</div>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <Sparkles size={22} color="#059669" strokeWidth={2.2} />
+                </div>
                 <h4 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: '#172033', fontWeight: 700 }}>
                   {t('landingStepPlan')}
                 </h4>
@@ -452,7 +487,20 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                   boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🗺️</div>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(37, 99, 235, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <Map size={22} color="#2563EB" strokeWidth={2.2} />
+                </div>
                 <h4 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: '#172033', fontWeight: 700 }}>
                   {t('landingStepNavigate')}
                 </h4>
@@ -471,7 +519,20 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                   boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>💾</div>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(217, 119, 6, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <Bookmark size={22} color="#D97706" strokeWidth={2.2} />
+                </div>
                 <h4 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: '#172033', fontWeight: 700 }}>
                   {t('landingStepSave')}
                 </h4>
@@ -499,7 +560,20 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
             zIndex: 1,
           }}
         >
-          <span style={{ fontSize: '2rem', display: 'inline-block', marginBottom: '8px' }}>🏛️</span>
+          <div
+            style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
+              background: 'rgba(8, 145, 178, 0.1)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '12px',
+            }}
+          >
+            <Landmark size={28} color="#0891B2" strokeWidth={2.2} />
+          </div>
           <h2 style={{ fontSize: 'clamp(1.6rem, 3.2vw, 2.4rem)', fontWeight: 800, margin: '0 0 12px 0', color: '#172033' }}>
             {t('landingCtaHeading')}
           </h2>
@@ -513,6 +587,9 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
               onClick={() => onNavigateTab('discovery')}
               className="btn-primary"
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
                 padding: '12px 28px',
                 fontSize: '0.95rem',
                 fontWeight: 700,
@@ -524,7 +601,8 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                 cursor: 'pointer',
               }}
             >
-              🔍 {t('landingBtnExplore')}
+              <Compass size={17} strokeWidth={2.2} />
+              <span>{t('landingBtnExplore')}</span>
             </button>
 
             <button
@@ -532,6 +610,9 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
               onClick={() => onNavigateTab('planner')}
               className="btn-secondary"
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
                 padding: '12px 28px',
                 fontSize: '0.95rem',
                 fontWeight: 600,
@@ -543,7 +624,8 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                 cursor: 'pointer',
               }}
             >
-              ✨ {t('landingBtnPlan')}
+              <Sparkles size={17} strokeWidth={2.2} />
+              <span>{t('landingBtnPlan')}</span>
             </button>
 
             <button
@@ -551,6 +633,9 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
               onClick={() => onNavigateTab('saved-trips')}
               className="btn-secondary"
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
                 padding: '12px 24px',
                 fontSize: '0.95rem',
                 fontWeight: 600,
@@ -562,7 +647,8 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
                 cursor: 'pointer',
               }}
             >
-              💾 {t('landingBtnSaved')}
+              <Bookmark size={17} strokeWidth={2.2} />
+              <span>{t('landingBtnSaved')}</span>
             </button>
           </div>
         </section>

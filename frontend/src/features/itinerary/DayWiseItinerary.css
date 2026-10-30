@@ -1,0 +1,883 @@
+/* ==========================================================================
+   Namma Karnataka — Day-Wise Itinerary & Polaroid Destination Gallery Styles
+   Refined Light Travel Scrapbook Theme (zero reliance on external utilities)
+   Palette: #F8FAFC, #EAF6FF, #DDF7F8, #FFFFFF, #C6A77D, #17233B, #64748B, #079BB5
+   ========================================================================== */
+
+/* Prevent horizontal scroll while enabling 100vw viewport-spanning rope */
+html, body {
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   1. Gallery Section Wrapper & 100vw Viewport-Spanning Rope Layer
+   -------------------------------------------------------------------------- */
+.nk-gallery-section-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 1.25rem 0 1.5rem 0;
+  overflow: visible;
+}
+
+/* Full Viewport-Width Hanging Twine String Layer (100vw, extreme left to extreme right) */
+.nk-viewport-rope-layer {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  height: 120px;
+  pointer-events: none;
+  z-index: 12;
+  overflow: visible;
+}
+
+.nk-viewport-rope-layer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .nk-viewport-rope-layer {
+    top: 12px;
+    height: 100px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Polaroid Gallery Section (.nk-day-gallery)
+   -------------------------------------------------------------------------- */
+.nk-day-gallery {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  min-height: 480px;
+  max-height: 510px;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0;
+  box-shadow: none !important;
+  box-sizing: border-box;
+  user-select: none;
+  z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .nk-day-gallery {
+    height: 430px;
+    min-height: 430px;
+    max-height: 450px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Polaroid Viewport & Track (.nk-polaroid-viewport, .nk-polaroid-track)
+   -------------------------------------------------------------------------- */
+.nk-polaroid-viewport {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 380px;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 36px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.nk-polaroid-track {
+  display: flex;
+  align-items: flex-start;
+  box-sizing: border-box;
+  will-change: transform;
+}
+
+@media (max-width: 1024px) {
+  .nk-polaroid-track.is-centered {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .nk-polaroid-viewport {
+    min-height: 320px;
+    padding-top: 28px;
+  }
+  .nk-polaroid-track.is-centered {
+    gap: 16px;
+  }
+  .nk-polaroid-track.is-carousel {
+    gap: 20px;
+  }
+}
+
+/* Empty State inside Gallery */
+.nk-gallery-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin: auto;
+  padding: 2.25rem 2rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  max-width: 460px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.07);
+  box-sizing: border-box;
+  z-index: 20;
+}
+
+.nk-gallery-empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #EAF6FF;
+  border: 1px solid rgba(7, 155, 181, 0.25);
+  color: #079BB5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.nk-gallery-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #17233B;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.35;
+}
+
+.nk-gallery-empty-subtitle {
+  font-size: 0.88rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   4. Polaroid Card & Clip (.nk-polaroid-card, .nk-polaroid-clip)
+   -------------------------------------------------------------------------- */
+.nk-polaroid-card {
+  position: relative;
+  flex: 0 0 220px;
+  width: 220px;
+  height: 295px;
+  min-width: 220px;
+  max-width: 220px;
+  min-height: 295px;
+  max-height: 295px;
+  background-color: #FFFFFF;
+  border-radius: 4px;
+  padding: 12px 12px 14px 12px;
+  cursor: pointer;
+  transition: transform 400ms ease, opacity 400ms ease, box-shadow 400ms ease;
+  transform-origin: top center;
+  box-sizing: border-box;
+}
+
+.nk-polaroid-card.is-active {
+  z-index: 20;
+  box-shadow: 0 20px 40px -8px rgba(7, 155, 181, 0.22), 0 4px 12px rgba(23, 35, 59, 0.08);
+  border: 1px solid rgba(7, 155, 181, 0.35);
+}
+
+.nk-polaroid-card.is-inactive {
+  z-index: 10;
+  box-shadow: 0 8px 20px -4px rgba(23, 35, 59, 0.08), 0 2px 6px rgba(23, 35, 59, 0.04);
+  border: 1px solid #E2E8F0;
+}
+
+.nk-polaroid-card:hover {
+  opacity: 1 !important;
+  box-shadow: 0 16px 32px -6px rgba(7, 155, 181, 0.26), 0 3px 10px rgba(23, 35, 59, 0.07);
+}
+
+@media (max-width: 640px) {
+  .nk-polaroid-card {
+    flex: 0 0 175px;
+    width: 175px;
+    height: 250px;
+    min-width: 175px;
+    max-width: 175px;
+    min-height: 250px;
+    max-height: 250px;
+    padding: 10px 10px 12px 10px;
+  }
+}
+
+/* Wooden Clothespin / Peg */
+.nk-polaroid-clip {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11px;
+  height: 28px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #DDB88E 0%, #C6A77D 50%, #A9875C 100%);
+  box-shadow: 0 2px 5px rgba(198, 167, 125, 0.4);
+  border: 1px solid rgba(169, 135, 92, 0.5);
+  z-index: 25;
+  pointer-events: none;
+}
+
+.nk-polaroid-clip-wire {
+  position: absolute;
+  top: 11px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #94A3B8;
+  border-top: 1px solid #CBD5E1;
+}
+
+/* Photo Frame & Image */
+.nk-polaroid-image-frame {
+  position: relative;
+  width: 196px;
+  height: 196px;
+  min-width: 196px;
+  max-width: 196px;
+  min-height: 196px;
+  max-height: 196px;
+  overflow: hidden;
+  border-radius: 2px;
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .nk-polaroid-image-frame {
+    width: 155px;
+    height: 155px;
+    min-width: 155px;
+    max-width: 155px;
+    min-height: 155px;
+    max-height: 155px;
+  }
+}
+
+.nk-polaroid-image {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  pointer-events: none;
+}
+
+/* Clean Branded Fallback Placeholder */
+.nk-polaroid-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F8FAFC 0%, #EAF6FF 100%);
+  color: #17233B;
+  text-align: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.nk-placeholder-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(7, 155, 181, 0.12);
+  border: 1px solid rgba(7, 155, 181, 0.25);
+  color: #079BB5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.nk-placeholder-district {
+  font-size: 11px;
+  font-weight: 600;
+  color: #17233B;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nk-placeholder-category {
+  font-size: 9px;
+  color: #64748B;
+  margin-top: 2px;
+}
+
+/* Photo Badges */
+.nk-polaroid-stop-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(4px);
+  color: #079BB5;
+  border: 1px solid rgba(7, 155, 181, 0.25);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.nk-polaroid-district-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(4px);
+  color: #17233B;
+  border: 1px solid #E2E8F0;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  max-width: 105px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+/* Polaroid Chin & Caption */
+.nk-polaroid-caption {
+  height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px 6px 0 6px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .nk-polaroid-caption {
+    height: 45px;
+  }
+}
+
+.nk-polaroid-caption-title {
+  font-family: Georgia, Cambria, 'Times New Roman', serif;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17233B;
+  margin: 0;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.nk-polaroid-caption-subtitle {
+  font-family: var(--font-family, system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748B;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   5. Bottom Gallery Navigation Bar (.nk-gallery-navigation)
+   -------------------------------------------------------------------------- */
+.nk-gallery-navigation {
+  height: 64px;
+  min-height: 64px;
+  padding: 0 12px;
+  border-top: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 30;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-sizing: border-box;
+}
+
+.nk-gallery-nav-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-right: 16px;
+}
+
+.nk-gallery-nav-title {
+  font-family: Georgia, Cambria, 'Times New Roman', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #17233B;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nk-gallery-nav-subtitle {
+  font-size: 0.85rem;
+  color: #64748B;
+  margin: 3px 0 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nk-gallery-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.nk-gallery-nav-counter {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748B;
+  letter-spacing: 0.08em;
+}
+
+.nk-gallery-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid #CBD5E1;
+  background-color: #FFFFFF;
+  color: #17233B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.nk-gallery-nav-btn:hover:not(:disabled) {
+  border-color: #079BB5;
+  color: #079BB5;
+  background-color: #F1F5F9;
+  box-shadow: 0 2px 6px rgba(7, 155, 181, 0.15);
+}
+
+.nk-gallery-nav-btn:disabled {
+  opacity: 0.35;
+  background-color: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #94A3B8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .nk-gallery-navigation {
+    height: 68px;
+    min-height: 68px;
+    padding: 0 16px;
+  }
+  .nk-gallery-nav-title {
+    font-size: 1.05rem;
+  }
+  .nk-gallery-nav-subtitle {
+    font-size: 0.78rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. Selected Day Overview (.nk-selected-day-overview)
+   -------------------------------------------------------------------------- */
+.nk-selected-day-overview {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #DCE6F2);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.05));
+  box-sizing: border-box;
+}
+
+.nk-overview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border-subtle, #DCE6F2);
+  padding-bottom: 1rem;
+}
+
+.nk-overview-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nk-day-pill-badge {
+  background: #0891B2;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nk-corridor-badge {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nk-meals-badge {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nk-overview-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #172033;
+  margin: 0.5rem 0 0.25rem 0;
+  font-family: var(--font-display, inherit);
+}
+
+.nk-overview-locations {
+  font-size: 0.88rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.nk-overview-locations strong {
+  color: #1E293B;
+}
+
+.nk-overview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Responsive Metric Cards Grid */
+.nk-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 1.25rem;
+}
+
+.nk-stat-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.nk-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nk-stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+.nk-stat-sub {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   7. Day Details Section (.nk-day-details)
+   -------------------------------------------------------------------------- */
+.nk-day-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.nk-details-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #DCE6F2);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.05));
+  box-sizing: border-box;
+}
+
+.nk-details-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.nk-details-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #172033;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nk-details-card-subtitle {
+  font-size: 0.82rem;
+  color: #64748B;
+}
+
+/* --------------------------------------------------------------------------
+   8. Day Navigation Bar (.nk-day-navbar)
+   -------------------------------------------------------------------------- */
+.nk-day-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #DCE6F2);
+  border-radius: 12px;
+  margin: 1rem 0;
+  box-sizing: border-box;
+}
+
+.nk-day-navbar-left,
+.nk-day-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nk-day-navbar-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.nk-day-chip {
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle, #DCE6F2);
+  background: #F8FAFC;
+  color: #475569;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nk-day-chip.active {
+  background: #0891B2;
+  color: #FFFFFF;
+  border-color: #0891B2;
+}
+
+.nk-day-chip:hover:not(.active) {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   9. Common Card Components for Details (.nk-card, .nk-grid-3, etc.)
+   -------------------------------------------------------------------------- */
+.nk-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #DCE6F2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.05));
+  margin: 1.25rem 0;
+  box-sizing: border-box;
+}
+
+.nk-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid #F1F5F9;
+  padding-bottom: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.nk-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nk-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nk-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nk-card-desc {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 3px 0 0 0;
+}
+
+.nk-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 0.75rem;
+}
+
+.nk-grid-item {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+}
+
+.nk-grid-item-label {
+  font-size: 0.75rem;
+  color: #64748B;
+  font-weight: 500;
+  display: block;
+}
+
+.nk-grid-item-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nk-price-box {
+  text-align: right;
+}
+
+.nk-price-box-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+}
+
+.nk-price-box-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.nk-badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.nk-badge-est {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}

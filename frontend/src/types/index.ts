@@ -223,6 +223,7 @@ export interface RecommendedDestination {
   access_status: AccessStatus;
   is_offbeat: boolean;
   sources?: DestinationSource[];
+  primary_image_url?: string | null;
 }
 
 export interface TravelLegAlternative {
@@ -314,6 +315,7 @@ export interface ItineraryStop {
   notes?: string | null;
   user_modified?: boolean;
   locked?: boolean;
+  primary_image_url?: string | null;
 }
 
 export interface CulturalEvent {

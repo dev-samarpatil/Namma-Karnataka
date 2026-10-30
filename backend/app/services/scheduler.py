@@ -1073,6 +1073,7 @@ class DeterministicScheduler:
                         cost_status=fee_status,
                         source_reference=None,
                         rationale=dest_rationale,
+                        primary_image_url=getattr(dest, "primary_image_url", None),
                     )
                 )
 
@@ -1711,6 +1712,7 @@ class DeterministicScheduler:
                     notes=attr.notes,
                     user_modified=attr.user_modified,
                     locked=attr.locked,
+                    primary_image_url=attr.primary_image_url,
                 )
                 stops.append(rescheduled_attr)
 
@@ -1725,6 +1727,9 @@ class DeterministicScheduler:
                     dest_rec = dest_repo.get_by_id(attr.destination_id) or dest_repo.get_by_slug(
                         attr.destination_id
                     )
+
+                if not rescheduled_attr.primary_image_url and dest_rec and dest_rec.primary_image_url:
+                    rescheduled_attr.primary_image_url = dest_rec.primary_image_url
 
                 slug = dest_rec.slug if dest_rec else attr.stop_id.replace("stop-", "")
                 cat = dest_rec.category if dest_rec else DestinationCategory.OTHER
@@ -1760,6 +1765,7 @@ class DeterministicScheduler:
                         ),
                         is_offbeat=dest_rec.is_offbeat if dest_rec else False,
                         sources=dest_rec.sources if dest_rec else [],
+                        primary_image_url=dest_rec.primary_image_url if dest_rec else attr.primary_image_url,
                     )
                 )
 
@@ -2392,6 +2398,7 @@ class DeterministicScheduler:
                 currency="INR",
                 cost_status=cost_status,
                 rationale=f"Regenerated stop in {dist_label}.",
+                primary_image_url=dest.primary_image_url,
             )
             new_attraction_stops.append(stop_item)
 

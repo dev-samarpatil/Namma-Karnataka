@@ -163,6 +163,7 @@ class RecommendedDestination(StrictSchema):
     access_status: AccessStatus
     is_offbeat: bool
     sources: list[DestinationSourceRead] = Field(default_factory=list)
+    primary_image_url: str | None = None
 
 
 class TravelLegAlternative(StrictSchema):
@@ -268,6 +269,7 @@ class ItineraryStop(StrictSchema):
     )
     user_modified: bool = Field(False, description="Flag indicating user customization")
     locked: bool = Field(False, description="Flag preventing automated reordering or regeneration")
+    primary_image_url: str | None = None
 
 
 class DayPlan(StrictSchema):

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   PlanningRecommendationResponse,
   RecommendedDestination,
@@ -20,17 +20,48 @@ import {
   listTripShares,
   revokeTripShare,
   updateSharedTrip,
+  getApiBaseUrl,
 } from '../../lib/api';
 import {
   getTripSyncStatus,
   processSyncQueue,
   enqueueOperation,
 } from '../../services/offlineSync';
+import { getOfflineDestinations } from '../../services/offlineStorage';
+import verifiedDestinationsData from './verifiedDestinationMedia.json';
+import { PolaroidLineCarousel, PolaroidSlide } from '../../components/ui/polaroid-line-carousel';
+import { DayOverview } from './DayOverview';
+import { DayNavigation } from './DayNavigation';
+import { DailyBudgetSummary } from './DailyBudgetSummary';
+import { OvernightStayCard } from './OvernightStayCard';
+import { DayEventsSection } from './DayEventsSection';
+import { TripWideOverview } from './TripWideOverview';
 import { BudgetSummary } from './BudgetSummary';
 import { MapView } from './MapView';
 import { TransitComparisonCard } from './TransitComparisonCard';
 import { TravelLegCard } from './TravelLegCard';
-import { FestivalRecommendations } from './FestivalRecommendations';
+import './DayWiseItinerary.css';
+
+// Fast static lookup map for guaranteed authentic destination photographs from verified catalogue
+const VERIFIED_MEDIA_MAP = new Map<string, string>();
+if (Array.isArray(verifiedDestinationsData)) {
+  for (const item of verifiedDestinationsData as Array<{ id?: string; slug?: string; name_en?: string; primary_image_url?: string }>) {
+    if (item.primary_image_url) {
+      if (item.id) VERIFIED_MEDIA_MAP.set(item.id, item.primary_image_url);
+      if (item.slug) {
+        VERIFIED_MEDIA_MAP.set(item.slug, item.primary_image_url);
+        VERIFIED_MEDIA_MAP.set(item.slug.replace(/-madikeri|-coorg/g, ''), item.primary_image_url);
+        VERIFIED_MEDIA_MAP.set(item.slug.replace(/-s-/g, '-'), item.primary_image_url);
+      }
+      if (item.name_en) {
+        const lower = item.name_en.toLowerCase();
+        VERIFIED_MEDIA_MAP.set(lower, item.primary_image_url);
+        VERIFIED_MEDIA_MAP.set(lower.replace(/[^a-z0-9 ]/g, '').trim(), item.primary_image_url);
+        VERIFIED_MEDIA_MAP.set(lower.replace(/\s*\(.*?\)\s*/g, '').trim(), item.primary_image_url);
+      }
+    }
+  }
+}
 
 interface ItineraryViewProps {
   plan: PlanningRecommendationResponse | null;
@@ -68,16 +99,18 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
   const { t } = useTranslation(language);
   const [showMap, setShowMap] = useState<boolean>(true);
-  const [activeDayTab, setActiveDayTab] = useState<number>(0);
+  const [activeDay, setActiveDay] = useState<number>(1);
+  const [activeDayTab, setActiveDayTab] = useState<number>(1);
+  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
+  const [isAllDaysView, setIsAllDaysView] = useState<boolean>(false);
+  const [showDetails, setShowDetails] = useState<boolean>(true);
+  const [destinationsMap, setDestinationsMap] = useState<Map<string, DestinationRead>>(new Map());
 
-  const handleSelectDayTab = (dNum: number) => {
+  const handleSelectDay = (dNum: number) => {
+    setActiveDay(dNum);
     setActiveDayTab(dNum);
-    if (dNum > 0) {
-      const el = document.getElementById(`day-block-${dNum}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
+    setIsAllDaysView(false);
+    setActiveSlideIndex(0);
   };
 
   // Backward compatibility: derive effectiveDays from plan.days or fallback to grouping items
@@ -120,6 +153,298 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     });
     return days.sort((a, b) => a.day_number - b.day_number);
   }, [plan]);
+
+  // Load verified catalogue, offline catalogue and query API in background for authentic destination photos
+  useEffect(() => {
+    const map = new Map<string, DestinationRead>();
+
+    const getImg = (obj: unknown): string | undefined => {
+      if (!obj || typeof obj !== 'object') return undefined;
+      const rec = obj as Record<string, unknown>;
+      if (typeof rec.primary_image_url === 'string' && rec.primary_image_url.trim()) {
+        return rec.primary_image_url;
+      }
+      if (Array.isArray(rec.media) && rec.media.length > 0) {
+        const m = rec.media[0] as Record<string, unknown>;
+        if (typeof m.thumbnail_url === 'string' && m.thumbnail_url) return m.thumbnail_url;
+        if (typeof m.url === 'string' && m.url) return m.url;
+      }
+      return undefined;
+    };
+
+    const registerKey = (key: string, d: unknown) => {
+      if (!key) return;
+      const existing = map.get(key);
+      if (existing) {
+        const existingImg = getImg(existing);
+        const incomingImg = getImg(d);
+        if (existingImg && !incomingImg) {
+          // Preserve existing verified image so incoming recommendations without images never strip photos
+          map.set(key, { ...(d as object), primary_image_url: existingImg, media: (existing as DestinationRead).media } as DestinationRead);
+          return;
+        }
+      }
+      map.set(key, d as DestinationRead);
+    };
+
+    const indexDest = (d: unknown) => {
+      if (!d || typeof d !== 'object') return;
+      const rec = d as Record<string, unknown>;
+      if (typeof rec.id === 'string') registerKey(rec.id, d);
+      if (typeof rec.slug === 'string') {
+        registerKey(rec.slug, d);
+        registerKey(rec.slug.replace(/-madikeri|-coorg/g, ''), d);
+        registerKey(rec.slug.replace(/-s-/g, '-'), d);
+      }
+      if (typeof rec.name_en === 'string') {
+        const lower = rec.name_en.toLowerCase();
+        registerKey(lower, d);
+        registerKey(lower.replace(/[^a-z0-9 ]/g, '').trim(), d);
+        registerKey(lower.replace(/\s*\(.*?\)\s*/g, '').trim(), d);
+      }
+      if (typeof rec.name === 'string') {
+        const lower = rec.name.toLowerCase();
+        registerKey(lower, d);
+        registerKey(lower.replace(/[^a-z0-9 ]/g, '').trim(), d);
+        registerKey(lower.replace(/\s*\(.*?\)\s*/g, '').trim(), d);
+      }
+      if (typeof rec.name_kn === 'string') {
+        registerKey(rec.name_kn, d);
+      }
+    };
+
+    // 1. Initial instant load from verified destination media catalogue (58 destinations)
+    if (Array.isArray(verifiedDestinationsData)) {
+      for (const d of verifiedDestinationsData) {
+        indexDest(d);
+      }
+    }
+
+    try {
+      const offline = getOfflineDestinations();
+      for (const d of offline) {
+        indexDest(d);
+      }
+      if (plan?.items) {
+        for (const item of plan.items) {
+          indexDest(item);
+        }
+      }
+      setDestinationsMap(new Map(map));
+    } catch {
+      // ignore
+    }
+
+    listDestinations({ limit: 100 })
+      .then((res) => {
+        setCatalogDests(res.items);
+        for (const d of res.items) {
+          indexDest(d);
+        }
+        if (plan?.items) {
+          for (const item of plan.items) {
+            indexDest(item);
+          }
+        }
+        setDestinationsMap(new Map(map));
+      })
+      .catch(() => {
+        // offline fallback
+      });
+  }, [plan?.items]);
+
+  // Bounds check for activeDay
+  useEffect(() => {
+    if (effectiveDays.length > 0 && activeDay > effectiveDays.length) {
+      setActiveDay(1);
+      setActiveDayTab(1);
+    }
+  }, [effectiveDays.length, activeDay]);
+
+  const currentDayPlan = useMemo(() => {
+    if (effectiveDays.length === 0) return null;
+    return effectiveDays.find((d) => d.day_number === activeDay) || effectiveDays[0];
+  }, [effectiveDays, activeDay]);
+
+  const resolveDestinationImage = useCallback(
+    (destIdOrSlug?: string | null, stopName?: string | null, directImg?: string | null): { proxyUrl: string; rawUrl: string } => {
+      let rawUrl: string | undefined = directImg && directImg.trim() ? directImg : undefined;
+
+      let match: DestinationRead | RecommendedDestination | (DestinationRead & { primary_image_url?: string }) | undefined;
+      if (destIdOrSlug) {
+        match =
+          destinationsMap.get(destIdOrSlug) ||
+          destinationsMap.get(destIdOrSlug.replace(/-s-/g, '-')) ||
+          plan?.items.find((i) => i.id === destIdOrSlug || i.slug === destIdOrSlug);
+      }
+      if (!match && stopName) {
+        const norm = stopName.trim().toLowerCase();
+        const stripped = norm.replace(/[^a-z0-9 ]/g, '').trim();
+        const base = norm.replace(/\s*\(.*?\)\s*/g, '').trim();
+        match =
+          destinationsMap.get(norm) ||
+          destinationsMap.get(stripped) ||
+          destinationsMap.get(base) ||
+          plan?.items.find((i) => {
+            const iname = i.name.toLowerCase();
+            return (
+              iname === norm ||
+              iname === stripped ||
+              iname === base ||
+              iname.includes(base) ||
+              base.includes(iname)
+            );
+          });
+      }
+
+      if (!rawUrl && match) {
+        if ('primary_image_url' in match && match.primary_image_url) {
+          rawUrl = match.primary_image_url;
+        } else if ('media' in match && match.media && match.media.length > 0) {
+          rawUrl = match.media[0].thumbnail_url || match.media[0].url;
+        }
+      }
+
+      // Static verified catalogue fallback
+      if (!rawUrl && destIdOrSlug) {
+        rawUrl = VERIFIED_MEDIA_MAP.get(destIdOrSlug) || VERIFIED_MEDIA_MAP.get(destIdOrSlug.replace(/-s-/g, '-'));
+      }
+      if (!rawUrl && stopName) {
+        const norm = stopName.trim().toLowerCase();
+        const stripped = norm.replace(/[^a-z0-9 ]/g, '').trim();
+        const base = norm.replace(/\s*\(.*?\)\s*/g, '').trim();
+        rawUrl = VERIFIED_MEDIA_MAP.get(norm) || VERIFIED_MEDIA_MAP.get(stripped) || VERIFIED_MEDIA_MAP.get(base);
+      }
+
+      if (!rawUrl) return { proxyUrl: '', rawUrl: '' };
+
+      const cleanUrl = rawUrl.replace('thumb.wikimedia.org', 'upload.wikimedia.org').split('?')[0];
+      const baseUrl = getApiBaseUrl().replace(/\/+$/, '');
+      const isLocalUrl = Boolean(cleanUrl && (cleanUrl.startsWith('/') || cleanUrl.startsWith('data:')));
+      const proxyUrl = isLocalUrl ? cleanUrl : `${baseUrl}/destinations/media/proxy?url=${encodeURIComponent(cleanUrl)}`;
+      return { proxyUrl, rawUrl: cleanUrl };
+    },
+    [destinationsMap, plan?.items]
+  );
+
+  // Eligible sightseeing stops for the selected day's photo gallery
+  const ELIGIBLE_GALLERY_TYPES = useMemo(() => new Set(['attraction', 'activity']), []);
+
+  const activeDaySightseeingStops = useMemo(() => {
+    if (!currentDayPlan) return [];
+    const seen = new Set<string>();
+    return currentDayPlan.stops.filter((stop) => {
+      // Strictly include only genuine sightseeing stops (attraction, activity)
+      if (!ELIGIBLE_GALLERY_TYPES.has(stop.stop_type)) return false;
+      // Safeguard against any accommodation, meal, or transport record
+      if (
+        stop.stop_type === 'accommodation' ||
+        stop.stop_type === 'meal' ||
+        stop.stop_type === 'transport' ||
+        stop.stop_type === 'break'
+      ) {
+        return false;
+      }
+      // Deduplicate in case identical destination is scheduled twice on same day
+      const key = stop.destination_id || stop.name;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [currentDayPlan, ELIGIBLE_GALLERY_TYPES]);
+
+  // One Polaroid slide per eligible sightseeing destination for the currently selected day
+  const carouselSlides: PolaroidSlide[] = useMemo(() => {
+    if (!currentDayPlan || activeDaySightseeingStops.length === 0) {
+      return [];
+    }
+
+    return activeDaySightseeingStops.map((stop, idx) => {
+      const matched =
+        (stop.destination_id ? destinationsMap.get(stop.destination_id) : null) ||
+        destinationsMap.get(stop.name.toLowerCase()) ||
+        plan?.items.find(
+          (i) =>
+            i.id === stop.destination_id ||
+            i.slug === stop.destination_id ||
+            i.name.toLowerCase() === stop.name.toLowerCase()
+        );
+
+      let districtName = '';
+      if (matched) {
+        if ('district' in matched && matched.district?.name_en) {
+          districtName = matched.district.name_en;
+        } else if ('district_name' in matched && matched.district_name) {
+          districtName = matched.district_name;
+        } else {
+          districtName = matched.district_code || '';
+        }
+      }
+      if (!districtName && currentDayPlan.start_location_name) {
+        districtName = currentDayPlan.start_location_name;
+      }
+
+      let categoryName = '';
+      if (matched && matched.category) {
+        categoryName = matched.category;
+      } else if (stop.stop_type === 'attraction') {
+        categoryName = 'Attraction';
+      } else if (stop.stop_type === 'activity') {
+        categoryName = 'Activity';
+      }
+
+      const { proxyUrl, rawUrl } = resolveDestinationImage(stop.destination_id, stop.name, stop.primary_image_url);
+
+      return {
+        id: stop.stop_id,
+        destinationId: stop.destination_id,
+        title: stop.name,
+        polaroidCaption: stop.name,
+        district: districtName,
+        category: categoryName,
+        image: proxyUrl,
+        rawImageUrl: rawUrl,
+        caption: stop.description || stop.rationale || '',
+        stopOrder: idx + 1,
+        dayNumber: currentDayPlan.day_number,
+      };
+    });
+  }, [currentDayPlan, activeDaySightseeingStops, destinationsMap, plan?.items, resolveDestinationImage]);
+
+  // Selected Day Title for Gallery Information Bar
+  const galleryDayTitle = useMemo(() => {
+    if (!currentDayPlan) return '';
+    const dNum = currentDayPlan.day_number;
+    const rawTheme = currentDayPlan.theme?.trim() || '';
+    const isHotelTheme = /hotel|resort|lodge|stay|mayura|inn|guest house/i.test(rawTheme);
+
+    if (rawTheme && !isHotelTheme && !rawTheme.toLowerCase().startsWith('day ')) {
+      return `Day ${dNum} — ${rawTheme}`;
+    }
+
+    const firstDest = activeDaySightseeingStops[0];
+    const matched = firstDest ? destinationsMap.get(firstDest.destination_id || '') : null;
+    const district =
+      (matched && 'district' in matched && matched.district?.name_en) ||
+      (matched && 'district_name' in matched && matched.district_name) ||
+      currentDayPlan.start_location_name;
+
+    if (activeDaySightseeingStops.length > 0) {
+      return `Day ${dNum} — ${district ? `${district} Exploration` : (language === 'kn' ? 'ದೃಶ್ಯವೀಕ್ಷಣೆ' : 'Sightseeing Circuit')}`;
+    }
+    return `Day ${dNum} — ${language === 'kn' ? 'ಪ್ರಯಾಣ ಮತ್ತು ವಿಶ್ರಾಂತಿ' : 'Travel & Rest'}`;
+  }, [currentDayPlan, activeDaySightseeingStops, destinationsMap, language]);
+
+  // Selected Day Subtitle (Destination Cluster)
+  const galleryDaySubtitle = useMemo(() => {
+    if (!currentDayPlan) return '';
+    if (activeDaySightseeingStops.length > 0) {
+      return activeDaySightseeingStops.map((s) => s.name).join(' · ');
+    }
+    return language === 'kn'
+      ? 'ಪ್ರಯಾಣ ಮತ್ತು ವಿಶ್ರಾಂತಿ ವೇಳಾಪಟ್ಟಿ · ವಾಸ್ತವ್ಯ ಮತ್ತು ಪ್ರಯಾಣದ ವಿವರಗಳು ಕೆಳಗಿವೆ'
+      : 'Rest and travel schedule · Accommodations and transit details in View Details';
+  }, [currentDayPlan, activeDaySightseeingStops, language]);
 
   // Phase 5 Interactive State
   const [isRecalculating, setIsRecalculating] = useState<boolean>(false);
@@ -621,6 +946,408 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     }
   };
 
+  // Render timeline block for a day
+  const renderDayTimelineBlock = (day: DayPlan) => {
+    const attrStopsInDay = day.stops.filter(
+      (s) => s.stop_type === 'attraction' || s.stop_type === 'activity'
+    );
+
+    return (
+      <div
+        key={day.day_number}
+        id={`day-block-${day.day_number}`}
+        className={`timeline-day-block ${activeDayTab === day.day_number ? 'day-block-active' : ''}`}
+        data-testid={`day-block-${day.day_number}`}
+      >
+        <div className="day-header">
+          <div>
+            <span className="day-pill">{t('day')} {day.day_number}</span>
+            <span className="day-theme-title">{day.theme}</span>
+            {day.meals_covered && day.meals_covered.length > 0 && (
+              <span className="day-badge-meals" style={{ marginLeft: '8px', fontSize: '0.8rem', background: '#ecfdf5', color: '#065f46', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                🍽️ {day.meals_covered.join(' · ')}
+              </span>
+            )}
+            {day.start_location_name && day.end_location_name && (
+              <div className="day-route-corridor" style={{ fontSize: '0.84rem', color: 'var(--accent-cyan, #38bdf8)', marginTop: '4px', fontWeight: 600 }}>
+                🚩 {day.start_location_name} ➔ {day.end_location_name === day.start_location_name ? 'Local Circuit' : `🏁 ${day.end_location_name}`}
+                {day.driving_distance_km ? ` · ~${day.driving_distance_km} km` : ''}
+                {day.transit_minutes ? ` (${Math.floor(day.transit_minutes / 60)}h ${day.transit_minutes % 60}m driving)` : ''}
+              </div>
+            )}
+          </div>
+
+          <div className="day-actions-toolbar">
+            <button
+              type="button"
+              className="btn-day-action"
+              onClick={() => setAddingToDay(day.day_number)}
+              data-testid={`add-stop-day-${day.day_number}`}
+            >
+              ➕ {t('addStop')}
+            </button>
+            <button
+              type="button"
+              className="btn-day-action"
+              onClick={() => setConfirmingRegenDay(day.day_number)}
+              data-testid={`regen-day-${day.day_number}`}
+            >
+              ✨ {t('regenerateDay')}
+            </button>
+            {day.daily_cost_min_inr !== null && day.daily_cost_min_inr !== undefined && (
+              <span className="day-badge-cost">
+                ₹{day.daily_cost_min_inr} – ₹{day.daily_cost_max_inr}
+              </span>
+            )}
+            <span className="day-stops-count">{day.stops.length} stops</span>
+          </div>
+        </div>
+
+        {day.warnings.length > 0 && (
+          <div className="day-warnings-box">
+            {day.warnings.map((w, idx) => (
+              <div key={idx} className="day-warning-text">⚠️ {w}</div>
+            ))}
+          </div>
+        )}
+
+        <div className="day-stops-list">
+          {day.stops.map((stop, sIdx) => {
+            const matchedItem = plan.items.find((i) => i.id === stop.destination_id || i.slug === stop.destination_id);
+            const stopCardTestId = matchedItem ? `stop-card-${matchedItem.slug}` : `stop-card-${stop.stop_id}`;
+
+            const hasTravelLeg = stop.travel_leg || (stop.distance_from_prev_km !== null && stop.distance_from_prev_km !== undefined && stop.distance_from_prev_km > 0);
+            const prevStopName = sIdx > 0 ? day.stops[sIdx - 1]?.name : day.start_location_name || undefined;
+            const travelLegElement = hasTravelLeg ? (
+              <TravelLegCard
+                travelLeg={stop.travel_leg}
+                distanceKm={stop.distance_from_prev_km}
+                transitMinutes={stop.transit_from_prev_minutes}
+                prevStopName={prevStopName}
+                destStopName={stop.name}
+                language={language}
+              />
+            ) : null;
+
+            if (stop.stop_type === 'meal') {
+              return (
+                <React.Fragment key={stop.stop_id}>
+                  {travelLegElement}
+                  <article className="timeline-stop-card meal-stop-card" data-testid={stopCardTestId}>
+                    <div className="stop-order-indicator stop-type-meal">
+                      <span className="order-icon" aria-hidden="true">🍽️</span>
+                    </div>
+                    <div className="stop-content">
+                      <div className="stop-header-row">
+                        <h4 className="stop-name">{stop.name}</h4>
+                        <div className="stop-pills">
+                          <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                          <span className="card-category-pill meal-pill">
+                            {language === 'kn' ? 'ಆಹಾರ ಮತ್ತು ಪಾನೀಯ' : 'Dining & Food'}
+                          </span>
+                          {stop.source_reference && (
+                            <span className="card-district-pill">🏛️ {stop.source_reference}</span>
+                          )}
+                        </div>
+                      </div>
+                      {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                      <div className="stop-footer-row">
+                        <span className="stop-fee-info">
+                          💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ವೆಚ್ಚ:' : 'Cost:') : (language === 'kn' ? 'ಅಂದಾಜು ವೆಚ್ಚ:' : 'Est. Cost:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
+                        </span>
+                        {stop.cost_status === 'verified' ? (
+                          <span className="status-badge status-verified">✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}</span>
+                        ) : (
+                          <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                </React.Fragment>
+              );
+            }
+
+            if (stop.stop_type === 'accommodation') {
+              return (
+                <React.Fragment key={stop.stop_id}>
+                  {travelLegElement}
+                  <article className="timeline-stop-card accommodation-stop-card" data-testid={stopCardTestId}>
+                    <div className="stop-order-indicator stop-type-stay">
+                      <span className="order-icon" aria-hidden="true">🏨</span>
+                    </div>
+                    <div className="stop-content">
+                      <div className="stop-header-row">
+                        <h4 className="stop-name">{stop.name}</h4>
+                        <div className="stop-pills">
+                          <span className="stop-time-badge">🌙 {stop.start_time} Check-in</span>
+                          <span className="card-category-pill stay-pill">
+                            {language === 'kn' ? 'ವಾಸ್ತವ್ಯ' : 'Lodging'}
+                          </span>
+                          {stop.source_reference && (
+                            <span className="card-district-pill">🏛️ {stop.source_reference}</span>
+                          )}
+                        </div>
+                      </div>
+                      {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                      <div className="stop-footer-row">
+                        <span className="stop-fee-info">
+                          💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ದರ:' : 'Tariff:') : (language === 'kn' ? 'ಅಂದಾಜು ದರ:' : 'Est. Lodging:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
+                        </span>
+                        {stop.cost_status === 'verified' ? (
+                          <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ದರ' : 'Verified Tariff'}</span>
+                        ) : (
+                          <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                </React.Fragment>
+              );
+            }
+
+            if (stop.stop_type === 'event') {
+              return (
+                <React.Fragment key={stop.stop_id}>
+                  {travelLegElement}
+                  <article className="timeline-stop-card event-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #f59e0b' }}>
+                    <div className="stop-order-indicator stop-type-event" style={{ background: '#f59e0b' }}>
+                      <span className="order-icon" aria-hidden="true">🎪</span>
+                    </div>
+                    <div className="stop-content">
+                      <div className="stop-header-row">
+                        <h4 className="stop-name" style={{ color: '#fef08a' }}>{stop.name}</h4>
+                        <div className="stop-pills">
+                          <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                          <span className="card-category-pill event-pill" style={{ background: '#78350f', color: '#fef3c7' }}>
+                            🎪 {language === 'kn' ? 'ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವ / ಜಾತ್ರೆ' : 'Cultural Festival'}
+                          </span>
+                          {stop.source_reference && (
+                            <a href={stop.source_reference} target="_blank" rel="noopener noreferrer" className="card-district-pill" style={{ textDecoration: 'underline' }}>
+                              🏛️ {language === 'kn' ? 'ಮೂಲ ಪರಿಶೀಲನೆ' : 'Official Citation'}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                      <div className="stop-footer-row">
+                        <span className="stop-fee-info">
+                          🎟️ {stop.cost_min_inr !== null && stop.cost_min_inr !== undefined
+                            ? (stop.cost_min_inr === 0 ? (language === 'kn' ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry') : `₹${stop.cost_min_inr}`)
+                            : (language === 'kn' ? 'ಪ್ರವೇಶ ಶುಲ್ಕ ಅನ್ವಯಿಸಬಹುದು' : 'Entry fee may apply')}
+                        </span>
+                        {stop.cost_status === 'verified' ? (
+                          <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ಉತ್ಸವ' : 'Verified Event'}</span>
+                        ) : (
+                          <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ೠತುಮಾನದ ಉತ್ಸವ' : 'Seasonal Festival'}</span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                </React.Fragment>
+              );
+            }
+
+            if (stop.stop_type === 'transport') {
+              return (
+                <React.Fragment key={stop.stop_id}>
+                  {travelLegElement}
+                  <article className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #38bdf8' }}>
+                    <div className="stop-order-indicator stop-type-transport" style={{ background: '#0284c7' }}>
+                      <span className="order-icon" aria-hidden="true">🚗</span>
+                    </div>
+                    <div className="stop-content">
+                      <div className="stop-header-row">
+                        <h4 className="stop-name">{stop.name}</h4>
+                        <div className="stop-pills">
+                          <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                          <span className="card-category-pill transport-pill">
+                            {language === 'kn' ? 'ಹಿಂತಿರುಗುವ ಪ್ರಯಾಣ' : 'Return Transit'}
+                          </span>
+                        </div>
+                      </div>
+                      {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
+                      <div className="stop-footer-row">
+                        <span className="stop-fee-info">
+                          🚗 {stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins)
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                </React.Fragment>
+              );
+            }
+
+            // Attraction or Activity Stop
+            const categoryKey = matchedItem ? (`cat_${matchedItem.category}` as TranslationKey) : undefined;
+            const categoryLabel = categoryKey ? t(categoryKey) || matchedItem?.category : 'Attraction';
+
+            const attrIdxInDay = attrStopsInDay.findIndex((s) => s.stop_id === stop.stop_id);
+            const isFirstAttr = attrIdxInDay === 0;
+            const isLastAttr = attrIdxInDay === attrStopsInDay.length - 1;
+
+            return (
+              <React.Fragment key={stop.stop_id}>
+                {travelLegElement}
+                <article className="timeline-stop-card" data-testid={stopCardTestId}>
+                  <div className="stop-order-indicator">
+                    <span className="order-number">{sIdx + 1}</span>
+                  </div>
+
+                  <div className="stop-content">
+                    <div className="stop-header-row">
+                      <h4 className="stop-name">{stop.name}</h4>
+                      <div className="stop-pills">
+                        <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time} ({stop.duration_minutes}m)</span>
+                        <span className="card-category-pill">{categoryLabel}</span>
+                        {matchedItem && (
+                          <span className="card-district-pill">📍 {matchedItem.district_name || matchedItem.district_code}</span>
+                        )}
+                        {matchedItem?.is_offbeat && (
+                          <span className="card-offbeat-badge">⭐ {t('offbeatBadge')}</span>
+                        )}
+                        {stop.user_modified && (
+                          <span className="pill-customized">✏️ {t('stopCustomized')}</span>
+                        )}
+                        {stop.locked && (
+                          <span className="pill-locked">🔒 {t('lockedBadge')}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {stop.description && <p className="stop-summary">{stop.description}</p>}
+
+                    {stop.notes && (
+                      <div className="stop-user-notes" data-testid={`stop-notes-${stop.stop_id}`}>
+                        <strong>📝 {t('notes')}:</strong> {stop.notes}
+                      </div>
+                    )}
+
+                    {stop.transit_from_prev_minutes && stop.distance_from_prev_km && (
+                      <div className="transit-indicator-row">
+                        🚗 ~{stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins ·{' '}
+                        {stop.transit_method === 'terrain_adjusted_estimate'
+                          ? language === 'kn'
+                            ? 'ಘಟ್ಟ/ರಸ್ತೆ ಅಂದಾಜು'
+                            : 'Terrain-adjusted road estimate'
+                          : language === 'kn'
+                          ? 'ನೇರ ರೇಖೆ ಅಂದಾಜು'
+                          : 'Straight-line estimate'}
+                        )
+                      </div>
+                    )}
+
+                    {(() => {
+                      const prevStop = sIdx > 0 ? day.stops[sIdx - 1] : null;
+                      const prevMatched = prevStop
+                        ? plan.items.find(
+                            (i) => i.id === prevStop.destination_id || i.slug === prevStop.destination_id
+                          )
+                        : null;
+                      if (prevMatched?.coordinates && matchedItem?.coordinates) {
+                        return (
+                          <TransitComparisonCard
+                            originLat={prevMatched.coordinates.lat}
+                            originLon={prevMatched.coordinates.lon}
+                            destLat={matchedItem.coordinates.lat}
+                            destLon={matchedItem.coordinates.lon}
+                            language={language}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {stop.rationale && (
+                      <div className="stop-rationale-box">
+                        <strong>{t('whyThisStop')}</strong> {stop.rationale}
+                      </div>
+                    )}
+
+                    <div className="stop-footer-row">
+                      <span className="stop-fee-info">
+                        🎟️ Entry:{' '}
+                        {stop.cost_min_inr === 0 && stop.cost_max_inr === 0 ? (
+                          <span className="text-free">{t('feeFree')}</span>
+                        ) : stop.cost_min_inr !== undefined && stop.cost_min_inr !== null ? (
+                          <span>
+                            ₹{stop.cost_min_inr}
+                            {stop.cost_max_inr && stop.cost_max_inr > stop.cost_min_inr
+                              ? ` - ₹${stop.cost_max_inr}`
+                              : ''}
+                          </span>
+                        ) : (
+                          <span className="text-unknown">{t('feeUnknown')}</span>
+                        )}
+                      </span>
+
+                      {stop.coordinates && (
+                        <span className="stop-coords-text">
+                          📍 {stop.coordinates.lat.toFixed(4)}° N, {stop.coordinates.lon.toFixed(4)}° E
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Interactive Stop Actions Toolbar (Phase 5) */}
+                    <div className="stop-actions-row" data-testid={`stop-actions-${stop.stop_id}`}>
+                      <button
+                        type="button"
+                        className="btn-stop-action"
+                        onClick={() => handleOpenEdit(day.day_number, stop)}
+                        data-testid={`edit-stop-${stop.stop_id}`}
+                      >
+                        ✏️ {t('editStop')}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-stop-action"
+                        onClick={() => handleMoveUp(day.day_number, stop.stop_id)}
+                        disabled={isFirstAttr}
+                        data-testid={`move-up-${stop.stop_id}`}
+                        aria-label="Move stop earlier in day"
+                      >
+                        ⬆️ {t('moveUp')}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-stop-action"
+                        onClick={() => handleMoveDown(day.day_number, stop.stop_id)}
+                        disabled={isLastAttr}
+                        data-testid={`move-down-${stop.stop_id}`}
+                        aria-label="Move stop later in day"
+                      >
+                        ⬇️ {t('moveDown')}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-stop-action btn-stop-regen"
+                        onClick={() => handleOpenAlternatives(day.day_number, stop)}
+                        data-testid={`regen-stop-${stop.stop_id}`}
+                      >
+                        ✨ {t('regenerateStop')}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-stop-action btn-stop-danger"
+                        onClick={() => setRemovingStop({ dayNumber: day.day_number, stop })}
+                        data-testid={`remove-stop-${stop.stop_id}`}
+                      >
+                        🗑️ {t('removeStop')}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <section className="itinerary-section" aria-label="Generated Itinerary">
       {/* Recalculating Overlay Status */}
@@ -789,496 +1516,137 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       </div>
 
 
-      {/* Embedded Map Section */}
-      {showMap && (
-        <MapView
-          stops={plan.items}
-          dayPlans={plan.days}
+      {/* Day Navigation Controls: [Previous Day] Day 1 Day 2 ... [Next Day] */}
+      {effectiveDays.length > 0 && (
+        <DayNavigation
+          currentDay={activeDay}
+          totalDays={effectiveDays.length}
+          onSelectDay={handleSelectDay}
+          isAllDaysView={isAllDaysView}
+          onToggleAllDaysView={() => setIsAllDaysView((prev) => !prev)}
           language={language}
-          originLabel={plan.origin_label || 'Bengaluru'}
-          travelMode={activeReq.travel_mode || 'driving'}
-          activeDayFilter={activeDayTab === 0 ? null : activeDayTab}
         />
       )}
 
-      {/* Embedded Budget Breakdown Section */}
-      <BudgetSummary stops={plan.items} language={language} budget={plan.budget_breakdown} />
+      {isAllDaysView ? (
+        /* Phase 6: Trip-Wide Overview */
+        <TripWideOverview
+          plan={plan}
+          effectiveDays={effectiveDays}
+          originLabel={plan.origin_label || 'Bengaluru'}
+          language={language}
+          onSelectDay={handleSelectDay}
+          destinationsMap={destinationsMap}
+          onReplan={onReplan}
+        />
+      ) : (
+        <>
+          {/* Daily Destination Gallery (Refined Light Travel Scrapbook) */}
+          <PolaroidLineCarousel
+            slides={carouselSlides}
+            activeIndex={activeSlideIndex}
+            onChange={(index) => setActiveSlideIndex(index)}
+            dayTitle={galleryDayTitle}
+            daySubtitle={galleryDaySubtitle}
+            dayNumber={activeDay}
+            autoplay={0}
+            language={language}
+            emptyStateTitle={
+              language === 'kn'
+                ? 'ಈ ದಿನಕ್ಕೆ ಯಾವುದೇ ದೃಶ್ಯವೀಕ್ಷಣೆಯ ತಾಣಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ.'
+                : 'No sightseeing destinations scheduled for this day.'
+            }
+            emptyStateSubtitle={
+              language === 'kn'
+                ? 'ನಿಮ್ಮ ವಾಸ್ತವ್ಯ ಮತ್ತು ಪ್ರಯಾಣದ ವಿವರಗಳು ಕೆಳಗಿನ ವಿವರಗಳಲ್ಲಿ ಲಭ್ಯವಿದೆ.'
+                : 'Your accommodation and travel details are available in View Details.'
+            }
+          />
 
-      {/* Workstream 6: Festivals & Cultural Events Near Traveler Route */}
-      <FestivalRecommendations
-        events={
-          plan.recommended_festivals && plan.recommended_festivals.length > 0
-            ? plan.recommended_festivals
-            : (plan.days || []).flatMap((d) => d.recommended_events || [])
-        }
-        language={language}
-      />
+          {currentDayPlan && (
+            <div className="day-view-wrapper" data-testid={`day-view-${currentDayPlan.day_number}`}>
+            {/* Phase 3: Selected Day Overview */}
+            <DayOverview
+              day={currentDayPlan}
+              totalDays={effectiveDays.length}
+              originLabel={plan.origin_label || 'Bengaluru'}
+              language={language}
+              showDetails={showDetails}
+              onToggleDetails={() => setShowDetails((prev) => !prev)}
+              onAddStop={(dNum) => setAddingToDay(dNum)}
+              onRegenerateDay={(dNum) => setConfirmingRegenDay(dNum)}
+              isReadOnly={isReadOnly}
+            />
 
-      {/* Day Navigator Bar (for multi-day trips) */}
-      {effectiveDays.length > 1 && (
-        <div
-          className="day-navigator-container"
-          data-testid="day-navigator"
-          style={{
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-            padding: '10px 4px',
-            margin: '1.25rem 0 0.5rem',
-            alignItems: 'center',
-            borderBottom: '1px solid var(--border-subtle, #243350)',
-          }}
-        >
-          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)', whiteSpace: 'nowrap' }}>
-            {language === 'kn' ? 'ದಿನಗಳಿಗೆ ಹೋಗಿ:' : 'Day Navigation:'}
-          </span>
-          <button
-            type="button"
-            onClick={() => handleSelectDayTab(0)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              background: activeDayTab === 0 ? 'var(--accent-cyan, #38bdf8)' : 'var(--bg-card, #182238)',
-              color: activeDayTab === 0 ? '#0b1329' : 'var(--text-primary, #f8fafc)',
-              border: '1px solid var(--border-subtle, #243350)',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {language === 'kn' ? 'ಎಲ್ಲಾ ದಿನಗಳು' : 'All Days'} ({effectiveDays.length})
-          </button>
-          {effectiveDays.map((d) => (
-            <button
-              key={d.day_number}
-              type="button"
-              onClick={() => handleSelectDayTab(d.day_number)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: activeDayTab === d.day_number ? 'var(--accent-gold, #f59e0b)' : 'var(--bg-card, #182238)',
-                color: activeDayTab === d.day_number ? '#0b1329' : 'var(--text-primary, #f8fafc)',
-                border: '1px solid var(--border-subtle, #243350)',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {language === 'kn' ? `ದಿನ ${d.day_number}` : `Day ${d.day_number}`}: {d.theme ? d.theme.substring(0, 20) : `${d.stops.length} stops`}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Chronological Day-by-Day Timeline */}
-      <div className="timeline-container" data-testid="itinerary-timeline">
-        {effectiveDays.length > 0 && (
-          effectiveDays.map((day) => {
-            const attrStopsInDay = day.stops.filter(
-              (s) => s.stop_type === 'attraction' || s.stop_type === 'activity'
-            );
-
-            return (
-              <div
-                key={day.day_number}
-                id={`day-block-${day.day_number}`}
-                className={`timeline-day-block ${activeDayTab === day.day_number ? 'day-block-active' : ''}`}
-                data-testid={`day-block-${day.day_number}`}
-              >
-                <div className="day-header">
-                  <div>
-                    <span className="day-pill">{t('day')} {day.day_number}</span>
-                    <span className="day-theme-title">{day.theme}</span>
-                    {day.meals_covered && day.meals_covered.length > 0 && (
-                      <span className="day-badge-meals" style={{ marginLeft: '8px', fontSize: '0.8rem', background: '#ecfdf5', color: '#065f46', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                        🍽️ {day.meals_covered.join(' · ')}
+            {/* Phase 5: View Details Experience */}
+            {showDetails && (
+              <div className="nk-day-details" data-testid="day-details-container">
+                {/* 5.1 Day Route Map */}
+                {showMap && (
+                  <div className="nk-details-card">
+                    <div className="nk-details-card-header">
+                      <h3 className="nk-details-card-title">
+                        <span>🗺️</span>
+                        <span>
+                          {language === 'kn'
+                            ? `ದಿನ ${currentDayPlan.day_number} ರಸ್ತೆ ನಕ್ಷೆ ಮತ್ತು ಮಾರ್ಗ`
+                            : `Day ${currentDayPlan.day_number} Route & Directions Map`}
+                        </span>
+                      </h3>
+                      <span className="nk-details-card-subtitle">
+                        {currentDayPlan.start_location_name} ➔ {currentDayPlan.end_location_name || currentDayPlan.start_location_name}
                       </span>
-                    )}
-                    {day.start_location_name && day.end_location_name && (
-                      <div className="day-route-corridor" style={{ fontSize: '0.84rem', color: 'var(--accent-cyan, #38bdf8)', marginTop: '4px', fontWeight: 600 }}>
-                        🚩 {day.start_location_name} ➔ {day.end_location_name === day.start_location_name ? 'Local Circuit' : `🏁 ${day.end_location_name}`}
-                        {day.driving_distance_km ? ` · ~${day.driving_distance_km} km` : ''}
-                        {day.transit_minutes ? ` (${Math.floor(day.transit_minutes / 60)}h ${day.transit_minutes % 60}m driving)` : ''}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="day-actions-toolbar">
-                    <button
-                      type="button"
-                      className="btn-day-action"
-                      onClick={() => setAddingToDay(day.day_number)}
-                      data-testid={`add-stop-day-${day.day_number}`}
-                    >
-                      ➕ {t('addStop')}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-day-action"
-                      onClick={() => setConfirmingRegenDay(day.day_number)}
-                      data-testid={`regen-day-${day.day_number}`}
-                    >
-                      ✨ {t('regenerateDay')}
-                    </button>
-                    {day.daily_cost_min_inr !== null && day.daily_cost_min_inr !== undefined && (
-                      <span className="day-badge-cost">
-                        ₹{day.daily_cost_min_inr} – ₹{day.daily_cost_max_inr}
-                      </span>
-                    )}
-                    <span className="day-stops-count">{day.stops.length} stops</span>
-                  </div>
-                </div>
-
-                {day.warnings.length > 0 && (
-                  <div className="day-warnings-box">
-                    {day.warnings.map((w, idx) => (
-                      <div key={idx} className="day-warning-text">⚠️ {w}</div>
-                    ))}
+                    </div>
+                    <MapView
+                      stops={plan.items}
+                      dayPlans={plan.days}
+                      language={language}
+                      originLabel={plan.origin_label || 'Bengaluru'}
+                      travelMode={activeReq.travel_mode || 'driving'}
+                      activeDayFilter={currentDayPlan.day_number}
+                    />
                   </div>
                 )}
 
-                <div className="day-stops-list">
-                  {day.stops.map((stop, sIdx) => {
-                    const matchedItem = plan.items.find((i) => i.id === stop.destination_id || i.slug === stop.destination_id);
-                    const stopCardTestId = matchedItem ? `stop-card-${matchedItem.slug}` : `stop-card-${stop.stop_id}`;
-
-                    const hasTravelLeg = stop.travel_leg || (stop.distance_from_prev_km !== null && stop.distance_from_prev_km !== undefined && stop.distance_from_prev_km > 0);
-                    const prevStopName = sIdx > 0 ? day.stops[sIdx - 1]?.name : day.start_location_name || undefined;
-                    const travelLegElement = hasTravelLeg ? (
-                      <TravelLegCard
-                        travelLeg={stop.travel_leg}
-                        distanceKm={stop.distance_from_prev_km}
-                        transitMinutes={stop.transit_from_prev_minutes}
-                        prevStopName={prevStopName}
-                        destStopName={stop.name}
-                        language={language}
-                      />
-                    ) : null;
-
-                    if (stop.stop_type === 'meal') {
-                      return (
-                        <React.Fragment key={stop.stop_id}>
-                          {travelLegElement}
-                          <article className="timeline-stop-card meal-stop-card" data-testid={stopCardTestId}>
-                            <div className="stop-order-indicator stop-type-meal">
-                              <span className="order-icon" aria-hidden="true">🍽️</span>
-                            </div>
-                            <div className="stop-content">
-                              <div className="stop-header-row">
-                                <h4 className="stop-name">{stop.name}</h4>
-                                <div className="stop-pills">
-                                  <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                                  <span className="card-category-pill meal-pill">
-                                    {language === 'kn' ? 'ಆಹಾರ ಮತ್ತು ಪಾನೀಯ' : 'Dining & Food'}
-                                  </span>
-                                  {stop.source_reference && (
-                                    <span className="card-district-pill">🏛️ {stop.source_reference}</span>
-                                  )}
-                                </div>
-                              </div>
-                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                              <div className="stop-footer-row">
-                                <span className="stop-fee-info">
-                                  💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ವೆಚ್ಚ:' : 'Cost:') : (language === 'kn' ? 'ಅಂದಾಜು ವೆಚ್ಚ:' : 'Est. Cost:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
-                                </span>
-                                {stop.cost_status === 'verified' ? (
-                                  <span className="status-badge status-verified">✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}</span>
-                                ) : (
-                                  <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
-                                )}
-                              </div>
-                            </div>
-                          </article>
-                        </React.Fragment>
-                      );
-                    }
-
-                    if (stop.stop_type === 'accommodation') {
-                      return (
-                        <React.Fragment key={stop.stop_id}>
-                          {travelLegElement}
-                          <article className="timeline-stop-card accommodation-stop-card" data-testid={stopCardTestId}>
-                            <div className="stop-order-indicator stop-type-stay">
-                              <span className="order-icon" aria-hidden="true">🏨</span>
-                            </div>
-                            <div className="stop-content">
-                              <div className="stop-header-row">
-                                <h4 className="stop-name">{stop.name}</h4>
-                                <div className="stop-pills">
-                                  <span className="stop-time-badge">🌙 {stop.start_time} Check-in</span>
-                                  <span className="card-category-pill stay-pill">
-                                    {language === 'kn' ? 'ವಾಸ್ತವ್ಯ' : 'Lodging'}
-                                  </span>
-                                  {stop.source_reference && (
-                                    <span className="card-district-pill">🏛️ {stop.source_reference}</span>
-                                  )}
-                                </div>
-                              </div>
-                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                              <div className="stop-footer-row">
-                                <span className="stop-fee-info">
-                                  💵 {stop.cost_status === 'verified' ? (language === 'kn' ? 'ದರ:' : 'Tariff:') : (language === 'kn' ? 'ಅಂದಾಜು ದರ:' : 'Est. Lodging:')} ₹{stop.cost_min_inr} – ₹{stop.cost_max_inr}
-                                </span>
-                                {stop.cost_status === 'verified' ? (
-                                  <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ದರ' : 'Verified Tariff'}</span>
-                                ) : (
-                                  <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ಅಂದಾಜು' : 'Estimated'}</span>
-                                )}
-                              </div>
-                            </div>
-                          </article>
-                        </React.Fragment>
-                      );
-                    }
-
-                    if (stop.stop_type === 'event') {
-                      return (
-                        <React.Fragment key={stop.stop_id}>
-                          {travelLegElement}
-                          <article className="timeline-stop-card event-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #f59e0b' }}>
-                            <div className="stop-order-indicator stop-type-event" style={{ background: '#f59e0b' }}>
-                              <span className="order-icon" aria-hidden="true">🎪</span>
-                            </div>
-                            <div className="stop-content">
-                              <div className="stop-header-row">
-                                <h4 className="stop-name" style={{ color: '#fef08a' }}>{stop.name}</h4>
-                                <div className="stop-pills">
-                                  <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                                  <span className="card-category-pill event-pill" style={{ background: '#78350f', color: '#fef3c7' }}>
-                                    🎪 {language === 'kn' ? 'ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವ / ಜಾತ್ರೆ' : 'Cultural Festival'}
-                                  </span>
-                                  {stop.source_reference && (
-                                    <a href={stop.source_reference} target="_blank" rel="noopener noreferrer" className="card-district-pill" style={{ textDecoration: 'underline' }}>
-                                      🏛️ {language === 'kn' ? 'ಮೂಲ ಪರಿಶೀಲನೆ' : 'Official Citation'}
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                              <div className="stop-footer-row">
-                                <span className="stop-fee-info">
-                                  🎟️ {stop.cost_min_inr !== null && stop.cost_min_inr !== undefined
-                                    ? (stop.cost_min_inr === 0 ? (language === 'kn' ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry') : `₹${stop.cost_min_inr}`)
-                                    : (language === 'kn' ? 'ಪ್ರವೇಶ ಶುಲ್ಕ ಅನ್ವಯಿಸಬಹುದು' : 'Entry fee may apply')}
-                                </span>
-                                {stop.cost_status === 'verified' ? (
-                                  <span className="status-badge status-verified">✓ {language === 'kn' ? 'ದೃಢೀಕೃತ ಉತ್ಸವ' : 'Verified Event'}</span>
-                                ) : (
-                                  <span className="status-badge status-estimated">≈ {language === 'kn' ? 'ೠತುಮಾನದ ಉತ್ಸವ' : 'Seasonal Festival'}</span>
-                                )}
-                              </div>
-                            </div>
-                          </article>
-                        </React.Fragment>
-                      );
-                    }
-
-                    if (stop.stop_type === 'transport') {
-                      return (
-                        <React.Fragment key={stop.stop_id}>
-                          {travelLegElement}
-                          <article className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #38bdf8' }}>
-                            <div className="stop-order-indicator stop-type-transport" style={{ background: '#0284c7' }}>
-                              <span className="order-icon" aria-hidden="true">🚗</span>
-                            </div>
-                            <div className="stop-content">
-                              <div className="stop-header-row">
-                                <h4 className="stop-name">{stop.name}</h4>
-                                <div className="stop-pills">
-                                  <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                                  <span className="card-category-pill transport-pill">
-                                    {language === 'kn' ? 'ಹಿಂತಿರುಗುವ ಪ್ರಯಾಣ' : 'Return Transit'}
-                                  </span>
-                                </div>
-                              </div>
-                              {stop.description && <p className="stop-summary text-muted">{stop.description}</p>}
-                              <div className="stop-footer-row">
-                                <span className="stop-fee-info">
-                                  🚗 {stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins)
-                                </span>
-                              </div>
-                            </div>
-                          </article>
-                        </React.Fragment>
-                      );
-                    }
-
-                    // Attraction or Activity Stop
-                    const categoryKey = matchedItem ? (`cat_${matchedItem.category}` as TranslationKey) : undefined;
-                    const categoryLabel = categoryKey ? t(categoryKey) || matchedItem?.category : 'Attraction';
-
-                    const attrIdxInDay = attrStopsInDay.findIndex((s) => s.stop_id === stop.stop_id);
-                    const isFirstAttr = attrIdxInDay === 0;
-                    const isLastAttr = attrIdxInDay === attrStopsInDay.length - 1;
-
-                    return (
-                      <React.Fragment key={stop.stop_id}>
-                        {travelLegElement}
-                        <article className="timeline-stop-card" data-testid={stopCardTestId}>
-                          <div className="stop-order-indicator">
-                            <span className="order-number">{sIdx + 1}</span>
-                          </div>
-
-                        <div className="stop-content">
-                          <div className="stop-header-row">
-                            <h4 className="stop-name">{stop.name}</h4>
-                            <div className="stop-pills">
-                              <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time} ({stop.duration_minutes}m)</span>
-                              <span className="card-category-pill">{categoryLabel}</span>
-                              {matchedItem && (
-                                <span className="card-district-pill">📍 {matchedItem.district_name || matchedItem.district_code}</span>
-                              )}
-                              {matchedItem?.is_offbeat && (
-                                <span className="card-offbeat-badge">⭐ {t('offbeatBadge')}</span>
-                              )}
-                              {stop.user_modified && (
-                                <span className="pill-customized">✏️ {t('stopCustomized')}</span>
-                              )}
-                              {stop.locked && (
-                                <span className="pill-locked">🔒 {t('lockedBadge')}</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {stop.description && <p className="stop-summary">{stop.description}</p>}
-
-                          {stop.notes && (
-                            <div className="stop-user-notes" data-testid={`stop-notes-${stop.stop_id}`}>
-                              <strong>📝 {t('notes')}:</strong> {stop.notes}
-                            </div>
-                          )}
-
-                          {stop.transit_from_prev_minutes && stop.distance_from_prev_km && (
-                            <div className="transit-indicator-row">
-                              🚗 ~{stop.distance_from_prev_km} km ({stop.transit_from_prev_minutes} mins ·{' '}
-                              {stop.transit_method === 'terrain_adjusted_estimate'
-                                ? language === 'kn'
-                                  ? 'ಘಟ್ಟ/ರಸ್ತೆ ಅಂದಾಜು'
-                                  : 'Terrain-adjusted road estimate'
-                                : language === 'kn'
-                                ? 'ನೇರ ರೇಖೆ ಅಂದಾಜು'
-                                : 'Straight-line estimate'}
-                              )
-                            </div>
-                          )}
-
-                          {(() => {
-                            const prevStop = sIdx > 0 ? day.stops[sIdx - 1] : null;
-                            const prevMatched = prevStop
-                              ? plan.items.find(
-                                  (i) => i.id === prevStop.destination_id || i.slug === prevStop.destination_id
-                                )
-                              : null;
-                            if (prevMatched?.coordinates && matchedItem?.coordinates) {
-                              return (
-                                <TransitComparisonCard
-                                  originLat={prevMatched.coordinates.lat}
-                                  originLon={prevMatched.coordinates.lon}
-                                  destLat={matchedItem.coordinates.lat}
-                                  destLon={matchedItem.coordinates.lon}
-                                  language={language}
-                                />
-                              );
-                            }
-                            return null;
-                          })()}
-
-                          {stop.rationale && (
-                            <div className="stop-rationale-box">
-                              <strong>{t('whyThisStop')}</strong> {stop.rationale}
-                            </div>
-                          )}
-
-                          <div className="stop-footer-row">
-                            <span className="stop-fee-info">
-                              🎟️ Entry:{' '}
-                              {stop.cost_min_inr === 0 && stop.cost_max_inr === 0 ? (
-                                <span className="text-free">{t('feeFree')}</span>
-                              ) : stop.cost_min_inr !== undefined && stop.cost_min_inr !== null ? (
-                                <span>
-                                  ₹{stop.cost_min_inr}
-                                  {stop.cost_max_inr && stop.cost_max_inr > stop.cost_min_inr
-                                    ? ` - ₹${stop.cost_max_inr}`
-                                    : ''}
-                                </span>
-                              ) : (
-                                <span className="text-unknown">{t('feeUnknown')}</span>
-                              )}
-                            </span>
-
-                            {stop.coordinates && (
-                              <span className="stop-coords-text">
-                                📍 {stop.coordinates.lat.toFixed(4)}° N, {stop.coordinates.lon.toFixed(4)}° E
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Interactive Stop Actions Toolbar (Phase 5) */}
-                          <div className="stop-actions-row" data-testid={`stop-actions-${stop.stop_id}`}>
-                            <button
-                              type="button"
-                              className="btn-stop-action"
-                              onClick={() => handleOpenEdit(day.day_number, stop)}
-                              data-testid={`edit-stop-${stop.stop_id}`}
-                            >
-                              ✏️ {t('editStop')}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn-stop-action"
-                              onClick={() => handleMoveUp(day.day_number, stop.stop_id)}
-                              disabled={isFirstAttr}
-                              data-testid={`move-up-${stop.stop_id}`}
-                              aria-label="Move stop earlier in day"
-                            >
-                              ⬆️ {t('moveUp')}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn-stop-action"
-                              onClick={() => handleMoveDown(day.day_number, stop.stop_id)}
-                              disabled={isLastAttr}
-                              data-testid={`move-down-${stop.stop_id}`}
-                              aria-label="Move stop later in day"
-                            >
-                              ⬇️ {t('moveDown')}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn-stop-action btn-stop-regen"
-                              onClick={() => handleOpenAlternatives(day.day_number, stop)}
-                              data-testid={`regen-stop-${stop.stop_id}`}
-                            >
-                              ✨ {t('regenerateStop')}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn-stop-action btn-stop-danger"
-                              onClick={() => setRemovingStop({ dayNumber: day.day_number, stop })}
-                              data-testid={`remove-stop-${stop.stop_id}`}
-                            >
-                              🗑️ {t('removeStop')}
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    </React.Fragment>
-                  );
-                  })}
+                {/* 5.2 Stop-by-Stop Schedule Timeline */}
+                <div className="timeline-container" data-testid="itinerary-timeline">
+                  {renderDayTimelineBlock(currentDayPlan)}
                 </div>
+
+                {/* 5.4 Daily Budget */}
+                <DailyBudgetSummary
+                  day={currentDayPlan}
+                  travelersCount={activeReq.travelers_count}
+                  language={language}
+                />
+
+                {/* 5.5 Accommodation & Overnight Stay */}
+                <OvernightStayCard
+                  day={currentDayPlan}
+                  nextDay={effectiveDays.find((d) => d.day_number === currentDayPlan.day_number + 1)}
+                  isLastDay={currentDayPlan.day_number === effectiveDays.length}
+                  travelersCount={activeReq.travelers_count}
+                  originLabel={plan.origin_label || 'Bengaluru'}
+                  language={language}
+                />
+
+                {/* 5.6 Festivals and Local Events */}
+                <DayEventsSection
+                  day={currentDayPlan}
+                  events={plan.recommended_festivals}
+                  language={language}
+                />
               </div>
-            );
-          })
+            )}
+
+            {/* Trip-Wide Budget Summary Section */}
+            <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle, #DCE6F2)', paddingTop: '1.5rem' }}>
+              <BudgetSummary stops={plan.items} language={language} budget={plan.budget_breakdown} />
+            </div>
+          </div>
         )}
-      </div>
+      </>
+    )}
 
       {/* Assumptions & Limitations Card */}
       {plan.assumptions && plan.assumptions.length > 0 && (

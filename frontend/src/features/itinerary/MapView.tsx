@@ -348,7 +348,7 @@ export const MapView: React.FC<MapViewProps> = ({
           setLoadingDirections(false);
         }
       });
-  }, [directionsRequest, selectedDay, originLabel, validStops, travelMode]);
+  }, [directionsRequest, selectedDay, activeOriginName, validStops, travelMode]);
 
   // Leaflet Map Initialization & Rendering
   useEffect(() => {

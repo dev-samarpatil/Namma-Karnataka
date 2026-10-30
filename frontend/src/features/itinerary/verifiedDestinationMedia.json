@@ -1,0 +1,524 @@
+[
+  {
+    "id": "11111111-1111-4111-8111-111111111103",
+    "slug": "abbey-falls-madikeri",
+    "name_en": "Abbey Falls, Madikeri",
+    "name_kn": "\u0c85\u0cac\u0ccd\u0cac\u0cbf \u0c9c\u0cb2\u0caa\u0cbe\u0ca4, \u0cae\u0ca1\u0cbf\u0c95\u0cc7\u0cb0\u0cbf",
+    "district_name": "Kodagu",
+    "category": "waterfall",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Abbey_Falls_%2C_Karnataka_%2C_India.jpg/960px-Abbey_Falls_%2C_Karnataka_%2C_India.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111120",
+    "slug": "agumbe-sunset-viewpoint",
+    "name_en": "Agumbe Sunset Viewpoint",
+    "name_kn": "\u0c86\u0c97\u0cc1\u0c82\u0cac\u0cc6 \u0cb8\u0cc2\u0cb0\u0ccd\u0caf\u0cbe\u0cb8\u0ccd\u0ca4 \u0cb5\u0cc0\u0c95\u0ccd\u0cb7\u0ca3\u0cbe \u0ca4\u0cbe\u0ca3",
+    "district_name": "Shivamogga",
+    "category": "viewpoint",
+    "primary_image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/View_from_sunset_point%2C_Agumbe_%2816017939927%29.jpg/960px-View_from_sunset_point%2C_Agumbe_%2816017939927%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222214",
+    "slug": "aihole-durga-temple",
+    "name_en": "Aihole Durga Temple & Heritage Complex",
+    "name_kn": "\u0c90\u0cb9\u0cca\u0cb3\u0cc6 \u0ca6\u0cc1\u0cb0\u0ccd\u0c97\u0cbe \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf \u0cb8\u0cae\u0cc1\u0c9a\u0ccd\u0c9a\u0caf",
+    "district_name": "Bagalkote",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Durga_Temple%2C_Aihole.jpg/960px-Durga_Temple%2C_Aihole.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222221",
+    "slug": "anthargange-caves",
+    "name_en": "Anthargange Caves & Spring",
+    "name_kn": "\u0c85\u0c82\u0ca4\u0cb0\u0c97\u0c82\u0c97\u0cc6 \u0c97\u0cc1\u0cb9\u0cc6\u0c97\u0cb3\u0cc1 \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0c9c\u0cb2\u0ca7\u0cbe\u0cb0\u0cc6",
+    "district_name": "Kolar",
+    "category": "adventure",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Antharagange.JPG/960px-Antharagange.JPG"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111119",
+    "slug": "baba-budangiri-peak",
+    "name_en": "Baba Budangiri (Chandra Drona Parvatha)",
+    "name_kn": "\u0cac\u0cbe\u0cac\u0cbe \u0cac\u0cc1\u0ca1\u0ca8\u0ccd\u200c\u0c97\u0cbf\u0cb0\u0cbf (\u0c9a\u0c82\u0ca6\u0ccd\u0cb0\u0ca6\u0ccd\u0cb0\u0ccb\u0ca3 \u0caa\u0cb0\u0ccd\u0cb5\u0ca4)",
+    "district_name": "Chikkamagaluru",
+    "category": "hill_station",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Baba_Budangiri%2C_Chikmagalur_%282024%29_74.jpg/960px-Baba_Budangiri%2C_Chikmagalur_%282024%29_74.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111131",
+    "slug": "badami-cave-temples",
+    "name_en": "Badami Cave Temples",
+    "name_kn": "\u0cac\u0cbe\u0ca6\u0cbe\u0cae\u0cbf \u0c97\u0cc1\u0cb9\u0cbe \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf\u0c97\u0cb3\u0cc1",
+    "district_name": "Bagalkote",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Badami_cave_temples.jpg/960px-Badami_cave_temples.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222201",
+    "slug": "ballari-fort",
+    "name_en": "Ballari Fort (Rock Fort)",
+    "name_kn": "\u0cac\u0cb3\u0ccd\u0cb3\u0cbe\u0cb0\u0cbf \u0c95\u0ccb\u0c9f\u0cc6",
+    "district_name": "Ballari",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Ballari_gudda.jpg/960px-Ballari_gudda.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111137",
+    "slug": "bandipur-national-park",
+    "name_en": "Bandipur Tiger Reserve & National Park",
+    "name_kn": "\u0cac\u0c82\u0ca1\u0cc0\u0caa\u0cc1\u0cb0 \u0cb9\u0cc1\u0cb2\u0cbf \u0cb8\u0c82\u0cb0\u0c95\u0ccd\u0cb7\u0cbf\u0ca4 \u0caa\u0ccd\u0cb0\u0ca6\u0cc7\u0cb6",
+    "district_name": "Chamarajanagar",
+    "category": "wildlife",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Bandipur_Tiger_Reserve_Karnataka.jpg/960px-Bandipur_Tiger_Reserve_Karnataka.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111113",
+    "slug": "bangalore-palace",
+    "name_en": "Bangalore Palace",
+    "name_kn": "\u0cac\u0cc6\u0c82\u0c97\u0cb3\u0cc2\u0cb0\u0cc1 \u0c85\u0cb0\u0cae\u0ca8\u0cc6",
+    "district_name": "Bengaluru Urban",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Bangalore_Palace_facade_on_a_cloudy_day.jpg/960px-Bangalore_Palace_facade_on_a_cloudy_day.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111135",
+    "slug": "bidar-fort",
+    "name_en": "Bidar Fort",
+    "name_kn": "\u0cac\u0cc0\u0ca6\u0cb0\u0ccd \u0c95\u0ccb\u0c9f\u0cc6 (\u0cb0\u0c82\u0c97\u0cc0\u0ca8\u0ccd \u0cae\u0cb9\u0cb2\u0ccd)",
+    "district_name": "Bidar",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Bidar_Fort_Museum.jpg/960px-Bidar_Fort_Museum.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111116",
+    "slug": "brindavan-gardens",
+    "name_en": "Brindavan Gardens (KRS Dam)",
+    "name_kn": "\u0cac\u0cc3\u0c82\u0ca6\u0cbe\u0cb5\u0ca8 \u0c89\u0ca6\u0ccd\u0caf\u0cbe\u0ca8\u0cb5\u0ca8 (\u0c95\u0cc6\u0c86\u0cb0\u0ccd\u200c\u0c8e\u0cb8\u0ccd \u0c85\u0ca3\u0cc6\u0c95\u0c9f\u0ccd\u0c9f\u0cc1)",
+    "district_name": "Mandya",
+    "category": "nature",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Brindavan_Garden%2C_Karnataka%2C_India.jpg/960px-Brindavan_Garden%2C_Karnataka%2C_India.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111115",
+    "slug": "chamundi-hill-temple",
+    "name_en": "Chamundeshwari Temple & Chamundi Hill",
+    "name_kn": "\u0c9a\u0cbe\u0cae\u0cc1\u0c82\u0ca1\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0\u0cbf \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf (\u0c9a\u0cbe\u0cae\u0cc1\u0c82\u0ca1\u0cbf \u0cac\u0cc6\u0c9f\u0ccd\u0c9f)",
+    "district_name": "Mysuru",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Chamundeshwari_Temple%2C_Chamundi_hills_-_Mysuru%2C_Karnataka.jpg/960px-Chamundeshwari_Temple%2C_Chamundi_hills_-_Mysuru%2C_Karnataka.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222205",
+    "slug": "chandramouleshwara-temple",
+    "name_en": "Chandramouleshwara Temple (Unkal)",
+    "name_kn": "\u0c9a\u0c82\u0ca6\u0ccd\u0cb0\u0cae\u0ccc\u0cb3\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf (\u0c89\u0ca3\u0c95\u0cb2\u0ccd)",
+    "district_name": "Dharwad",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Chandramouleshwara_temple_Unkal_2.JPG/960px-Chandramouleshwara_temple_Unkal_2.JPG"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111107",
+    "slug": "chennakeshava-temple-belur",
+    "name_en": "Chennakeshava Temple, Belur",
+    "name_kn": "\u0c9a\u0cc6\u0ca8\u0ccd\u0ca8\u0c95\u0cc7\u0cb6\u0cb5 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf, \u0cac\u0cc7\u0cb2\u0cc2\u0cb0\u0cc1",
+    "district_name": "Hassan",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Chennakeshava_Temple%2C_Belur%2C_Karnataka%2C_India.jpg/960px-Chennakeshava_Temple%2C_Belur%2C_Karnataka%2C_India.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111127",
+    "slug": "chitradurga-fort",
+    "name_en": "Chitradurga Fort (Elusuttina Kote)",
+    "name_kn": "\u0c9a\u0cbf\u0ca4\u0ccd\u0cb0\u0ca6\u0cc1\u0cb0\u0ccd\u0c97\u0ca6 \u0c95\u0cb2\u0ccd\u0cb2\u0cbf\u0ca8 \u0c95\u0ccb\u0c9f\u0cc6 (\u0c8f\u0cb3\u0cc1\u0cb8\u0cc1\u0ca4\u0ccd\u0ca4\u0cbf\u0ca8 \u0c95\u0ccb\u0c9f\u0cc6)",
+    "district_name": "Chitradurga",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Chitradurga_Fort%2C_Karnataka.jpg/960px-Chitradurga_Fort%2C_Karnataka.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222202",
+    "slug": "devanahalli-fort",
+    "name_en": "Devanahalli Fort",
+    "name_kn": "\u0ca6\u0cc7\u0cb5\u0ca8\u0cb9\u0cb3\u0ccd\u0cb3\u0cbf \u0c95\u0ccb\u0c9f\u0cc6",
+    "district_name": "Bengaluru Rural",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Devanahalli_Fort_entrance%2C_Devanahalli%2C_Bengaluru%2C_Karnataka%2C_India_%282006%29.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222212",
+    "slug": "devarayanadurga",
+    "name_en": "Devarayanadurga Hill Sanctuary",
+    "name_kn": "\u0ca6\u0cc7\u0cb5\u0cb0\u0cbe\u0caf\u0ca8\u0ca6\u0cc1\u0cb0\u0ccd\u0c97 \u0cac\u0cc6\u0c9f\u0ccd\u0c9f",
+    "district_name": "Tumakuru",
+    "category": "hill_station",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Devarayanadurga%2C_Halekote%2C_Tumkur.jpg/960px-Devarayanadurga%2C_Halekote%2C_Tumkur.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111133",
+    "slug": "gokak-falls",
+    "name_en": "Gokak Falls",
+    "name_kn": "\u0c97\u0ccb\u0c95\u0cbe\u0c95\u0ccd \u0c9c\u0cb2\u0caa\u0cbe\u0ca4",
+    "district_name": "Belagavi",
+    "category": "waterfall",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Gokak_Falls.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111129",
+    "slug": "gol-gumbaz-vijayapura",
+    "name_en": "Gol Gumbaz",
+    "name_kn": "\u0c97\u0ccb\u0cb2\u0ccd \u0c97\u0cc1\u0cae\u0ccd\u0cae\u0c9f (\u0cb5\u0cbf\u0c9c\u0caf\u0caa\u0cc1\u0cb0)",
+    "district_name": "Vijayapura",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gol_Gumbaz%2C_Bijapur.jpg/960px-Gol_Gumbaz%2C_Bijapur.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111136",
+    "slug": "gulbarga-fort-haft-gumbaz",
+    "name_en": "Gulbarga Fort & Jamia Mosque",
+    "name_kn": "\u0c95\u0cb2\u0cac\u0cc1\u0cb0\u0c97\u0cbf \u0c95\u0ccb\u0c9f\u0cc6 \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0c9c\u0cbe\u0cae\u0cbf\u0caf\u0cbe \u0cae\u0cb8\u0cc0\u0ca6\u0cbf",
+    "district_name": "Kalaburagi",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Gulbarga_Fort_%26_Mosque.JPG/960px-Gulbarga_Fort_%26_Mosque.JPG"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111125",
+    "slug": "hoysaleswara-temple-halebidu",
+    "name_en": "Hoysaleswara Temple (Halebidu)",
+    "name_kn": "\u0cb9\u0cca\u0caf\u0ccd\u0cb8\u0cb3\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf (\u0cb9\u0cb3\u0cc7\u0cac\u0cc0\u0ca1\u0cc1)",
+    "district_name": "Hassan",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Hoysaleswara_Temple_at_Halebidu.jpg/960px-Hoysaleswara_Temple_at_Halebidu.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111130",
+    "slug": "ibrahim-rauza-vijayapura",
+    "name_en": "Ibrahim Rauza",
+    "name_kn": "\u0c87\u0cac\u0ccd\u0cb0\u0cbe\u0cb9\u0cbf\u0c82 \u0cb0\u0ccb\u0c9c\u0cbe (\u0ca6\u0c96\u0ccd\u0c96\u0ca8\u0ccd\u200c\u0ca8 \u0ca4\u0cbe\u0c9c\u0ccd \u0cae\u0cb9\u0cb2\u0ccd)",
+    "district_name": "Vijayapura",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Ibrahim_Rauza%2C_Bijapur.jpg/960px-Ibrahim_Rauza%2C_Bijapur.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111105",
+    "slug": "jog-falls",
+    "name_en": "Jog Falls (Gerosoppa)",
+    "name_kn": "\u0c9c\u0ccb\u0c97 \u0c9c\u0cb2\u0caa\u0cbe\u0ca4",
+    "district_name": "Shivamogga",
+    "category": "waterfall",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Gerosoppa_Falls_or_Jog_Falls.jpg/960px-Gerosoppa_Falls_or_Jog_Falls.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111112",
+    "slug": "kavaledurga-fort",
+    "name_en": "Kavaledurga Fort",
+    "name_kn": "\u0c95\u0cb5\u0cb2\u0cc6\u0ca6\u0cc1\u0cb0\u0ccd\u0c97 \u0c95\u0ccb\u0c9f\u0cc6",
+    "district_name": "Shivamogga",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Kavaledurga_fort.jpg/960px-Kavaledurga_fort.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222219",
+    "slug": "keladi-rameshwara-temple",
+    "name_en": "Keladi Rameshwara Temple",
+    "name_kn": "\u0c95\u0cc6\u0cb3\u0ca6\u0cbf \u0cb0\u0cbe\u0cae\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf",
+    "district_name": "Shivamogga",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Yali_pillars_in_open_mantapa_of_Rameshwara_temple_at_Keladi.jpg/960px-Yali_pillars_in_open_mantapa_of_Rameshwara_temple_at_Keladi.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222204",
+    "slug": "kondajji-lake",
+    "name_en": "Kondajji Lake & Nature Sanctuary",
+    "name_kn": "\u0c95\u0cca\u0c82\u0ca1\u0c9c\u0ccd\u0c9c\u0cbf \u0c95\u0cc6\u0cb0\u0cc6 \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0caa\u0ccd\u0cb0\u0c95\u0cc3\u0ca4\u0cbf \u0ca7\u0cbe\u0cae",
+    "district_name": "Davanagere",
+    "category": "nature",
+    "primary_image_url": "/images/destinations/kondajji-lake.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111140",
+    "slug": "kudremukh-peak-trek",
+    "name_en": "Kudremukh Peak & National Park",
+    "name_kn": "\u0c95\u0cc1\u0ca6\u0cc1\u0cb0\u0cc6\u0cae\u0cc1\u0c96 \u0cb6\u0cbf\u0c96\u0cb0 \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0cb0\u0cbe\u0cb7\u0ccd\u0c9f\u0ccd\u0cb0\u0cc0\u0caf \u0c89\u0ca6\u0ccd\u0caf\u0cbe\u0ca8",
+    "district_name": "Chikkamagaluru",
+    "category": "hill_station",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/State_Highway_66_passing_through_the_Kudremukh_National_Park_near_the_Gangadikal_Peak_in_Karnataka_%28October_2021%29.jpg/960px-State_Highway_66_passing_through_the_Kudremukh_National_Park_near_the_Gangadikal_Peak_in_Karnataka_%28October_2021%29.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111124",
+    "slug": "kudroli-gokarnath-temple",
+    "name_en": "Kudroli Gokarnanatheshwara Temple",
+    "name_kn": "\u0c95\u0cc1\u0ca6\u0ccd\u0cb0\u0ccb\u0cb3\u0cbf \u0c97\u0ccb\u0c95\u0cb0\u0ccd\u0ca3\u0ca8\u0cbe\u0ca5\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf",
+    "district_name": "Dakshina Kannada",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Kudroli-gokarnatha-temple-panorama.jpg/960px-Kudroli-gokarnatha-temple-panorama.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111109",
+    "slug": "lalbagh-botanical-garden",
+    "name_en": "Lalbagh Botanical Garden",
+    "name_kn": "\u0cb2\u0cbe\u0cb2\u0ccd\u200c\u0cac\u0cbe\u0c97\u0ccd \u0cb8\u0cb8\u0ccd\u0caf\u0ca4\u0ccb\u0c9f",
+    "district_name": "Bengaluru Urban",
+    "category": "nature",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Glass_House_Botanical_Garden_Lal_Bagh_Bangalore_%2848186335066%29.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222209",
+    "slug": "mahadeva-temple-itagi",
+    "name_en": "Mahadeva Temple (Itagi)",
+    "name_kn": "\u0cae\u0cb9\u0cbe\u0ca6\u0cc7\u0cb5 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf (\u0c87\u0c9f\u0c97\u0cbf)",
+    "district_name": "Koppal",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Rear_view_showing_lateral_entrances_of_the_Mahadeva_Temple_at_Itagi_in_the_Koppal_district.JPG/960px-Rear_view_showing_lateral_entrances_of_the_Mahadeva_Temple_at_Itagi_in_the_Koppal_district.JPG"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222220",
+    "slug": "male-mahadeshwara-hills",
+    "name_en": "Male Mahadeshwara Hills (MM Hills)",
+    "name_kn": "\u0cae\u0cb2\u0cc6 \u0cae\u0cb9\u0cbe\u0ca6\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0cac\u0cc6\u0c9f\u0ccd\u0c9f (\u0c8e\u0c82.\u0c8e\u0c82. \u0cb9\u0cbf\u0cb2\u0ccd\u0cb8\u0ccd)",
+    "district_name": "Chamarajanagar",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Malai_Mahadeshwara_Hills%2C_2.jpg/960px-Malai_Mahadeshwara_Hills%2C_2.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111122",
+    "slug": "malpe-beach-st-marys",
+    "name_en": "Malpe Beach & St. Mary's Island Ferry",
+    "name_kn": "\u0cae\u0cb2\u0ccd\u0caa\u0cc6 \u0c95\u0ca1\u0cb2\u0ca4\u0cc0\u0cb0 \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0cb8\u0cc7\u0c82\u0c9f\u0ccd \u0cae\u0cc7\u0cb0\u0cbf\u0cb8\u0ccd \u0ca6\u0ccd\u0cb5\u0cc0\u0caa",
+    "district_name": "Udupi",
+    "category": "beach",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/St._Mary%27s_Islands%2C_Malpe_beach%2C_Karnataka_02.jpg/960px-St._Mary%27s_Islands%2C_Malpe_beach%2C_Karnataka_02.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222215",
+    "slug": "mirjan-fort",
+    "name_en": "Mirjan Fort",
+    "name_kn": "\u0cae\u0cbf\u0cb0\u0ccd\u0c9c\u0cbe\u0ca8\u0ccd \u0c95\u0ccb\u0c9f\u0cc6",
+    "district_name": "Uttara Kannada",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Mirjan_Fort%2C_Karnataka_%2860720%29.jpg/960px-Mirjan_Fort%2C_Karnataka_%2860720%29.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111104",
+    "slug": "mullayanagiri-peak",
+    "name_en": "Mullayanagiri Peak",
+    "name_kn": "\u0cae\u0cc1\u0cb3\u0ccd\u0cb3\u0caf\u0ccd\u0caf\u0ca8\u0c97\u0cbf\u0cb0\u0cbf \u0cb6\u0cbf\u0c96\u0cb0",
+    "district_name": "Chikkamagaluru",
+    "category": "hill_station",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mullayanagiri_peak.jpg/960px-Mullayanagiri_peak.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111121",
+    "slug": "murudeshwar-temple-beach",
+    "name_en": "Murudeshwar Temple & Beach",
+    "name_kn": "\u0cae\u0cc1\u0cb0\u0cc1\u0ca1\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0c95\u0ca1\u0cb2\u0ca4\u0cc0\u0cb0",
+    "district_name": "Uttara Kannada",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Shiva_statue_murudeshwar_beach.jpg/960px-Shiva_statue_murudeshwar_beach.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111101",
+    "slug": "mysore-palace",
+    "name_en": "Mysuru Palace (Amba Vilas)",
+    "name_kn": "\u0cae\u0cc8\u0cb8\u0cc2\u0cb0\u0cc1 \u0c85\u0cb0\u0cae\u0ca8\u0cc6 (\u0c85\u0c82\u0cac\u0cbe \u0cb5\u0cbf\u0cb2\u0cbe\u0cb8)",
+    "district_name": "Mysuru",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Mysore_Palace_Morning.jpg/960px-Mysore_Palace_Morning.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111110",
+    "slug": "nagarahole-national-park",
+    "name_en": "Nagarahole National Park (Tiger Reserve)",
+    "name_kn": "\u0ca8\u0cbe\u0c97\u0cb0\u0cb9\u0cca\u0cb3\u0cc6 \u0cb0\u0cbe\u0cb7\u0ccd\u0c9f\u0ccd\u0cb0\u0cc0\u0caf \u0c89\u0ca6\u0ccd\u0caf\u0cbe\u0ca8\u0cb5\u0ca8",
+    "district_name": "Mysuru",
+    "category": "wildlife",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Axis_axis_%28Nagarhole%2C_2010%29.jpg/960px-Axis_axis_%28Nagarhole%2C_2010%29.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222203",
+    "slug": "nandi-hills",
+    "name_en": "Nandi Hills (Nandidurga)",
+    "name_kn": "\u0ca8\u0c82\u0ca6\u0cbf \u0cac\u0cc6\u0c9f\u0ccd\u0c9f (\u0ca8\u0c82\u0ca6\u0cbf\u0ca6\u0cc1\u0cb0\u0ccd\u0c97)",
+    "district_name": "Chikkaballapura",
+    "category": "hill_station",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Within_the_boundary.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111106",
+    "slug": "om-beach-gokarna",
+    "name_en": "Om Beach, Gokarna",
+    "name_kn": "\u0c93\u0c82 \u0c95\u0ca1\u0cb2\u0ca4\u0cc0\u0cb0, \u0c97\u0ccb\u0c95\u0cb0\u0ccd\u0ca3",
+    "district_name": "Uttara Kannada",
+    "category": "beach",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/PXL_20260103_101009613_People_and_Beach_Om_Beach_Gokarna%2C_Karnataka_35.jpg/960px-PXL_20260103_101009613_People_and_Beach_Om_Beach_Gokarna%2C_Karnataka_35.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111123",
+    "slug": "panambur-beach-mangalore",
+    "name_en": "Panambur Beach",
+    "name_kn": "\u0caa\u0ca3\u0c82\u0cac\u0cc2\u0cb0\u0cc1 \u0c95\u0ca1\u0cb2\u0ca4\u0cc0\u0cb0 (\u0cae\u0c82\u0c97\u0cb3\u0cc2\u0cb0\u0cc1)",
+    "district_name": "Dakshina Kannada",
+    "category": "beach",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/2/23/Panambur_Beach_Mangalore.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111132",
+    "slug": "pattadakal-monuments",
+    "name_en": "Pattadakal Group of Monuments",
+    "name_kn": "\u0caa\u0c9f\u0ccd\u0c9f\u0ca6\u0c95\u0cb2\u0ccd\u0cb2\u0cc1 \u0cb8\u0ccd\u0cae\u0cbe\u0cb0\u0c95 \u0cb8\u0cae\u0cc2\u0cb9",
+    "district_name": "Bagalkote",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/7th_-_9th_century_Hindu_and_Jain_temples%2C_Pattadakal_monuments_Karnataka_7.jpg/960px-7th_-_9th_century_Hindu_and_Jain_temples%2C_Pattadakal_monuments_Karnataka_7.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222210",
+    "slug": "raichur-fort",
+    "name_en": "Raichur Fort",
+    "name_kn": "\u0cb0\u0cbe\u0caf\u0c9a\u0cc2\u0cb0\u0cc1 \u0c95\u0ccb\u0c9f\u0cc6",
+    "district_name": "Raichur",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/WV_banner_Raichur_district_Mudgal_fort.jpg/960px-WV_banner_Raichur_district_Mudgal_fort.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111117",
+    "slug": "rajas-seat-madikeri",
+    "name_en": "Raja's Seat",
+    "name_kn": "\u0cb0\u0cbe\u0c9c\u0cbe\u0cb8\u0cc0\u0c9f\u0ccd (\u0cae\u0ca1\u0cbf\u0c95\u0cc7\u0cb0\u0cbf)",
+    "district_name": "Kodagu",
+    "category": "viewpoint",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Raja%27s_Seat_View_Point.jpg/960px-Raja%27s_Seat_View_Point.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222211",
+    "slug": "ramadevara-betta",
+    "name_en": "Ramadevara Betta Vulture Sanctuary",
+    "name_kn": "\u0cb0\u0cbe\u0cae\u0ca6\u0cc7\u0cb5\u0cb0 \u0cac\u0cc6\u0c9f\u0ccd\u0c9f \u0cb0\u0ca3\u0cb9\u0ca6\u0ccd\u0ca6\u0cc1 \u0c85\u0cad\u0caf\u0cbe\u0cb0\u0ca3\u0ccd\u0caf",
+    "district_name": "Ramanagara",
+    "category": "nature",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Ramadevara_Betta_Hill_%282%29%2C_Karnataka.png/960px-Ramadevara_Betta_Hill_%282%29%2C_Karnataka.png"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111139",
+    "slug": "ranganathittu-bird-sanctuary",
+    "name_en": "Ranganathittu Bird Sanctuary",
+    "name_kn": "\u0cb0\u0c82\u0c97\u0ca8\u0ca4\u0cbf\u0c9f\u0ccd\u0c9f\u0cc1 \u0caa\u0c95\u0ccd\u0cb7\u0cbf\u0ca7\u0cbe\u0cae (\u0cb6\u0ccd\u0cb0\u0cc0\u0cb0\u0c82\u0c97\u0caa\u0c9f\u0ccd\u0c9f\u0ca3)",
+    "district_name": "Mandya",
+    "category": "wildlife",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Eurasian_Spoonbill_Walking_Ranganathittu_Karnataka_Jan24_A7C_09151.jpg/960px-Eurasian_Spoonbill_Walking_Ranganathittu_Karnataka_Jan24_A7C_09151.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111138",
+    "slug": "shivanasamudra-falls",
+    "name_en": "Shivanasamudra Falls (Gaganachukki & Bharachukki)",
+    "name_kn": "\u0cb6\u0cbf\u0cb5\u0ca8\u0cb8\u0cae\u0cc1\u0ca6\u0ccd\u0cb0 \u0c9c\u0cb2\u0caa\u0cbe\u0ca4 (\u0c97\u0c97\u0ca8\u0c9a\u0cc1\u0c95\u0ccd\u0c95\u0cbf \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0cad\u0cb0\u0c9a\u0cc1\u0c95\u0ccd\u0c95\u0cbf)",
+    "district_name": "Chamarajanagar",
+    "category": "waterfall",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Bharachukki_Falls_Panorama.jpg/960px-Bharachukki_Falls_Panorama.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111126",
+    "slug": "shravanabelagola-gommateshwara",
+    "name_en": "Gommateshwara Monolith (Shravanabelagola)",
+    "name_kn": "\u0c97\u0cca\u0cae\u0ccd\u0cae\u0c9f\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0c8f\u0c95\u0cb6\u0cbf\u0cb2\u0cbe \u0caa\u0ccd\u0cb0\u0ca4\u0cbf\u0cae\u0cc6 (\u0cb6\u0ccd\u0cb0\u0cb5\u0ca3\u0cac\u0cc6\u0cb3\u0c97\u0cca\u0cb3)",
+    "district_name": "Hassan",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Gommateshwara_Birds_eye_view.jpg/960px-Gommateshwara_Birds_eye_view.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222207",
+    "slug": "siddheshwara-temple-haveri",
+    "name_en": "Siddheshwara Temple",
+    "name_kn": "\u0cb8\u0cbf\u0ca6\u0ccd\u0ca7\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf (\u0cb9\u0cbe\u0cb5\u0cc7\u0cb0\u0cbf)",
+    "district_name": "Haveri",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/11th_12th_century_Siddheshwara_Temple_Kalgi_Karnataka_India_-_21.jpg/960px-11th_12th_century_Siddheshwara_Temple_Kalgi_Karnataka_India_-_21.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222208",
+    "slug": "someshwara-temple-kolar",
+    "name_en": "Kolar Someshwara Temple",
+    "name_kn": "\u0c95\u0ccb\u0cb2\u0cbe\u0cb0 \u0cb8\u0ccb\u0cae\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf",
+    "district_name": "Kolar",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Sculpture_of_a_female%2C_Someshwara_Temple%2C_Kolar%2C_Karnataka.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111108",
+    "slug": "sri-krishna-matha-udupi",
+    "name_en": "Sri Krishna Matha, Udupi",
+    "name_kn": "\u0cb6\u0ccd\u0cb0\u0cc0 \u0c95\u0cc3\u0cb7\u0ccd\u0ca3 \u0cae\u0ca0, \u0c89\u0ca1\u0cc1\u0caa\u0cbf",
+    "district_name": "Udupi",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Udupi_Sri_Krishna_Matha_Temple.jpg/960px-Udupi_Sri_Krishna_Matha_Temple.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222217",
+    "slug": "st-philomenas-cathedral",
+    "name_en": "St. Philomena's Cathedral",
+    "name_kn": "\u0cb8\u0cc7\u0c82\u0c9f\u0ccd \u0cab\u0cbf\u0cb2\u0ccb\u0cae\u0cbf\u0ca8\u0cbe \u0c9a\u0cb0\u0ccd\u0c9a\u0ccd (\u0cae\u0cc8\u0cb8\u0cc2\u0cb0\u0cc1)",
+    "district_name": "Mysuru",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/St._Philomena%27s_Church%2C_Mysore.jpg/960px-St._Philomena%27s_Church%2C_Mysore.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111118",
+    "slug": "talakaveri-temple-birthplace",
+    "name_en": "Talakaveri (Origin of River Kaveri)",
+    "name_kn": "\u0ca4\u0cb2\u0c95\u0cbe\u0cb5\u0cc7\u0cb0\u0cbf (\u0c95\u0cbe\u0cb5\u0cc7\u0cb0\u0cbf \u0ca8\u0ca6\u0cbf\u0caf \u0c89\u0c97\u0cae \u0cb8\u0ccd\u0ca5\u0cbe\u0ca8)",
+    "district_name": "Kodagu",
+    "category": "spiritual_cultural",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/KAVERI_RIVER_LOOKS_LIKE_COMING_FROM_MOUTH_OF_ADISHESHU%28COBRA%29.jpg/960px-KAVERI_RIVER_LOOKS_LIKE_COMING_FROM_MOUTH_OF_ADISHESHU%28COBRA%29.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111114",
+    "slug": "tipu-sultans-summer-palace",
+    "name_en": "Tipu Sultan's Summer Palace",
+    "name_kn": "\u0c9f\u0cbf\u0caa\u0ccd\u0caa\u0cc1 \u0cb8\u0cc1\u0cb2\u0ccd\u0ca4\u0cbe\u0ca8\u0cb0 \u0cac\u0cc7\u0cb8\u0cbf\u0c97\u0cc6 \u0c85\u0cb0\u0cae\u0ca8\u0cc6",
+    "district_name": "Bengaluru Urban",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Interior_of_Tipu_Sultan%27s_summer_palace%2C_Bangalore%2C_Karnataka%2C_India_%282018%29.jpg/960px-Interior_of_Tipu_Sultan%27s_summer_palace%2C_Bangalore%2C_Karnataka%2C_India_%282018%29.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222206",
+    "slug": "trikuteshwara-temple",
+    "name_en": "Trikuteshwara Temple Complex",
+    "name_kn": "\u0ca4\u0ccd\u0cb0\u0cbf\u0c95\u0cc2\u0c9f\u0cc7\u0cb6\u0ccd\u0cb5\u0cb0 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf \u0cb8\u0cae\u0cc1\u0c9a\u0ccd\u0c9a\u0caf",
+    "district_name": "Gadag",
+    "category": "architecture",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Trikuteshwara_temple_complex_at_Gadag.JPG/960px-Trikuteshwara_temple_complex_at_Gadag.JPG"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111128",
+    "slug": "vijaya-vittala-temple-hampi",
+    "name_en": "Vijaya Vittala Temple & Stone Chariot (Hampi)",
+    "name_kn": "\u0cb5\u0cbf\u0c9c\u0caf \u0cb5\u0cbf\u0ca0\u0ccd\u0ca0\u0cb2 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0c95\u0cb2\u0ccd\u0cb2\u0cbf\u0ca8 \u0cb0\u0ca5 (\u0cb9\u0c82\u0caa\u0cbf)",
+    "district_name": "Vijayanagara",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Hampi_Garuda_stone_chariot.jpg/960px-Hampi_Garuda_stone_chariot.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111102",
+    "slug": "virupaksha-temple-hampi",
+    "name_en": "Virupaksha Temple, Hampi",
+    "name_kn": "\u0cb5\u0cbf\u0cb0\u0cc2\u0caa\u0cbe\u0c95\u0ccd\u0cb7 \u0ca6\u0cc7\u0cb5\u0cbe\u0cb2\u0caf, \u0cb9\u0c82\u0caa\u0cbf",
+    "district_name": "Vijayanagara",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Virupaksha_temple%2C_Hampi.jpg/960px-Virupaksha_temple%2C_Hampi.jpg"
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222213",
+    "slug": "yadgir-hill-fort",
+    "name_en": "Yadgir Hill Fort",
+    "name_kn": "\u0caf\u0cbe\u0ca6\u0c97\u0cbf\u0cb0\u0cbf \u0cac\u0cc6\u0c9f\u0ccd\u0c9f\u0ca6 \u0c95\u0ccb\u0c9f\u0cc6",
+    "district_name": "Yadgir",
+    "category": "heritage",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Yadgir_town_view_from_fort.jpg/960px-Yadgir_town_view_from_fort.jpg"
+  },
+  {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "slug": "yana-rocks-caves",
+    "name_en": "Yana Rocks & Caves",
+    "name_kn": "\u0caf\u0cbe\u0ca3\u0ca6 \u0cac\u0c82\u0ca1\u0cc6\u0c97\u0cb3\u0cc1 \u0cae\u0ca4\u0ccd\u0ca4\u0cc1 \u0c97\u0cc1\u0cb9\u0cc6\u0c97\u0cb3\u0cc1",
+    "district_name": "Uttara Kannada",
+    "category": "nature",
+    "primary_image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Yana_Rocks_Karnataka_India.jpg/960px-Yana_Rocks_Karnataka_India.jpg"
+  }
+]

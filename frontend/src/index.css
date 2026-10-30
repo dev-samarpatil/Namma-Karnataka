@@ -1,6 +1,7 @@
 /* ==========================================================================
    Namma Karnataka (ನಮ್ಮ ಕರ್ನಾಟಕ) — Phase 4 Core Design System & Styles
    ========================================================================== */
+@import './features/itinerary/DayWiseItinerary.css';
 
 :root {
   --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

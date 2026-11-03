@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "namma-karnataka-backend"
 version = "0.1.0"
 description = "FastAPI backend for Namma Karnataka travel discovery and planning"
-readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [

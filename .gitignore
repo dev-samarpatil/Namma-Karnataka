@@ -89,3 +89,4 @@ lerna-debug.log*
 *.bak
 .temp/
 supabase/.temp/
+backend/app/static/media_cache/

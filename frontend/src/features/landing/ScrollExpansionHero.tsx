@@ -61,19 +61,29 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
     const unmuteOnInteraction = () => {
       const v = frontVideoRef.current;
       if (v) {
-        v.muted = false;
-        v.volume = 0.22;
-        setIsMuted(false);
+        try {
+          v.muted = false;
+          v.volume = 0.22;
+          setIsMuted(false);
+          const playPromise = v.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              v.muted = true;
+              setIsMuted(true);
+            });
+          }
+        } catch {
+          v.muted = true;
+          setIsMuted(true);
+        }
       }
     };
 
-    window.addEventListener('scroll', unmuteOnInteraction, { once: true, passive: true });
     window.addEventListener('click', unmuteOnInteraction, { once: true, passive: true });
     window.addEventListener('touchstart', unmuteOnInteraction, { once: true, passive: true });
     window.addEventListener('keydown', unmuteOnInteraction, { once: true });
 
     return () => {
-      window.removeEventListener('scroll', unmuteOnInteraction);
       window.removeEventListener('click', unmuteOnInteraction);
       window.removeEventListener('touchstart', unmuteOnInteraction);
       window.removeEventListener('keydown', unmuteOnInteraction);

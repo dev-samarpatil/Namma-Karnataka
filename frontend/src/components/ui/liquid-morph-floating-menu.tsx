@@ -51,6 +51,9 @@ export const LiquidMorphFloatingMenu: React.FC<LiquidMorphFloatingMenuProps> = (
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (document.activeElement instanceof HTMLElement && containerRef.current.contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
         setIsOpen(false);
       }
     };
@@ -69,8 +72,11 @@ export const LiquidMorphFloatingMenu: React.FC<LiquidMorphFloatingMenuProps> = (
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
-        setIsOpen(false);
+        if (document.activeElement instanceof HTMLElement && containerRef.current?.contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
         triggerRef.current?.focus();
+        setIsOpen(false);
       }
     };
 
@@ -82,9 +88,21 @@ export const LiquidMorphFloatingMenu: React.FC<LiquidMorphFloatingMenuProps> = (
     };
   }, [isOpen]);
 
+  const handleCloseMenu = useCallback(() => {
+    if (document.activeElement instanceof HTMLElement && containerRef.current?.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    triggerRef.current?.focus();
+    setIsOpen(false);
+  }, []);
+
   const handleSelectTab = useCallback(
     (tab: ActiveTab) => {
+      if (document.activeElement instanceof HTMLElement && containerRef.current?.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
       onTabChange(tab);
+      triggerRef.current?.focus();
       setIsOpen(false);
     },
     [onTabChange]
@@ -250,7 +268,7 @@ export const LiquidMorphFloatingMenu: React.FC<LiquidMorphFloatingMenuProps> = (
 
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleCloseMenu}
             aria-label={language === 'kn' ? 'ನ್ಯಾವಿಗೇಷನ್ ಮುಚ್ಚಿ' : 'Close navigation menu'}
             style={{
               background: 'transparent',

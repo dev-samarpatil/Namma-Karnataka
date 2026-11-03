@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import Response
 
 from app.core.errors import AppError
@@ -242,8 +242,9 @@ def _get_proxy_client() -> httpx.AsyncClient:
     return _SHARED_PROXY_CLIENT
 
 
-@router.get("/media/proxy")
+@router.api_route("/media/proxy", methods=["GET", "HEAD"])
 async def proxy_destination_media(
+    request: Request,
     url: str = Query(..., description="Canonical Wikimedia media URL to proxy"),
 ) -> Any:
     """Proxy authentic destination media from verified Wikimedia domains to avoid

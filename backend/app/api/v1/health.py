@@ -11,7 +11,9 @@ from app.schemas.common import HealthResponse, ReadinessResponse
 router = APIRouter()
 
 
-@router.get("/health", response_model=HealthResponse, tags=["Health"])
+@router.api_route(
+    "/health", methods=["GET", "HEAD"], response_model=HealthResponse, tags=["Health"]
+)
 async def check_health() -> HealthResponse:
     """Process liveness probe reporting whether the application process is running.
 

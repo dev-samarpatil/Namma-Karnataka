@@ -48,7 +48,7 @@ app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
 
 # 5. Root-level Health and Readiness Endpoints (for Render, Docker, and external probes)
-@app.get("/health", response_model=HealthResponse, tags=["Health"])
+@app.api_route("/health", methods=["GET", "HEAD"], response_model=HealthResponse, tags=["Health"])
 async def root_health() -> HealthResponse:
     """Root liveness probe indicating process availability."""
     return await check_health()

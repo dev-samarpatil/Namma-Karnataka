@@ -21,7 +21,7 @@ def test_root_endpoint():
 
 
 def test_health_endpoints():
-    """Verify both /health and /api/v1/health liveness probes."""
+    """Verify both /health and /api/v1/health liveness probes with GET and HEAD."""
     for path in ["/health", "/api/v1/health"]:
         response = client.get(path)
         assert response.status_code == 200
@@ -32,6 +32,10 @@ def test_health_endpoints():
         assert "environment" in data
         assert "timestamp" in data
         assert "X-Request-ID" in response.headers
+
+        # Verify HEAD request also succeeds
+        head_res = client.head(path)
+        assert head_res.status_code == 200
 
 
 def test_readiness_endpoints():

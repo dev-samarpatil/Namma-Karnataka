@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.schemas.destinations import (
     AccessStatus,
@@ -23,6 +23,8 @@ from app.schemas.destinations import (
     LanguageCode,
     SourceType,
     TranslationStatus,
+)
+from app.schemas.destinations import (
     VerificationStatus as DestVerificationStatus,
 )
 from app.schemas.planning import RecommendedDestination
@@ -38,7 +40,16 @@ from app.services.discovery_providers import (
     VerificationStatus,
 )
 
-logger = get_logger("app.services.destination_discovery") if "get_logger" in globals() else logging.getLogger(__name__)
+__all__ = [
+    "DestinationDiscoveryService",
+    "DiscoveredDestination",
+    "DiscoveryProvider",
+    "ProvenanceSource",
+    "VerificationStatus",
+    "get_destination_discovery_service",
+]
+
+logger = logging.getLogger(__name__)
 
 CATEGORY_MAP: dict[str, DestinationCategory] = {
     "heritage": DestinationCategory.HERITAGE,

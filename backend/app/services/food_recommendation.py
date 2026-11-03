@@ -7,12 +7,12 @@ and realistic local pricing across meal times.
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Sequence
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 
-class CulinaryRegion(str, Enum):
+class CulinaryRegion(StrEnum):
     BENGALURU_URBAN = "bengaluru_urban"
     MYSURU_MANDYA = "mysuru_mandya"
     COASTAL_KARAVALI = "coastal_karavali"

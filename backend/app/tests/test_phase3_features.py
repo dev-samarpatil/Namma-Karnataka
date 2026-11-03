@@ -9,8 +9,6 @@ Validates:
 
 from __future__ import annotations
 
-import pytest
-
 from app.schemas.destinations import Coordinates
 from app.schemas.planning import PlanningRequest
 from app.services.budget import BudgetCalculator

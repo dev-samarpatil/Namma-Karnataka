@@ -7,12 +7,13 @@ verification status, confidence scores, and genuine offbeat indicators.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum
-from typing import Sequence
+from collections.abc import Sequence
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 
-class VerificationStatus(str, Enum):
+class VerificationStatus(StrEnum):
     VERIFIED = "VERIFIED"
     COMMUNITY_SOURCED = "COMMUNITY_SOURCED"
     DISCOVERED_UNVERIFIED = "DISCOVERED_UNVERIFIED"
@@ -20,7 +21,7 @@ class VerificationStatus(str, Enum):
     TEMPORARILY_CLOSED = "TEMPORARILY_CLOSED"
 
 
-class ProvenanceSource(str, Enum):
+class ProvenanceSource(StrEnum):
     OFFICIAL_KARNATAKA_TOURISM = "OFFICIAL_KARNATAKA_TOURISM"
     ASI_ARCHAEOLOGICAL_SURVEY = "ASI_ARCHAEOLOGICAL_SURVEY"
     DISTRICT_GAZETTEER = "DISTRICT_GAZETTEER"

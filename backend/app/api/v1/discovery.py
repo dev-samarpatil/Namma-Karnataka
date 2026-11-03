@@ -6,7 +6,6 @@ ASI, District Gazetteers, and OpenStreetMap with authentic offbeat scores.
 
 from __future__ import annotations
 
-from typing import Sequence
 from fastapi import APIRouter, Query
 
 from app.services.destination_discovery import (

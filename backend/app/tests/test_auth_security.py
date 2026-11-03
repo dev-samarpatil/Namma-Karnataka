@@ -1,6 +1,7 @@
 """Tests for authentication security, JWT verification, and multi-tenant isolation."""
 
 import time
+
 import jwt
 import pytest
 from fastapi.testclient import TestClient
@@ -9,7 +10,6 @@ from app.core.config import settings
 from app.core.errors import AppError
 from app.core.security import AuthenticatedUser, verify_jwt_token
 from app.main import app
-
 from app.repositories.trips import InMemoryTripRepository
 from app.tests.test_trips_api import sample_trip_payload
 

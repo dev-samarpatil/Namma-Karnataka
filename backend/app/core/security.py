@@ -7,6 +7,7 @@ Never trusts client-supplied owner IDs or unverified claims.
 from __future__ import annotations
 
 from typing import Any
+
 import httpx
 import jwt
 from pydantic import BaseModel, Field

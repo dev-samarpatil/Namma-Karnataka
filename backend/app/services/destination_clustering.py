@@ -7,7 +7,7 @@ prevent impossible travel days, and schedule daylight-dependent attractions.
 from __future__ import annotations
 
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.schemas.destinations import Coordinates, DestinationRead
 from app.schemas.planning import RecommendedDestination

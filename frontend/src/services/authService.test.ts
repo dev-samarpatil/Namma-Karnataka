@@ -1,7 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { User, Session, AuthError } from '@supabase/supabase-js';
 import * as authService from './authService';
 import { supabase } from '../lib/supabaseClient';
 import * as supabaseClientModule from '../lib/supabaseClient';
+
+const createMockUser = (overrides: Partial<User> = {}): User =>
+  ({
+    id: 'user-xyz',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: '2026-11-01T00:00:00Z',
+    identities: [
+      {
+        id: 'id-1',
+        user_id: 'user-xyz',
+        identity_data: {},
+        provider: 'email',
+        last_sign_in_at: '2026-11-01T00:00:00Z',
+        created_at: '2026-11-01T00:00:00Z',
+        updated_at: '2026-11-01T00:00:00Z',
+      },
+    ],
+    ...overrides,
+  } as unknown as User);
+
+const createMockSession = (overrides: Partial<Session> = {}): Session =>
+  ({
+    access_token: 'valid-jwt-token',
+    refresh_token: 'valid-refresh-token',
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: createMockUser(),
+    ...overrides,
+  } as unknown as Session);
 
 describe('authService', () => {
   beforeEach(() => {
@@ -68,7 +100,7 @@ describe('authService', () => {
     it('handles successful registration with email confirmation enabled (session: null)', async () => {
       vi.spyOn(supabase.auth, 'signUp').mockResolvedValue({
         data: {
-          user: { id: 'user-xyz', identities: [{ id: 'id-1' }] } as any,
+          user: createMockUser(),
           session: null,
         },
         error: null,
@@ -88,8 +120,8 @@ describe('authService', () => {
     it('handles successful registration with email confirmation disabled (session present)', async () => {
       vi.spyOn(supabase.auth, 'signUp').mockResolvedValue({
         data: {
-          user: { id: 'user-xyz', identities: [{ id: 'id-1' }] } as any,
-          session: { access_token: 'valid-jwt-token' } as any,
+          user: createMockUser(),
+          session: createMockSession({ access_token: 'valid-jwt-token' }),
         },
         error: null,
       });
@@ -107,7 +139,7 @@ describe('authService', () => {
     it('detects anti-enumeration duplicate email when identities is empty array', async () => {
       vi.spyOn(supabase.auth, 'signUp').mockResolvedValue({
         data: {
-          user: { id: 'user-xyz', identities: [] } as any,
+          user: createMockUser({ identities: [] }),
           session: null,
         },
         error: null,
@@ -123,9 +155,15 @@ describe('authService', () => {
     });
 
     it('returns error when supabase signUp returns an error object', async () => {
+      const mockError = {
+        name: 'AuthApiError',
+        message: 'User already registered',
+        status: 400,
+      } as unknown as AuthError;
+
       vi.spyOn(supabase.auth, 'signUp').mockResolvedValue({
         data: { user: null, session: null },
-        error: { message: 'User already registered' } as any,
+        error: mockError,
       });
 
       const res = await authService.signUp({

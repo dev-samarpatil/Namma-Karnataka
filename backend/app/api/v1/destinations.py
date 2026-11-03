@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import math
+from pathlib import Path
 from typing import Any
-import httpx
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
+from fastapi.responses import Response
+import httpx
 
 from app.core.errors import AppError
 from app.repositories.destinations import DestinationRepository, get_destination_repository
@@ -21,9 +26,9 @@ from app.schemas.destinations import (
     NearbyAttractionItem,
     NearbyTransitItem,
 )
-from app.services.media.image_search import DestinationImageSearchService
 from app.services.destination_discovery import get_destination_discovery_service
 from app.services.destination_image_service import get_destination_image_service
+from app.services.media.image_search import DestinationImageSearchService
 from app.services.places.service import PlacesService
 from app.services.transit.curated_provider import CuratedTransitProvider
 
@@ -209,12 +214,6 @@ def get_destination_nearby(
         nearby_accommodations=nearby_accommodations,
     )
 
-
-
-import asyncio
-import hashlib
-from pathlib import Path
-from fastapi.responses import Response
 
 _MEDIA_CACHE: dict[str, tuple[bytes, str]] = {}
 _MEDIA_DISK_CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "static" / "media_cache"

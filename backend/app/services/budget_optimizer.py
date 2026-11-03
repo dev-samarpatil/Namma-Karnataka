@@ -9,14 +9,13 @@ budget alternatives and infeasibility diagnostics.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 from app.schemas.destinations import DestinationRead
 from app.schemas.planning import (
     BudgetAlternativeItem,
     CompleteBudgetBreakdown,
-    CostStatus,
     DayPlan,
     PlanningRequest,
     RecommendedDestination,
@@ -356,9 +355,9 @@ class BudgetOptimizer:
         if effective_limit < lowest_feasible:
             return days, destinations, budget, False
 
-        from app.services.scheduler import DeterministicScheduler
         from app.services.budget import BudgetCalculator
         from app.services.destination_discovery import get_destination_discovery_service
+        from app.services.scheduler import DeterministicScheduler
 
         # Step 1: Clone request with budget-conscious scenario & accommodation
         opt_request = request.model_copy(
@@ -374,7 +373,6 @@ class BudgetOptimizer:
         disc_svc = get_destination_discovery_service()
         free_cand_records = disc_svc.discover_destinations(max_entry_fee_inr=50.0, limit=30)
         free_recs = [disc_svc.to_recommended_destination(d) for d in free_cand_records]
-        free_rec_pool = {r.id: r for r in free_recs}
 
         from app.services.destination_uniqueness import (
             _haversine_distance_m,

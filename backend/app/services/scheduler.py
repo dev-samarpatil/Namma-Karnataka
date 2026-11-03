@@ -37,9 +37,8 @@ from app.schemas.planning import (
 from app.services.clustering.corridors import get_origin_coordinates
 from app.services.events import get_events_service
 from app.services.karnataka_events import get_karnataka_events_service
-from app.services.places import get_places_service
-from app.services.food_recommendation import get_food_recommendation_service
 from app.services.local_food_guide import get_local_food_guide_service
+from app.services.places import get_places_service
 from app.services.routing import get_routing_service
 from app.services.transit.service import get_transit_service
 from app.services.transport_cost import TransportCostCalculator
@@ -813,21 +812,12 @@ class DeterministicScheduler:
         pref_acc = getattr(request, "accommodation_type_preference", None)
         is_strict = getattr(request, "strict_budget", False)
         if scenario == "budget" or is_strict:
-            bfast_unit = 60.0
-            lunch_unit = 110.0
-            dinner_unit = 130.0
             stay_unit_min = 850.0
             stay_unit_max = 1200.0
         elif scenario == "comfort":
-            bfast_unit = 160.0
-            lunch_unit = 350.0
-            dinner_unit = 450.0
             stay_unit_min = 3500.0
             stay_unit_max = 6000.0
         else:  # standard
-            bfast_unit = 100.0
-            lunch_unit = 200.0
-            dinner_unit = 250.0
             stay_unit_min = 850.0 if pref_acc in ("dormitory", "homestay") else 1800.0
             stay_unit_max = 1200.0 if pref_acc in ("dormitory", "homestay") else 3000.0
 
@@ -1480,21 +1470,12 @@ class DeterministicScheduler:
         pref_acc = getattr(request, "accommodation_type_preference", None)
         is_strict = getattr(request, "strict_budget", False)
         if scenario == "budget" or is_strict:
-            bfast_unit = 60.0
-            lunch_unit = 110.0
-            dinner_unit = 130.0
             stay_unit_min = 850.0
             stay_unit_max = 1200.0
         elif scenario == "comfort":
-            bfast_unit = 160.0
-            lunch_unit = 350.0
-            dinner_unit = 450.0
             stay_unit_min = 3500.0
             stay_unit_max = 6000.0
         else:
-            bfast_unit = 100.0
-            lunch_unit = 200.0
-            dinner_unit = 250.0
             stay_unit_min = 850.0 if pref_acc in ("dormitory", "homestay") else 1800.0
             stay_unit_max = 1200.0 if pref_acc in ("dormitory", "homestay") else 3000.0
 

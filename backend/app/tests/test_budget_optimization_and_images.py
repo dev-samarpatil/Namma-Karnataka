@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-
+from app.repositories.destinations import get_destination_repository
 from app.schemas.destinations import DestinationFilterParams
 from app.schemas.planning import PlanningRequest
-from app.repositories.destinations import get_destination_repository
 from app.services.ai.fallback import DeterministicFallbackEngine
 from app.services.budget import BudgetCalculator
-from app.services.budget_optimizer import BudgetOptimizer
 from app.services.destination_discovery import get_destination_discovery_service
 from app.services.destination_image_service import (
-    DestinationImageMetadata,
     get_destination_image_service,
 )
 from app.services.scheduler import DeterministicScheduler

@@ -11,17 +11,16 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from app.core.logging import get_logger
 from app.repositories.destinations import get_destination_repository
 from app.schemas.destinations import Coordinates, DestinationFilterParams, DestinationRead
 from app.schemas.planning import (
     DayPlan,
-    ItineraryStop,
     PlanningRecommendationResponse,
     PlanningRequest,
-    RecommendedDestination,
     StopType,
 )
 
@@ -321,8 +320,8 @@ def validate_trip_destination_uniqueness(
         )
 
     # Reschedule using DeterministicScheduler if request available
-    from app.services.scheduler import DeterministicScheduler
     from app.services.budget import BudgetCalculator
+    from app.services.scheduler import DeterministicScheduler
 
     req = request or PlanningRequest(
         origin_label="Bengaluru",

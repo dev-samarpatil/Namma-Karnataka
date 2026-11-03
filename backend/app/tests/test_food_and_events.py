@@ -1,19 +1,14 @@
 """Tests for Karnataka Regional Food Guide, Authenticity Verification, and Events Calendar."""
 
-import pytest
-from app.services.local_food_guide import (
-    LocalFoodGuideService,
-    get_local_food_guide_service,
-)
+from fastapi.testclient import TestClient
+
+from app.main import app
 from app.services.karnataka_events import (
-    KarnatakaEventsCalendarService,
     get_karnataka_events_service,
 )
-from app.schemas.planning import PlanningRequest
-from app.services.scheduler import DeterministicScheduler
-from app.repositories.destinations import InMemoryDestinationRepository
-from fastapi.testclient import TestClient
-from app.main import app
+from app.services.local_food_guide import (
+    get_local_food_guide_service,
+)
 
 client = TestClient(app)
 

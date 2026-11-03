@@ -1,9 +1,31 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { User, Session } from '@supabase/supabase-js';
 import { AuthModal } from './AuthModal';
 import * as authService from '../../services/authService';
 import * as supabaseClientModule from '../../lib/supabaseClient';
 import { AuthProvider } from '../../context/AuthContext';
+
+const createMockUser = (overrides: Partial<User> = {}): User =>
+  ({
+    id: 'user-1',
+    email: 'kaveri@example.com',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: '2026-11-01T00:00:00Z',
+    ...overrides,
+  } as unknown as User);
+
+const createMockSession = (overrides: Partial<Session> = {}): Session =>
+  ({
+    access_token: 'live-token-123',
+    refresh_token: 'refresh-token-123',
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: createMockUser(),
+    ...overrides,
+  } as unknown as Session);
 
 describe('AuthModal Component', () => {
   beforeEach(() => {
@@ -137,7 +159,7 @@ describe('AuthModal Component', () => {
     it('registers user when email confirmation is enabled and displays verification prompt', async () => {
       const signUpSpy = vi.spyOn(authService, 'signUp').mockResolvedValue({
         data: {
-          user: { id: 'user-1', email: 'kaveri@example.com' } as any,
+          user: createMockUser({ id: 'user-1', email: 'kaveri@example.com' }),
           session: null,
         },
       });
@@ -176,8 +198,8 @@ describe('AuthModal Component', () => {
     it('registers user when email confirmation is disabled and displays success banner', async () => {
       vi.spyOn(authService, 'signUp').mockResolvedValue({
         data: {
-          user: { id: 'user-2', email: 'arjun@example.com' } as any,
-          session: { access_token: 'live-token-123' } as any,
+          user: createMockUser({ id: 'user-2', email: 'arjun@example.com' }),
+          session: createMockSession({ access_token: 'live-token-123' }),
         },
       });
 

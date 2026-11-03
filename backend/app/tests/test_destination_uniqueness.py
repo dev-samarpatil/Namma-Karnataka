@@ -12,8 +12,9 @@ Tests:
 from __future__ import annotations
 
 import pytest
+
 from app.repositories.destinations import get_destination_repository
-from app.schemas.destinations import Coordinates, DestinationFilterParams, DestinationRead
+from app.schemas.destinations import Coordinates, DestinationFilterParams
 from app.schemas.planning import (
     DayPlan,
     ItineraryStop,
@@ -27,7 +28,6 @@ from app.services.destination_uniqueness import (
     are_same_destination,
     filter_candidate_pool_for_uniqueness,
     get_canonical_destination_id,
-    normalize_destination_name,
     validate_trip_destination_uniqueness,
 )
 from app.services.routing.optimizer import RouteOptimizer

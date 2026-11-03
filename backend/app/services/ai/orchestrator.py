@@ -24,8 +24,8 @@ from app.services.ai.groq_adapter import GroqAdapter
 from app.services.ai.validator import AIValidationError, parse_and_ground_plan
 from app.services.budget import BudgetCalculator
 from app.services.budget_optimizer import BudgetOptimizer
-from app.services.destination_discovery import get_destination_discovery_service
 from app.services.clustering.corridors import get_origin_coordinates, identify_best_corridor
+from app.services.destination_discovery import get_destination_discovery_service
 from app.services.routing.optimizer import RouteOptimizer
 from app.services.scheduler import DeterministicScheduler
 

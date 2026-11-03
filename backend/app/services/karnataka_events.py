@@ -8,11 +8,12 @@ official provenance, and date-aware trip itinerary matching.
 
 from __future__ import annotations
 
-from datetime import date, datetime
 import logging
 import math
-from typing import Sequence
-from pydantic import BaseModel, Field
+from collections.abc import Sequence
+from datetime import date, datetime
+
+from pydantic import BaseModel
 
 from app.schemas.events import EventRead
 

@@ -7,7 +7,7 @@ Karnataka District Gazetteers, state archaeological surveys, and regional record
 from __future__ import annotations
 
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.services.discovery_providers.base import (
     DiscoveredDestination,

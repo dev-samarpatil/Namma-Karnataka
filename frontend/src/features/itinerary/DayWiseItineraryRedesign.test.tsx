@@ -481,7 +481,7 @@ describe('Interactive Day-Wise Itinerary Redesign Experience', () => {
     expect(screen.getByText('Daily Budget')).toBeInTheDocument();
     // Metric 6: Overnight Stay
     expect(screen.getByText('Overnight Stay')).toBeInTheDocument();
-    expect(screen.getByText('Bengaluru City Hotel')).toBeInTheDocument();
+    expect(screen.getAllByText('Bengaluru City Hotel')[0]).toBeInTheDocument();
   });
 
   it('toggles View Details section on and off', () => {

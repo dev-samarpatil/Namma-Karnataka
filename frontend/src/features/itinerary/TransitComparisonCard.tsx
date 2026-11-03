@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Bus, Car, AlertTriangle, Leaf, Loader2, Info } from 'lucide-react';
 import { TransitComparison, Language } from '../../types';
 import { compareTransitAndRoad, ApiClientError } from '../../lib/api';
 import { useTranslation } from '../../lib/i18n';
@@ -70,7 +71,7 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
           cursor: 'pointer',
         }}
       >
-        🚌 {isOpen ? t('hideTransitComparison') : t('compareTransit')}
+        <Bus size={14} /> {isOpen ? t('hideTransitComparison') : t('compareTransit')}
       </button>
 
       {isOpen && (
@@ -91,14 +92,14 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
           </h5>
 
           {loading && (
-            <div style={{ fontSize: '0.85rem', color: '#64748b', padding: '8px 0' }}>
-              ⏳ Querying KSRTC, BMTC & SWR schedules...
+            <div style={{ fontSize: '0.85rem', color: '#64748b', padding: '8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Loader2 size={14} className="spin" /> Querying KSRTC, BMTC & SWR schedules...
             </div>
           )}
 
           {error && (
-            <div style={{ fontSize: '0.85rem', color: '#b91c1c', padding: '6px 0' }}>
-              ⚠️ {error}
+            <div style={{ fontSize: '0.85rem', color: '#b91c1c', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={14} /> {error}
             </div>
           )}
 
@@ -114,8 +115,8 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
                   padding: '10px',
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155', marginBottom: '4px' }}>
-                  🚗 {t('roadOption')}
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Car size={14} /> {t('roadOption')}
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#475569' }}>
                   <div><strong>Distance:</strong> ~{comparison.road_distance_km} km</div>
@@ -137,8 +138,8 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
                   padding: '10px',
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: comparison.transit_available ? '#166534' : '#991b1b', marginBottom: '4px' }}>
-                  🚌 {t('transitOption')}
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: comparison.transit_available ? '#166534' : '#991b1b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Bus size={14} /> {t('transitOption')}
                 </div>
                 {comparison.transit_available && comparison.transit_options.length > 0 ? (
                   <div style={{ fontSize: '0.82rem', color: '#1e293b' }}>
@@ -155,8 +156,8 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
                             <strong>{t('transfersCount')}:</strong>{' '}
                             {opt.transfers_count === 0 ? t('directService') : t('viaHubTransfer')}
                           </div>
-                          <div style={{ marginTop: '4px', fontSize: '0.75rem', color: '#047857' }}>
-                            🌱 {language === 'kn' ? comparison.carbon_comparison_note_kn : comparison.carbon_comparison_note_en}
+                          <div style={{ marginTop: '4px', fontSize: '0.75rem', color: '#047857', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Leaf size={13} /> {language === 'kn' ? comparison.carbon_comparison_note_kn : comparison.carbon_comparison_note_en}
                           </div>
                           <div
                             style={{
@@ -167,17 +168,20 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
                               borderRadius: '4px',
                               fontSize: '0.72rem',
                               color: '#065f46',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
                             }}
                           >
-                            ℹ️ {opt.disclaimer}
+                            <Info size={12} /> {opt.disclaimer}
                           </div>
                         </>
                       );
                     })()}
                   </div>
                 ) : (
-                  <div style={{ fontSize: '0.8rem', color: '#991b1b' }}>
-                    ℹ️ {t('transitUnavailable')}
+                  <div style={{ fontSize: '0.8rem', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Info size={12} /> {t('transitUnavailable')}
                   </div>
                 )}
               </div>

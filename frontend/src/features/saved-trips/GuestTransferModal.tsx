@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Cloud, X, Check, AlertTriangle, Loader2, CloudUpload } from 'lucide-react';
 import { SavedTrip, Language, SaveCloudTripPayload } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { saveCloudTrip } from '../../lib/api';
@@ -137,7 +138,10 @@ export const GuestTransferModal: React.FC<GuestTransferModalProps> = ({
     >
       <div className="modal-card" style={{ maxWidth: '560px' }}>
         <div className="modal-header">
-          <h3 id="transfer-modal-title">☁️ {t('guestTransferPromptTitle')}</h3>
+          <h3 id="transfer-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Cloud size={18} strokeWidth={2} color="#0798B5" />
+            <span>{t('guestTransferPromptTitle')}</span>
+          </h3>
           <button
             type="button"
             className="close-btn"
@@ -145,8 +149,9 @@ export const GuestTransferModal: React.FC<GuestTransferModalProps> = ({
             disabled={isImporting}
             aria-label={t('close')}
             data-testid="close-transfer-modal-btn"
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            ✕
+            <X size={16} strokeWidth={2} />
           </button>
         </div>
 
@@ -175,8 +180,9 @@ export const GuestTransferModal: React.FC<GuestTransferModalProps> = ({
           )}
 
           {availableTrips.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-              <p>✓ All itineraries on this device are already synced to your cloud account.</p>
+            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Check size={16} strokeWidth={2.5} color="#166534" />
+              <span>All itineraries on this device are already synced to your cloud account.</span>
             </div>
           ) : (
             <>
@@ -262,26 +268,29 @@ export const GuestTransferModal: React.FC<GuestTransferModalProps> = ({
                       </div>
                       <div>
                         {status === 'importing' && (
-                          <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>
-                            ⏳ {t('guestTransferStatusImporting')}
+                          <span className="badge badge-neutral" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Loader2 size={11} strokeWidth={2} style={{ animation: 'nk-spin 0.7s linear infinite' }} />
+                            <span>{t('guestTransferStatusImporting')}</span>
                           </span>
                         )}
                         {status === 'success' && (
                           <span
                             className="badge badge-success"
-                            style={{ fontSize: '0.75rem' }}
+                            style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                             data-testid={`status-success-${trip.id}`}
                           >
-                            ✓ {t('guestTransferStatusImported')}
+                            <Check size={11} strokeWidth={2.5} />
+                            <span>{t('guestTransferStatusImported')}</span>
                           </span>
                         )}
                         {status === 'error' && (
                           <span
                             className="badge badge-danger"
-                            style={{ fontSize: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c' }}
+                            style={{ fontSize: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                             data-testid={`status-error-${trip.id}`}
                           >
-                            ⚠️ {t('guestTransferStatusFailed')}
+                            <AlertTriangle size={11} strokeWidth={2} />
+                            <span>{t('guestTransferStatusFailed')}</span>
                           </span>
                         )}
                       </div>
@@ -316,8 +325,19 @@ export const GuestTransferModal: React.FC<GuestTransferModalProps> = ({
                 onClick={handleStartImport}
                 disabled={isImporting || selectedIds.size === 0}
                 data-testid="start-transfer-btn"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                {isImporting ? '⏳ ...' : `✓ ${t('guestTransferAction')}`}
+                {isImporting ? (
+                  <>
+                    <Loader2 size={14} strokeWidth={2} style={{ animation: 'nk-spin 0.7s linear infinite' }} />
+                    <span>...</span>
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload size={14} strokeWidth={2} />
+                    <span>{t('guestTransferAction')}</span>
+                  </>
+                )}
               </button>
             )}
           </div>

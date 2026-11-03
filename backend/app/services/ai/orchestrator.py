@@ -23,6 +23,8 @@ from app.services.ai.gemini_adapter import GeminiAdapter
 from app.services.ai.groq_adapter import GroqAdapter
 from app.services.ai.validator import AIValidationError, parse_and_ground_plan
 from app.services.budget import BudgetCalculator
+from app.services.budget_optimizer import BudgetOptimizer
+from app.services.destination_discovery import get_destination_discovery_service
 from app.services.clustering.corridors import get_origin_coordinates, identify_best_corridor
 from app.services.routing.optimizer import RouteOptimizer
 from app.services.scheduler import DeterministicScheduler
@@ -59,6 +61,61 @@ class AIOrchestrator:
         # 1. Fetch allowlisted candidate catalog from repository
         filter_params = DestinationFilterParams(limit=100, offset=0)
         candidates, total = self._repository.list_destinations(filter_params, published_only=True)
+
+        # Workstream B: Augment catalogue with multi-provider dynamic discovery records
+        discovery_svc = get_destination_discovery_service()
+        discovered = discovery_svc.discover_destinations(
+            categories=request.categories,
+            offbeat_only=getattr(request, "is_offbeat_preferred", False),
+            limit=25,
+        )
+        from app.services.destination_uniqueness import (
+            _haversine_distance_m,
+            get_canonical_destination_id,
+            validate_trip_destination_uniqueness,
+        )
+
+        existing_canon_ids = {
+            get_canonical_destination_id(
+                c.id, name=c.name_en, coordinates=c.coordinates, district_code=c.district_code
+            )
+            for c in candidates
+        }
+        existing_coords = [
+            (c.coordinates.lat, c.coordinates.lon) for c in candidates if c.coordinates
+        ]
+
+        for d in discovered:
+            d_canon = get_canonical_destination_id(
+                d.id,
+                name=d.name_en,
+                coordinates=(d.latitude, d.longitude),
+                district_code=d.district_code,
+            )
+            if d_canon in existing_canon_ids:
+                continue
+
+            # Geodesic duplicate check against existing candidates (<= 500m)
+            too_close = False
+            for lat, lon in existing_coords:
+                if _haversine_distance_m(d.latitude, d.longitude, lat, lon) <= 500.0:
+                    too_close = True
+                    break
+            if too_close:
+                continue
+
+            converted = discovery_svc.to_destination_read(d)
+            candidates.append(converted)
+            existing_canon_ids.add(d_canon)
+            existing_coords.append((d.latitude, d.longitude))
+
+        # Workstream A: Apply budget filtering and ranking to prioritize financially feasible attractions
+        if getattr(request, "budget_limit_inr", None) and request.budget_limit_inr > 0:
+            candidates = BudgetOptimizer.filter_and_rank_by_budget(
+                request=request,
+                candidates=candidates,
+                target_count=len(candidates),
+            )
 
         if not candidates:
             raise AppError(
@@ -192,6 +249,26 @@ class AIOrchestrator:
                     request=request, days=days, destinations=grounded_items
                 )
 
+                # Active budget optimization pass
+                if not budget.is_budget_feasible and (
+                    getattr(request, "strict_budget", False)
+                    or (request.budget_limit_inr and request.budget_limit_inr > 0)
+                ):
+                    opt_days, opt_items, opt_budget, was_optimized = BudgetOptimizer.optimize_itinerary_for_budget(
+                        request=request,
+                        destinations=grounded_items,
+                        days=days,
+                        budget=budget,
+                        candidates=candidates,
+                    )
+                    if was_optimized:
+                        days = opt_days
+                        grounded_items = opt_items
+                        budget = opt_budget
+                        schedule_warnings.append(
+                            "Itinerary actively optimized to fit within your specified budget limit."
+                        )
+
                 all_warnings = corridor_warnings + schedule_warnings
                 provider_display = f"{provider_name} ({model_used})" if model_used != "default" else provider_name
 
@@ -203,7 +280,24 @@ class AIOrchestrator:
                             fest_seen.add(ev.event_id)
                             trip_festivals.append(ev)
 
-                return PlanningRecommendationResponse(
+                if not trip_festivals:
+                    from app.services.karnataka_events import get_karnataka_events_service
+                    k_events = get_karnataka_events_service().match_trip_events(
+                        start_date=request.start_date,
+                        duration_days=request.duration_days,
+                        corridor_districts=corridor.districts,
+                        destination_coordinates=[
+                            (item.coordinates.lat, item.coordinates.lon)
+                            for item in grounded_items
+                            if getattr(item, "coordinates", None)
+                        ],
+                    )
+                    for kev in k_events:
+                        if kev.id not in fest_seen:
+                            fest_seen.add(kev.id)
+                            trip_festivals.append(kev.to_event_read())
+
+                ai_response = PlanningRecommendationResponse(
                     request_id=req_id,
                     language=request.language,
                     generation_mode="ai",
@@ -220,6 +314,10 @@ class AIOrchestrator:
                     data_limitations=[],
                     warnings=all_warnings,
                 )
+                _, _, validated_response = validate_trip_destination_uniqueness(
+                    ai_response, repair=True, request=request
+                )
+                return validated_response
 
             except TimeoutError as exc:
                 call_duration = round(time.monotonic() - provider_start, 2)
@@ -289,6 +387,26 @@ class AIOrchestrator:
             request=request, days=days, destinations=fallback_items
         )
 
+        # Active budget optimization pass
+        if not budget.is_budget_feasible and (
+            getattr(request, "strict_budget", False)
+            or (request.budget_limit_inr and request.budget_limit_inr > 0)
+        ):
+            opt_days, opt_items, opt_budget, was_optimized = BudgetOptimizer.optimize_itinerary_for_budget(
+                request=request,
+                destinations=fallback_items,
+                days=days,
+                budget=budget,
+                candidates=candidates,
+            )
+            if was_optimized:
+                days = opt_days
+                fallback_items = opt_items
+                budget = opt_budget
+                schedule_warnings.append(
+                    "Itinerary actively optimized to fit within your specified budget limit."
+                )
+
         warning_msg = (
             "AI generation was temporarily unavailable. Recommendations curated using "
             "verified regional catalog."
@@ -309,7 +427,24 @@ class AIOrchestrator:
                     fest_seen.add(ev.event_id)
                     fallback_festivals.append(ev)
 
-        return PlanningRecommendationResponse(
+        if not fallback_festivals:
+            from app.services.karnataka_events import get_karnataka_events_service
+            k_events = get_karnataka_events_service().match_trip_events(
+                start_date=request.start_date,
+                duration_days=request.duration_days,
+                corridor_districts=corridor_result.districts,
+                destination_coordinates=[
+                    (item.coordinates.lat, item.coordinates.lon)
+                    for item in fallback_items
+                    if getattr(item, "coordinates", None)
+                ],
+            )
+            for kev in k_events:
+                if kev.id not in fest_seen:
+                    fest_seen.add(kev.id)
+                    fallback_festivals.append(kev.to_event_read())
+
+        fallback_response = PlanningRecommendationResponse(
             request_id=req_id,
             language=request.language,
             generation_mode="fallback",
@@ -331,3 +466,7 @@ class AIOrchestrator:
             ],
             warnings=all_warnings,
         )
+        _, _, validated_fallback = validate_trip_destination_uniqueness(
+            fallback_response, repair=True, request=request
+        )
+        return validated_fallback

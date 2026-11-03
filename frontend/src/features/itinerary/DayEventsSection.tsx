@@ -1,6 +1,6 @@
 import React from 'react';
 import { DayPlan, CulturalEvent, Language } from '../../types';
-import { Calendar, MapPin, ExternalLink, ShieldCheck, Ticket } from 'lucide-react';
+import { Calendar, MapPin, ExternalLink, ShieldCheck, Ticket, Info } from 'lucide-react';
 import './DayWiseItinerary.css';
 
 export interface DayEventsSectionProps {
@@ -33,16 +33,16 @@ export const DayEventsSection: React.FC<DayEventsSectionProps> = ({
       <div className="nk-card-header" style={{ borderBottom: '1px solid #FEF3C7' }}>
         <div className="nk-card-title-group">
           <div className="nk-card-icon" style={{ background: '#FEF3C7', color: '#92400E' }}>
-            <span style={{ fontSize: '1.1rem' }}>🎪</span>
+            <Ticket size={18} />
           </div>
           <div>
             <h3 className="nk-card-title">
-              {isKn ? `ದಿನ ${day.day_number} ಸಮೀಪದ ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವಗಳು` : `Day ${day.day_number} Cultural Festivals & Heritage Fairs`}
+              {isKn ? `ನಿಮ್ಮ ಪ್ರವಾಸದ ಅವಧಿಯಲ್ಲಿ ನಡೆಯುವ ಉತ್ಸವಗಳು (ದಿನ ${day.day_number})` : `Happening During Your Trip — Day ${day.day_number}`}
             </h3>
             <p className="nk-card-desc">
               {isKn
-                ? 'ಈ ದಿನದ ತಾಣಗಳು ಮತ್ತು ಪ್ರಯಾಣದ ದಿನಾಂಕಗಳೊಂದಿಗೆ ಹೊಂದಿಕೆಯಾಗುವ ಅಧಿಕೃತ ಉತ್ಸವಗಳು.'
-                : 'Verified regional celebrations coinciding with your travel dates and route.'}
+                ? 'ನಿಮ್ಮ ಪ್ರಯಾಣದ ದಿನಾಂಕಗಳು ಮತ್ತು ತಾಣಗಳೊಂದಿಗೆ ಹೊಂದಿಕೆಯಾಗುವ ಅಧಿಕೃತ ಕರ್ನಾಟಕ ಉತ್ಸವಗಳು.'
+                : 'Verified regional celebrations and cultural festivals coinciding with your travel dates.'}
             </p>
           </div>
         </div>
@@ -90,53 +90,76 @@ export const DayEventsSection: React.FC<DayEventsSectionProps> = ({
                   background: '#FFFFFF',
                   padding: '14px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                  <div>
-                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>{eventName}</h4>
-                    <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.78rem', color: '#64748B' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155', fontWeight: 600 }}>
-                        <MapPin size={12} color="#B45309" />
-                        <span>{event.location_name}</span>
-                      </span>
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                  {event.image_url && (
+                    <img
+                      src={event.image_url}
+                      alt={eventName}
+                      loading="lazy"
+                      style={{
+                        width: '100px',
+                        height: '76px',
+                        objectFit: 'cover',
+                        borderRadius: '6px',
+                        border: '1px solid #E2E8F0',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>{eventName}</h4>
+                        <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.78rem', color: '#64748B' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155', fontWeight: 600 }}>
+                            <MapPin size={12} color="#B45309" />
+                            <span>{event.location_name}</span>
+                          </span>
 
-                      {event.typical_start_date && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155', fontWeight: 600 }}>
-                          <Calendar size={12} color="#0891B2" />
-                          <span>{event.typical_start_date} {event.typical_end_date ? `– ${event.typical_end_date}` : ''}</span>
+                          {event.typical_start_date && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155', fontWeight: 600 }}>
+                              <Calendar size={12} color="#0891B2" />
+                              <span>{event.typical_start_date} {event.typical_end_date ? `– ${event.typical_end_date}` : ''}</span>
+                            </span>
+                          )}
+
+                          <span style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, color: '#92400E' }}>
+                            {event.event_category || 'Festival'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Fee badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 700, color: '#047857' }}>
+                        <Ticket size={14} />
+                        <span>
+                          {event.ticket_cost_min_inr === 0
+                            ? isKn ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry'
+                            : `₹${event.ticket_cost_min_inr}`}
                         </span>
-                      )}
-
-                      <span style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, color: '#92400E' }}>
-                        {event.event_category || 'Festival'}
-                      </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Fee badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 700, color: '#047857' }}>
-                    <Ticket size={14} />
-                    <span>
-                      {event.ticket_cost_min_inr === 0
-                        ? isKn ? 'ಉಚಿತ ಪ್ರವೇಶ' : 'Free Entry'
-                        : `₹${event.ticket_cost_min_inr}`}
-                    </span>
+                    <p style={{ marginTop: '8px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.5, margin: '8px 0 0 0' }}>
+                      {eventDesc}
+                    </p>
                   </div>
                 </div>
 
-                <p style={{ marginTop: '8px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.5, margin: '8px 0 0 0' }}>
-                  {eventDesc}
-                </p>
-
                 {event.travel_advisory && (
-                  <div style={{ marginTop: '8px', fontSize: '0.78rem', fontWeight: 600, color: '#92400E', background: '#FFFBEB', padding: '6px 10px', borderRadius: '6px' }}>
-                    ℹ️ {event.travel_advisory}
+                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#92400E', background: '#FFFBEB', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Info size={13} style={{ flexShrink: 0 }} />
+                    <span>{event.travel_advisory}</span>
                   </div>
                 )}
 
                 {/* Footer / Source verification */}
-                <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 600 }}>
                     <ShieldCheck size={12} />
                     <span>{isKn ? 'ಅಧಿಕೃತ ಮೂಲದಿಂದ ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified by'} {event.source_name}</span>

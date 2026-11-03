@@ -24,8 +24,8 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const frontVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Audio state: default to gentle low volume (approx 22%)
-  const [isMuted, setIsMuted] = useState<boolean>(false);
+  // Audio state: starts muted so autoplay succeeds; unmutes on first interaction
+  const [isMuted, setIsMuted] = useState<boolean>(true);
 
   // Scroll progress from 0 (compact) to 1 (expanded)
   const [scrollProgress, setScrollProgress] = useState<number>(0);
@@ -40,43 +40,44 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
   const backgroundVideoSrc = '/back.mp4';
   const frontVideoSrc = '/front-.mp4';
 
-  // Initialize gentle audio volume on front-.mp4 with browser autoplay resilience
+  // Initialize front video: always start muted for autoplay compliance.
+  // Unmute at 22% volume on first user interaction (scroll, click, touch, key).
   useEffect(() => {
     const video = frontVideoRef.current;
     if (!video) return;
 
+    // Ensure DOM muted attribute is set before play — React's muted prop
+    // is not reliably reflected to the DOM attribute after mount.
+    video.muted = true;
     video.volume = 0.22;
-    video.muted = false;
+
     const playPromise = video.play();
-
     if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          setIsMuted(false);
-        })
-        .catch(() => {
-          video.muted = true;
-          setIsMuted(true);
-          video.play().catch(() => {});
-
-          const unmuteOnInteraction = () => {
-            if (video) {
-              video.muted = false;
-              video.volume = 0.22;
-              setIsMuted(false);
-            }
-            window.removeEventListener('click', unmuteOnInteraction);
-            window.removeEventListener('scroll', unmuteOnInteraction);
-            window.removeEventListener('touchstart', unmuteOnInteraction);
-            window.removeEventListener('keydown', unmuteOnInteraction);
-          };
-
-          window.addEventListener('click', unmuteOnInteraction, { once: true, passive: true });
-          window.addEventListener('scroll', unmuteOnInteraction, { once: true, passive: true });
-          window.addEventListener('touchstart', unmuteOnInteraction, { once: true, passive: true });
-          window.addEventListener('keydown', unmuteOnInteraction, { once: true, passive: true });
-        });
+      playPromise.catch(() => {
+        // Silent: some browsers block even muted autoplay until gesture
+      });
     }
+
+    const unmuteOnInteraction = () => {
+      const v = frontVideoRef.current;
+      if (v) {
+        v.muted = false;
+        v.volume = 0.22;
+        setIsMuted(false);
+      }
+    };
+
+    window.addEventListener('scroll', unmuteOnInteraction, { once: true, passive: true });
+    window.addEventListener('click', unmuteOnInteraction, { once: true, passive: true });
+    window.addEventListener('touchstart', unmuteOnInteraction, { once: true, passive: true });
+    window.addEventListener('keydown', unmuteOnInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('scroll', unmuteOnInteraction);
+      window.removeEventListener('click', unmuteOnInteraction);
+      window.removeEventListener('touchstart', unmuteOnInteraction);
+      window.removeEventListener('keydown', unmuteOnInteraction);
+    };
   }, []);
 
   // Update window dimensions on resize
@@ -143,15 +144,16 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
 
   // Compact initial dimensions at scrollProgress = 0
   const initialWidth = isMobile ? 290 : 400;
-  const initialHeight = isMobile ? 180 : 240;
+  const initialHeight = isMobile ? 180 : 230;
 
   // Fully expanded dimensions at scrollProgress = 1
+  // Calibrated so expanded video + split headings never exceed 100vh on any display height
   const maxTargetWidth = isMobile
     ? Math.round(windowDimensions.width * 0.92)
     : Math.min(1160, Math.round(windowDimensions.width * 0.94));
   const maxTargetHeight = isMobile
-    ? Math.round(windowDimensions.height * 0.62)
-    : Math.min(560, Math.round(windowDimensions.height * 0.72));
+    ? Math.round(windowDimensions.height * 0.46)
+    : Math.min(460, Math.round(windowDimensions.height * 0.52));
 
   const panelWidth = Math.round(initialWidth + (maxTargetWidth - initialWidth) * easeProgress);
   const panelHeight = Math.round(initialHeight + (maxTargetHeight - initialHeight) * easeProgress);
@@ -189,7 +191,8 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           background: '#FAFCFF',
-          padding: isMobile ? '24px 16px' : '40px 24px',
+          padding: isMobile ? '16px 12px' : '20px 24px',
+          boxSizing: 'border-box',
         }}
       >
         {/* 1. Cinematic Background Video (back.mp4) — Crisp, Rich, Recognizable */}
@@ -220,7 +223,6 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
               opacity: 0.96,
               filter: `brightness(${0.94 - easeProgress * 0.12}) contrast(1.02)`,
               transform: `scale(${1.02 + easeProgress * 0.04})`,
-              transition: 'opacity 0.2s ease-out, filter 0.2s ease-out',
             }}
           />
         </div>
@@ -237,7 +239,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
           }}
         />
 
-        {/* 3. Subtle bottom edge fade into light theme canvas (48px) */}
+        {/* 3. Subtle background video edge blend behind content (layer 2) */}
         <div
           aria-hidden="true"
           style={{
@@ -245,10 +247,10 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
             bottom: 0,
             left: 0,
             right: 0,
-            height: '48px',
-            background: 'linear-gradient(to bottom, transparent 0%, #FAFCFF 100%)',
+            height: '24px',
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(250, 252, 255, 0.6) 100%)',
             pointerEvents: 'none',
-            zIndex: 15,
+            zIndex: 2,
           }}
         />
 
@@ -276,15 +278,14 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 language === 'kn'
                   ? 'var(--font-kannada, "Noto Sans Kannada", sans-serif)'
                   : 'var(--font-display, "Space Grotesk", sans-serif)',
-              fontSize: isMobile ? 'clamp(2.6rem, 11vw, 4rem)' : 'clamp(4.2rem, 7.8vw, 6.4rem)',
+              fontSize: isMobile ? 'clamp(2.4rem, 10vw, 3.8rem)' : 'clamp(3.8rem, 7vw, 5.8rem)',
               fontWeight: 800,
               letterSpacing: language === 'kn' ? '-0.01em' : '-0.03em',
               textTransform: 'uppercase',
               color: '#FFFFFF',
               textShadow:
                 '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.9)',
-              transform: `translateY(${18 + textTranslateY1}px) translateX(${textTranslateX1}px)`,
-              transition: 'transform 0.1s linear',
+              transform: `translateY(${14 + textTranslateY1}px) translateX(${textTranslateX1}px)`,
               lineHeight: 0.95,
               userSelect: 'none',
               zIndex: 10,
@@ -306,7 +307,6 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
               boxShadow: '0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.22)',
               zIndex: 15,
               background: 'transparent',
-              transition: 'border-radius 0.15s ease-out, box-shadow 0.2s ease-out',
             }}
           >
             <video
@@ -316,7 +316,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
               autoPlay
               loop
               playsInline
-              muted={isMuted}
+              muted
               style={{
                 width: '100%',
                 height: '100%',
@@ -324,6 +324,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 objectPosition: 'center center',
                 transform: 'scale(1.33)',
                 transformOrigin: 'center center',
+                willChange: 'transform',
               }}
             />
 
@@ -335,6 +336,7 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 e.stopPropagation();
                 if (frontVideoRef.current) {
                   const nextMuted = !isMuted;
+                  // Must set DOM property directly; React's muted prop is unreliable
                   frontVideoRef.current.muted = nextMuted;
                   frontVideoRef.current.volume = 0.22;
                   setIsMuted(nextMuted);
@@ -373,15 +375,14 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
                 language === 'kn'
                   ? 'var(--font-kannada, "Noto Sans Kannada", sans-serif)'
                   : 'var(--font-display, "Space Grotesk", sans-serif)',
-              fontSize: isMobile ? 'clamp(2.6rem, 11vw, 4rem)' : 'clamp(4.2rem, 7.8vw, 6.4rem)',
+              fontSize: isMobile ? 'clamp(2.4rem, 10vw, 3.8rem)' : 'clamp(3.8rem, 7vw, 5.8rem)',
               fontWeight: 800,
               letterSpacing: language === 'kn' ? '-0.01em' : '-0.03em',
               textTransform: 'uppercase',
               color: '#FFFFFF',
               textShadow:
                 '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.9)',
-              transform: `translateY(${-18 + textTranslateY2}px) translateX(${textTranslateX2}px)`,
-              transition: 'transform 0.1s linear',
+              transform: `translateY(${-14 + textTranslateY2}px) translateX(${textTranslateX2}px)`,
               lineHeight: 0.95,
               userSelect: 'none',
               zIndex: 10,
@@ -398,14 +399,13 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
               fontFamily: 'var(--font-family)',
               maxWidth: '680px',
               textAlign: 'center',
-              marginTop: isMobile ? '10px' : '16px',
-              fontSize: isMobile ? '0.88rem' : '1.05rem',
+              marginTop: isMobile ? '10px' : '14px',
+              fontSize: isMobile ? '0.88rem' : '1.02rem',
               color: '#FFFFFF',
               lineHeight: 1.5,
               textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)',
-              opacity: Math.max(0, 1 - easeProgress * 1.5),
-              transition: 'opacity 0.2s ease-out',
-              pointerEvents: easeProgress > 0.6 ? 'none' : 'auto',
+              opacity: Math.max(0, 1 - easeProgress * 1.6),
+              pointerEvents: easeProgress > 0.5 ? 'none' : 'auto',
             }}
           >
             {t('heroSupportingLine')}
@@ -416,13 +416,12 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
             style={{
               display: 'flex',
               gap: '12px',
-              marginTop: '16px',
+              marginTop: '14px',
               flexWrap: 'wrap',
               justifyContent: 'center',
               zIndex: 20,
-              opacity: Math.max(0, 1 - easeProgress * 1.5),
-              transition: 'opacity 0.2s ease-out',
-              pointerEvents: easeProgress > 0.6 ? 'none' : 'auto',
+              opacity: Math.max(0, 1 - easeProgress * 1.6),
+              pointerEvents: easeProgress > 0.5 ? 'none' : 'auto',
             }}
           >
             {onExploreClick && (
@@ -481,13 +480,15 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
           className="scroll-cue"
           style={{
             position: 'absolute',
-            bottom: '12px',
+            bottom: '16px',
             left: 0,
             right: 0,
             display: 'flex',
             justifyContent: 'center',
-            color: '#475569',
-            fontSize: '0.78rem',
+            color: '#FFFFFF',
+            fontSize: '0.82rem',
+            fontWeight: 500,
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)',
             zIndex: 25,
             opacity: Math.max(0, 1 - easeProgress * 2),
             pointerEvents: easeProgress > 0.5 ? 'none' : 'auto',
@@ -499,13 +500,14 @@ export const ScrollExpansionHero: React.FC<ScrollExpansionHeroProps> = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#475569',
+              color: '#FFFFFF',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               fontSize: 'inherit',
               padding: '4px 8px',
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)',
             }}
             aria-label={t('heroSkipCue')}
           >

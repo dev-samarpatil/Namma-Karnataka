@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Map as MapIcon, Search, X, Zap, List, AlertTriangle, Compass } from 'lucide-react';
 import {
   DestinationRead,
   DestinationCategory,
@@ -167,7 +168,7 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
       <div className="filter-panel" role="search" aria-label="Destination filters">
         <div className="search-bar-row">
           <div className="search-bar" style={{ width: '100%' }}>
-            <span className="search-icon" aria-hidden="true">🔍</span>
+            <span className="search-icon" aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}><Search size={16} strokeWidth={2} /></span>
             <input
               type="search"
               value={searchQuery}
@@ -296,8 +297,10 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
               className="btn-reset-filters"
               onClick={resetFilters}
               data-testid="reset-filters-btn"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
             >
-              ✕ {t('clearAll')}
+              <X size={13} strokeWidth={2.5} />
+              <span>{t('clearAll')}</span>
             </button>
           )}
         </div>
@@ -368,8 +371,9 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
             {totalCount} {t('destinationsFound')}
           </span>
           {isOfflineData && (
-            <span className="badge badge-cached" data-testid="offline-cached-badge" style={{ fontSize: '0.85rem', color: '#b45309', background: '#fef3c7', padding: '4px 8px', borderRadius: '4px' }}>
-              ⚡ {t('cachedBadge')} {cachedTime ? `(${t('cachedAt')} ${cachedTime})` : ''}
+            <span className="badge badge-cached" data-testid="offline-cached-badge" style={{ fontSize: '0.85rem', color: '#b45309', background: '#fef3c7', padding: '4px 8px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Zap size={13} strokeWidth={2} />
+              <span>{t('cachedBadge')} {cachedTime ? `(${t('cachedAt')} ${cachedTime})` : ''}</span>
             </span>
           )}
         </div>
@@ -388,10 +392,14 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
               color: viewMode === 'list' ? '#ffffff' : '#374151',
               fontWeight: 600,
               cursor: 'pointer',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            📋 {t('toggleListView')}
+            <List size={15} strokeWidth={2} />
+            <span>{t('toggleListView')}</span>
           </button>
           <button
             type="button"
@@ -406,10 +414,14 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
               color: viewMode === 'map' ? '#ffffff' : '#374151',
               fontWeight: 600,
               cursor: 'pointer',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            🗺️ {t('toggleMapView')}
+            <MapIcon size={15} strokeWidth={2} />
+            <span>{t('toggleMapView')}</span>
           </button>
         </div>
       </div>
@@ -423,7 +435,7 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
 
       {!loading && errorMessage && (
         <div className="error-panel" data-testid="discovery-error">
-          <div className="error-icon" aria-hidden="true">⚠️</div>
+          <div className="error-icon" aria-hidden="true"><AlertTriangle size={32} color="#DC2626" /></div>
           <h3>{t('errorTitle')}</h3>
           <p>{errorMessage}</p>
           <button type="button" className="btn-primary" onClick={() => loadData()}>
@@ -434,7 +446,7 @@ export const DestinationDiscovery: React.FC<DestinationDiscoveryProps> = ({
 
       {!loading && !errorMessage && destinations.length === 0 && (
         <div className="empty-state" data-testid="discovery-empty">
-          <div className="empty-icon" aria-hidden="true">🏞️</div>
+          <div className="empty-icon" aria-hidden="true"><Compass size={36} color="#94A3B8" /></div>
           <h3>{t('noDestinationsFound')}</h3>
           <p>{t('clearFiltersToSeeMore')}</p>
           {hasActiveFilters && (

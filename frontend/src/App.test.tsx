@@ -108,8 +108,9 @@ describe('Namma Karnataka Phase 4 Complete Journey', () => {
     render(<App />);
 
     // Check English header branding
-    expect(screen.getByRole('banner')).toBeInTheDocument();
-    expect(screen.getByText(/Namma Karnataka/i)).toBeInTheDocument();
+    const banner = screen.getByRole('banner');
+    expect(banner).toBeInTheDocument();
+    expect(within(banner).getByText(/Namma Karnataka/i)).toBeInTheDocument();
 
     // Toggle language to Kannada
     const langBtn = screen.getByTestId('language-toggle-btn');

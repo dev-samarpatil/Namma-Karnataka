@@ -41,6 +41,7 @@ import { MapView } from './MapView';
 import { TransitComparisonCard } from './TransitComparisonCard';
 import { TravelLegCard } from './TravelLegCard';
 import './DayWiseItinerary.css';
+import { deduplicateItineraryDestinations } from '../../lib/itineraryDeduplication';
 
 // Fast static lookup map for guaranteed authentic destination photographs from verified catalogue
 const VERIFIED_MEDIA_MAP = new Map<string, string>();
@@ -113,14 +114,20 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     setActiveSlideIndex(0);
   };
 
+  // Ensure plan destinations are strictly deduplicated across and within days
+  const cleanPlan = useMemo(() => {
+    return plan ? deduplicateItineraryDestinations(plan) : null;
+  }, [plan]);
+
   // Backward compatibility: derive effectiveDays from plan.days or fallback to grouping items
   const effectiveDays: DayPlan[] = useMemo(() => {
-    if (!plan) return [];
-    if (plan.days && plan.days.length > 0) {
-      return plan.days;
+    const activePlanObj = cleanPlan || plan;
+    if (!activePlanObj) return [];
+    if (activePlanObj.days && activePlanObj.days.length > 0) {
+      return activePlanObj.days;
     }
     const grouped = new Map<number, RecommendedDestination[]>();
-    for (const item of plan.items) {
+    for (const item of activePlanObj.items) {
       const dNum = item.day_number || 1;
       if (!grouped.has(dNum)) grouped.set(dNum, []);
       grouped.get(dNum)!.push(item);
@@ -345,10 +352,12 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       ) {
         return false;
       }
-      // Deduplicate in case identical destination is scheduled twice on same day
-      const key = stop.destination_id || stop.name;
-      if (seen.has(key)) return false;
+      // Deduplicate in case identical destination or alias is scheduled twice on same day
+      const normName = stop.name.toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
+      const key = stop.destination_id || normName || stop.name;
+      if (seen.has(key) || (normName && normName.length >= 4 && seen.has(normName))) return false;
       seen.add(key);
+      if (normName && normName.length >= 4) seen.add(normName);
       return true;
     });
   }, [currentDayPlan, ELIGIBLE_GALLERY_TYPES]);
@@ -470,6 +479,14 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   // Remove Stop Confirmation Dialog
   const [removingStop, setRemovingStop] = useState<{ dayNumber: number; stop: ItineraryStop } | null>(null);
 
+  // Duplicate Move Confirmation Dialog
+  const [duplicateMovePrompt, setDuplicateMovePrompt] = useState<{
+    dest: DestinationRead;
+    existingDay: number;
+    targetDay: number;
+    existingStop: ItineraryStop;
+  } | null>(null);
+
   // Day Regeneration Confirmation
   const [confirmingRegenDay, setConfirmingRegenDay] = useState<number | null>(null);
 
@@ -558,7 +575,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     setActionError(null);
     setConflictError(false);
     try {
-      const response = await recalculateItinerary(activeReq, updatedDays);
+      const rawResponse = await recalculateItinerary(activeReq, updatedDays);
+      const response = deduplicateItineraryDestinations(rawResponse);
       if (shareToken && userRole === 'editor') {
         try {
           const updateRes = await updateSharedTrip(shareToken, {
@@ -740,9 +758,91 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   };
 
   // --- Handlers for Adding a Destination ---
+  const handleConfirmMoveDuplicate = async () => {
+    if (!duplicateMovePrompt || !plan.days) return;
+    const { dest, existingDay, targetDay, existingStop } = duplicateMovePrompt;
+    setDuplicateMovePrompt(null);
+
+    const destName = language === 'kn' && dest.name_kn ? dest.name_kn : dest.name_en;
+    const destSummary = language === 'kn' && dest.summary_kn ? dest.summary_kn : dest.summary_en;
+
+    const movedStop: ItineraryStop = {
+      ...existingStop,
+      stop_id: `stop-d${targetDay}-${dest.slug || 'dest'}-${Date.now()}`,
+      destination_id: dest.id,
+      name: destName,
+      description: destSummary || existingStop.description,
+      user_modified: true,
+    };
+
+    const newDays = plan.days.map((d) => {
+      if (d.day_number === existingDay) {
+        return {
+          ...d,
+          stops: d.stops.filter((s) => s.stop_id !== existingStop.stop_id),
+        };
+      }
+      if (d.day_number === targetDay) {
+        return {
+          ...d,
+          stops: [...d.stops, movedStop],
+        };
+      }
+      return d;
+    });
+
+    await executeRecalculate(newDays);
+  };
+
   const handleAddDestinationToDay = async (dest: DestinationRead) => {
     if (addingToDay === null || !plan.days) return;
     const dayNumber = addingToDay;
+
+    const destName = language === 'kn' && dest.name_kn ? dest.name_kn : dest.name_en;
+
+    // Check if destination is already scheduled anywhere across all days
+    let existingDay: number | null = null;
+    let existingStop: ItineraryStop | null = null;
+    const normAdd = (dest.name_en || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
+
+    for (const d of plan.days) {
+      for (const s of d.stops) {
+        if (s.stop_type === 'attraction' || s.stop_type === 'activity') {
+          const normStop = (s.name || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
+          const isSame =
+            s.destination_id === dest.id ||
+            s.destination_id === dest.slug ||
+            (normAdd && normStop && normAdd === normStop && normAdd.length >= 4) ||
+            (dest.coordinates && s.coordinates &&
+              Math.hypot(dest.coordinates.lat - s.coordinates.lat, dest.coordinates.lon - s.coordinates.lon) < 0.005);
+          if (isSame) {
+            existingDay = d.day_number;
+            existingStop = s;
+            break;
+          }
+        }
+      }
+      if (existingDay !== null) break;
+    }
+
+    if (existingDay !== null && existingStop) {
+      setAddingToDay(null);
+      if (existingDay === dayNumber) {
+        setActionError(
+          language === 'kn'
+            ? `"${destName}" ಈಗಾಗಲೇ ಈ ದಿನದ ಪ್ರವಾಸ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ಪ್ರತಿ ತಾಣವನ್ನು ಒಮ್ಮೆ ಮಾತ್ರ ಭೇಟಿ ನೀಡಲಾಗುತ್ತದೆ.`
+            : `"${destName}" is already scheduled on Day ${dayNumber}. Each destination can only be visited once per trip.`
+        );
+      } else {
+        setDuplicateMovePrompt({
+          dest,
+          existingDay,
+          targetDay: dayNumber,
+          existingStop,
+        });
+      }
+      return;
+    }
 
     const travelers = activeReq.travelers_count || 1;
     const feeMin = dest.entry_fee_min_inr ?? null;
@@ -751,7 +851,6 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     const costMax = feeMax !== null ? feeMax * travelers : null;
     const costStatus = feeMin !== null ? 'verified' : 'unknown';
 
-    const destName = language === 'kn' && dest.name_kn ? dest.name_kn : dest.name_en;
     const destSummary = language === 'kn' && dest.summary_kn ? dest.summary_kn : dest.summary_en;
 
     const newStop: ItineraryStop = {
@@ -2016,6 +2115,65 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 data-testid="confirm-remove-btn"
               >
                 🗑️ {t('remove')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 4B: Duplicate Destination Move Dialog                    */}
+      {/* ============================================================== */}
+      {duplicateMovePrompt && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setDuplicateMovePrompt(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="duplicate-move-title"
+        >
+          <div className="modal-container" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 id="duplicate-move-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#f59e0b', fontSize: '1.1rem' }}>⚠️</span>
+                {language === 'kn' ? 'ತಾಣ ಈಗಾಗಲೇ ನಿಗದಿಯಾಗಿದೆ' : 'Destination Already Scheduled'}
+              </h3>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setDuplicateMovePrompt(null)}
+                style={{ padding: '0.2rem 0.5rem' }}
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: '#fff' }}>
+              <strong>{language === 'kn' && duplicateMovePrompt.dest.name_kn ? duplicateMovePrompt.dest.name_kn : duplicateMovePrompt.dest.name_en}</strong>
+            </p>
+            <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+              {language === 'kn'
+                ? `ಈ ತಾಣವು ಈಗಾಗಲೇ ದಿನ ${duplicateMovePrompt.existingDay} ರಲ್ಲಿದೆ. ಪುನರಾವರ್ತನೆಗಳನ್ನು ತಪ್ಪಿಸಲು ತಾಣಗಳನ್ನು ಪ್ರವಾಸದಲ್ಲಿ ಒಮ್ಮೆ ಮಾತ್ರ ಭೇಟಿ ನೀಡಲಾಗುತ್ತದೆ. ನೀವು ಇದನ್ನು ದಿನ ${duplicateMovePrompt.targetDay} ಕ್ಕೆ ಸ್ಥಳಾಂತರಿಸಲು ಬಯಸುವಿರಾ?`
+                : `This destination is already scheduled on Day ${duplicateMovePrompt.existingDay}. To maintain itinerary variety and prevent repetition, attractions can only be visited once per trip. Would you like to move it to Day ${duplicateMovePrompt.targetDay} instead?`}
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setDuplicateMovePrompt(null)}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                onClick={handleConfirmMoveDuplicate}
+                data-testid="confirm-move-duplicate-btn"
+              >
+                {language === 'kn' ? `ದಿನ ${duplicateMovePrompt.targetDay} ಕ್ಕೆ ಸರಿಸಿ` : `Move to Day ${duplicateMovePrompt.targetDay}`}
               </button>
             </div>
           </div>

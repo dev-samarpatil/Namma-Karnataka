@@ -25,6 +25,7 @@ import { TripPlannerForm } from './features/planner/TripPlannerForm';
 import { ItineraryView } from './features/itinerary/ItineraryView';
 import { SavedTripsView } from './features/saved-trips/SavedTripsView';
 import { GradientDots } from './components/ui/gradient-dots';
+import { WifiOff, Wifi, AlertTriangle, X } from 'lucide-react';
 
 const AUTH_TOKEN_STORAGE_KEY = 'nk_auth_token';
 
@@ -99,13 +100,13 @@ export const App: React.FC = () => {
           setCurrentTab('itinerary');
           setToastMessage(
             detail.role === 'editor'
-              ? '✏️ Loaded shared trip with editor permissions!'
-              : '👁️ Loaded shared trip with read-only viewer permissions.'
+              ? 'Loaded shared trip with editor permissions.'
+              : 'Loaded shared trip with read-only viewer permissions.'
           );
           setTimeout(() => setToastMessage(null), 4000);
         })
         .catch(() => {
-          setToastMessage('⚠️ Unable to load shared trip. The link may be expired or revoked.');
+          setToastMessage('Unable to load shared trip. The link may be expired or revoked.');
           setTimeout(() => setToastMessage(null), 5000);
         });
     }
@@ -130,10 +131,10 @@ export const App: React.FC = () => {
       setActivePlan(detail.snapshot);
       setActiveTripVersion(detail.version);
       setActiveUserRole(detail.role);
-      setToastMessage('🔄 Reloaded latest plan version from server.');
+      setToastMessage('Reloaded latest plan version from server.');
       setTimeout(() => setToastMessage(null), 3000);
     } catch {
-      setToastMessage('⚠️ Failed to reload shared trip.');
+      setToastMessage('Failed to reload shared trip.');
       setTimeout(() => setToastMessage(null), 3000);
     }
   };
@@ -162,7 +163,7 @@ export const App: React.FC = () => {
       const response = await generatePlanningRecommendations(request);
       setActivePlan(response);
       setCurrentTab('itinerary');
-      setToastMessage('🎉 Itinerary generated successfully!');
+      setToastMessage('Itinerary generated successfully!');
       setTimeout(() => setToastMessage(null), 4000);
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -197,9 +198,9 @@ export const App: React.FC = () => {
     const saveResult = saveGuestTrip(tripRecord);
     if (!saveResult.success) {
       if (saveResult.error === 'quota_exceeded') {
-        setToastMessage(`⚠️ ${t('storageQuotaWarning')}`);
+        setToastMessage(t('storageQuotaWarning'));
       } else {
-        setToastMessage(`⚠️ ${saveResult.message || 'Failed to save trip locally.'}`);
+        setToastMessage(saveResult.message || 'Failed to save trip locally.');
       }
       setTimeout(() => setToastMessage(null), 4000);
       return;
@@ -232,12 +233,12 @@ export const App: React.FC = () => {
         tripRecord.sync_status = 'synced';
         saveGuestTrip(tripRecord);
         setSavedTrips(loadGuestTrips());
-        setToastMessage('💾 Trip saved locally and synced to cloud!');
+        setToastMessage('Trip saved locally and synced to cloud.');
       } catch {
-        setToastMessage('💾 Trip saved locally (cloud sync unavailable).');
+        setToastMessage('Trip saved locally (cloud sync unavailable).');
       }
     } else {
-      setToastMessage('💾 Trip saved to your device!');
+      setToastMessage('Trip saved to your device.');
     }
     setTimeout(() => setToastMessage(null), 3000);
   };
@@ -273,7 +274,7 @@ export const App: React.FC = () => {
       }
     }
 
-    setToastMessage('✨ Itinerary updated and schedule recalculated!');
+    setToastMessage('Itinerary updated and schedule recalculated.');
     setTimeout(() => setToastMessage(null), 3500);
   };
 
@@ -322,7 +323,7 @@ export const App: React.FC = () => {
         duration={40}
         colorCycleDuration={18}
         backgroundColor="#F8FAFF"
-        className="opacity-85"
+        className="opacity-35"
         style={{
           position: 'fixed',
           inset: 0,
@@ -355,9 +356,14 @@ export const App: React.FC = () => {
             textAlign: 'center',
             fontSize: '0.9rem',
             fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
           }}
         >
-          📶 {t('offlineBanner')}
+          <WifiOff size={16} strokeWidth={2} />
+          <span>{t('offlineBanner')}</span>
         </div>
       )}
 
@@ -366,9 +372,10 @@ export const App: React.FC = () => {
           className="toast-notification"
           role="status"
           aria-live="polite"
-          style={{ background: '#0f766e', color: '#fff' }}
+          style={{ background: '#0f766e', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          🌐 Back online! Connected to Namma Karnataka server.
+          <Wifi size={16} strokeWidth={2} />
+          <span>Back online! Connected to Namma Karnataka server.</span>
         </div>
       )}
 
@@ -379,10 +386,13 @@ export const App: React.FC = () => {
       )}
 
       {plannerError && currentTab === 'planner' && (
-        <div className="app-error-banner" role="alert">
-          <span>⚠️ {plannerError}</span>
-          <button type="button" onClick={() => setPlannerError(null)}>
-            ✕
+        <div className="app-error-banner" role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} strokeWidth={2} />
+            <span>{plannerError}</span>
+          </span>
+          <button type="button" onClick={() => setPlannerError(null)} aria-label="Dismiss error" style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'inherit' }}>
+            <X size={15} strokeWidth={2} />
           </button>
         </div>
       )}

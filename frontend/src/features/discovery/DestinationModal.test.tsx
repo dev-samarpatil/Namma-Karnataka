@@ -145,15 +145,15 @@ describe('DestinationModal', () => {
 
     expect(screen.getByText('Mysuru Palace')).toBeInTheDocument();
     expect(screen.getByText(/₹100/)).toBeInTheDocument();
-    expect(screen.getByText('⏱️ 120 mins')).toBeInTheDocument();
+    expect(screen.getByText(/120 mins/)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Original Hotel Vinayaka Mylari')).toBeInTheDocument();
       expect(screen.getByText('KSTDC Hotel Mayura Hoysala')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/📍 0.8 km/)).toBeInTheDocument();
-    expect(screen.getByText(/📍 1.5 km/)).toBeInTheDocument();
+    expect(screen.getByText(/0.8 km/)).toBeInTheDocument();
+    expect(screen.getByText(/1.5 km/)).toBeInTheDocument();
   });
 
   it('renders complete uncropped multi-photo gallery with thumbnail strip, navigation, and synchronized attribution', async () => {
@@ -318,5 +318,91 @@ describe('DestinationModal', () => {
     const lightboxClose = screen.getByTestId('lightbox-close-button');
     fireEvent.click(lightboxClose);
     expect(screen.queryByTestId('gallery-lightbox-overlay')).not.toBeInTheDocument();
+  });
+
+  it('switches between information tabs and renders appropriate sections', () => {
+    render(
+      <DestinationModal
+        destination={MOCK_DESTINATION}
+        language="en"
+        onClose={vi.fn()}
+        onPlanAround={vi.fn()}
+      />
+    );
+
+    // Initial state: 'all' tab active, content scroll container present
+    expect(screen.getByTestId('destination-modal-content')).toBeInTheDocument();
+    expect(screen.getByTestId('destination-overview-section')).toBeInTheDocument();
+    expect(screen.getByTestId('verified-sources-section')).toBeInTheDocument();
+
+    // Click Overview tab
+    fireEvent.click(screen.getByTestId('tab-btn-overview'));
+    expect(screen.getByTestId('destination-overview-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('destination-events-section')).not.toBeInTheDocument();
+
+    // Click Sources tab
+    fireEvent.click(screen.getByTestId('tab-btn-sources'));
+    expect(screen.getByTestId('verified-sources-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('destination-overview-section')).not.toBeInTheDocument();
+
+    // Click All tab
+    fireEvent.click(screen.getByTestId('tab-btn-all'));
+    expect(screen.getByTestId('destination-overview-section')).toBeInTheDocument();
+    expect(screen.getByTestId('verified-sources-section')).toBeInTheDocument();
+  });
+
+  it('renders informative empty states when partial data is missing for specific tabs', () => {
+    const minimalDestination: DestinationRead = {
+      ...MOCK_DESTINATION,
+      description_en: undefined,
+      description_kn: undefined,
+      accessibility_notes_en: undefined,
+      how_to_reach_en: undefined,
+      sources: [],
+    };
+
+    render(
+      <DestinationModal
+        destination={minimalDestination}
+        language="en"
+        onClose={vi.fn()}
+        onPlanAround={vi.fn()}
+      />
+    );
+
+    // Click Overview tab -> fallback card shown instead of blank
+    fireEvent.click(screen.getByTestId('tab-btn-overview'));
+    expect(screen.getByTestId('destination-overview-section')).toBeInTheDocument();
+    expect(screen.getByText(/Historical and cultural narrative details/i)).toBeInTheDocument();
+
+    // Click Visit Info tab -> fallback card shown instead of blank
+    fireEvent.click(screen.getByTestId('tab-btn-visit-info'));
+    expect(screen.getByTestId('destination-guidance-section')).toBeInTheDocument();
+    expect(screen.getByText(/Transit route guidance and accessibility advisories/i)).toBeInTheDocument();
+
+    // Click Sources tab -> fallback gazetteer record shown instead of blank
+    fireEvent.click(screen.getByTestId('tab-btn-sources'));
+    expect(screen.getByTestId('verified-sources-section')).toBeInTheDocument();
+    expect(screen.getByText(/Catalogued and verified via Karnataka Tourism Gazettes/i)).toBeInTheDocument();
+  });
+
+  it('calls onPlanAround and onClose when the Plan Trip CTA is clicked', () => {
+    const handleClose = vi.fn();
+    const handlePlanAround = vi.fn();
+
+    render(
+      <DestinationModal
+        destination={MOCK_DESTINATION}
+        language="en"
+        onClose={handleClose}
+        onPlanAround={handlePlanAround}
+      />
+    );
+
+    const planBtn = screen.getByTestId('modal-plan-trip-btn');
+    fireEvent.click(planBtn);
+
+    expect(handleClose).toHaveBeenCalledTimes(1);
+    expect(handlePlanAround).toHaveBeenCalledWith(MOCK_DESTINATION);
   });
 });

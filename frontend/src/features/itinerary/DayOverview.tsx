@@ -9,6 +9,8 @@ import {
   Bed,
   ChevronDown,
   ChevronUp,
+  Utensils,
+  ArrowRight,
 } from 'lucide-react';
 import './DayWiseItinerary.css';
 
@@ -106,13 +108,15 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
                 ? (totalDays ? `ದಿನ ${day.day_number} / ${totalDays}` : `ದಿನ ${day.day_number}`)
                 : (totalDays ? `Day ${day.day_number} of ${totalDays}` : `Day ${day.day_number}`)}
             </span>
-            <span className="nk-corridor-badge">
+            <span className="nk-corridor-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               <Navigation size={12} />
-              <span>{startLoc} ➔ {endLoc === startLoc ? (isKn ? 'ಸ್ಥಳೀಯ ಸುತ್ತು' : 'Local Circuit') : endLoc}</span>
+              <span>{startLoc}</span>
+              <ArrowRight size={11} />
+              <span>{endLoc === startLoc ? (isKn ? 'ಸ್ಥಳೀಯ ಸುತ್ತು' : 'Local Circuit') : endLoc}</span>
             </span>
             {day.meals_covered && day.meals_covered.length > 0 && (
-              <span className="nk-meals-badge">
-                <span>🍽️</span>
+              <span className="nk-meals-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Utensils size={12} />
                 <span>{day.meals_covered.length} {isKn ? 'ಆಹಾರ ನಿಲುಗಡೆಗಳು' : 'Meals Planned'}</span>
               </span>
             )}

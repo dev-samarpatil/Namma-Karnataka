@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { List, Map as MapIcon, RotateCcw, Info, Sparkles, Utensils, Hotel, Bus, AlertTriangle } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DestinationRead, Language } from '../../types';
@@ -373,7 +374,10 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
       {/* Map Control Bar */}
       <div className="interactive-map-header">
         <div className="map-title-group">
-          <h3 className="interactive-map-title">🗺️ {t('interactiveMapTitle')}</h3>
+          <h3 className="interactive-map-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <MapIcon size={18} strokeWidth={2} color="#0798B5" />
+            <span>{t('interactiveMapTitle')}</span>
+          </h3>
           <p className="interactive-map-subtitle">
             {destinations.length} {t('destinationsFound')}
           </p>
@@ -386,7 +390,15 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
             onClick={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
             data-testid="toggle-map-list-mode"
           >
-            {viewMode === 'map' ? `📋 ${t('toggleListView')}` : `🗺️ ${t('toggleMapView')}`}
+            {viewMode === 'map' ? (
+              <>
+                <List size={14} strokeWidth={2} /> {t('toggleListView')}
+              </>
+            ) : (
+              <>
+                <MapIcon size={14} strokeWidth={2} /> {t('toggleMapView')}
+              </>
+            )}
           </button>
           <button
             type="button"
@@ -397,7 +409,7 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
               }
             }}
           >
-            🔄 {t('centerStateBtn')}
+            <RotateCcw size={14} strokeWidth={2} /> {t('centerStateBtn')}
           </button>
         </div>
       </div>
@@ -406,38 +418,42 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
       {viewMode === 'map' && (
         <div className="map-layer-toggles">
           <span className="layer-label">Overlays:</span>
-          <label className="layer-checkbox-label">
+          <label className="layer-checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <input
               type="checkbox"
               checked={showDining}
               onChange={(e) => setShowDining(e.target.checked)}
             />
-            🍴 {t('layerDining')}
+            <Utensils size={13} strokeWidth={2} />
+            <span>{t('layerDining')}</span>
           </label>
-          <label className="layer-checkbox-label">
+          <label className="layer-checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <input
               type="checkbox"
               checked={showStays}
               onChange={(e) => setShowStays(e.target.checked)}
             />
-            🏨 {t('layerStays')}
+            <Hotel size={13} strokeWidth={2} />
+            <span>{t('layerStays')}</span>
           </label>
-          <label className="layer-checkbox-label">
+          <label className="layer-checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <input
               type="checkbox"
               checked={showTransit}
               onChange={(e) => setShowTransit(e.target.checked)}
             />
-            🚉 {t('layerTransit')}
+            <Bus size={13} strokeWidth={2} />
+            <span>{t('layerTransit')}</span>
           </label>
-          {loadingNearby && <span className="loading-nearby-spinner">⏳ Loading layer...</span>}
+          {loadingNearby && <span className="loading-nearby-spinner" style={{ fontSize: '0.8rem', color: '#64748B' }}>Loading layer...</span>}
         </div>
       )}
 
       {/* Offline Status Warning */}
       {!isOnline && (
-        <div className="map-offline-banner" data-testid="map-offline-warning">
-          ⚠️ {t('mapOfflineWarning')}
+        <div className="map-offline-banner" data-testid="map-offline-warning" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <AlertTriangle size={14} strokeWidth={2} />
+          <span>{t('mapOfflineWarning')}</span>
         </div>
       )}
 
@@ -473,7 +489,7 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
                   onClick={() => onOpenDetails && onOpenDetails(activeDest)}
                   data-testid="map-flyout-open-details"
                 >
-                  ℹ️ {t('viewDetails')}
+                  <Info size={14} strokeWidth={2} /> {t('viewDetails')}
                 </button>
                 {onPlanWithDestination && (
                   <button
@@ -481,7 +497,7 @@ export const DestinationInteractiveMap: React.FC<DestinationInteractiveMapProps>
                     className="btn-flyout-plan"
                     onClick={() => onPlanWithDestination(activeDest)}
                   >
-                    ✨ {t('planWithThis')}
+                    <Sparkles size={14} strokeWidth={2} /> {t('planWithThis')}
                   </button>
                 )}
               </div>

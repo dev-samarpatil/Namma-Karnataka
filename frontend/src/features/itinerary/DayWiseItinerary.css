@@ -19,32 +19,9 @@ html, body {
   overflow: visible;
 }
 
-/* Full Viewport-Width Hanging Twine String Layer (100vw, extreme left to extreme right) */
+/* Full Viewport-Width Hanging Twine String Layer (Removed for sleek modern travel timeline) */
 .nk-viewport-rope-layer {
-  position: absolute;
-  top: 18px;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  width: 100vw;
-  height: 120px;
-  pointer-events: none;
-  z-index: 12;
-  overflow: visible;
-}
-
-.nk-viewport-rope-layer svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-@media (max-width: 640px) {
-  .nk-viewport-rope-layer {
-    top: 12px;
-    height: 100px;
-  }
+  display: none !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -53,9 +30,9 @@ html, body {
 .nk-day-gallery {
   position: relative;
   width: 100%;
-  height: 480px;
-  min-height: 480px;
-  max-height: 510px;
+  height: 350px;
+  min-height: 330px;
+  max-height: 370px;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
@@ -71,9 +48,9 @@ html, body {
 
 @media (max-width: 640px) {
   .nk-day-gallery {
-    height: 430px;
-    min-height: 430px;
-    max-height: 450px;
+    height: 300px;
+    min-height: 290px;
+    max-height: 320px;
   }
 }
 
@@ -84,10 +61,10 @@ html, body {
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 380px;
+  min-height: 290px;
   display: flex;
   align-items: flex-start;
-  padding-top: 36px;
+  padding-top: 12px;
   box-sizing: border-box;
   overflow: visible;
 }
@@ -178,29 +155,29 @@ html, body {
   min-height: 295px;
   max-height: 295px;
   background-color: #FFFFFF;
-  border-radius: 4px;
+  border-radius: 12px;
   padding: 12px 12px 14px 12px;
   cursor: pointer;
-  transition: transform 400ms ease, opacity 400ms ease, box-shadow 400ms ease;
-  transform-origin: top center;
+  transition: transform 300ms ease, opacity 300ms ease, box-shadow 300ms ease;
+  transform-origin: center center;
   box-sizing: border-box;
 }
 
 .nk-polaroid-card.is-active {
   z-index: 20;
-  box-shadow: 0 20px 40px -8px rgba(7, 155, 181, 0.22), 0 4px 12px rgba(23, 35, 59, 0.08);
-  border: 1px solid rgba(7, 155, 181, 0.35);
+  box-shadow: 0 16px 36px -6px rgba(7, 155, 181, 0.22), 0 4px 12px rgba(23, 35, 59, 0.08);
+  border: 2px solid #0798B5;
 }
 
 .nk-polaroid-card.is-inactive {
   z-index: 10;
-  box-shadow: 0 8px 20px -4px rgba(23, 35, 59, 0.08), 0 2px 6px rgba(23, 35, 59, 0.04);
+  box-shadow: 0 6px 16px -4px rgba(23, 35, 59, 0.07), 0 1px 4px rgba(23, 35, 59, 0.03);
   border: 1px solid #E2E8F0;
 }
 
 .nk-polaroid-card:hover {
   opacity: 1 !important;
-  box-shadow: 0 16px 32px -6px rgba(7, 155, 181, 0.26), 0 3px 10px rgba(23, 35, 59, 0.07);
+  box-shadow: 0 14px 28px -4px rgba(7, 155, 181, 0.2), 0 3px 8px rgba(23, 35, 59, 0.06);
 }
 
 @media (max-width: 640px) {
@@ -213,33 +190,17 @@ html, body {
     min-height: 250px;
     max-height: 250px;
     padding: 10px 10px 12px 10px;
+    border-radius: 10px;
   }
 }
 
-/* Wooden Clothespin / Peg */
+/* Clothespin / Peg layer (hidden for clean modern card look) */
 .nk-polaroid-clip {
-  position: absolute;
-  top: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 11px;
-  height: 28px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, #DDB88E 0%, #C6A77D 50%, #A9875C 100%);
-  box-shadow: 0 2px 5px rgba(198, 167, 125, 0.4);
-  border: 1px solid rgba(169, 135, 92, 0.5);
-  z-index: 25;
-  pointer-events: none;
+  display: none !important;
 }
 
 .nk-polaroid-clip-wire {
-  position: absolute;
-  top: 11px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: #94A3B8;
-  border-top: 1px solid #CBD5E1;
+  display: none !important;
 }
 
 /* Photo Frame & Image */

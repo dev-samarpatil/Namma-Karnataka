@@ -1,6 +1,6 @@
 import React from 'react';
 import { DayPlan, Language } from '../../types';
-import { Ticket, Utensils, Car, Bed, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Ticket, Utensils, Car, Bed, Sparkles, CheckCircle2, AlertCircle, Wallet } from 'lucide-react';
 import './DayWiseItinerary.css';
 
 export interface DailyBudgetSummaryProps {
@@ -152,8 +152,8 @@ export const DailyBudgetSummary: React.FC<DailyBudgetSummaryProps> = ({
     >
       <div className="nk-card-header">
         <div>
-          <h3 className="nk-card-title">
-            <span>💰</span>
+          <h3 className="nk-card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Wallet size={16} color="#0798B5" />
             <span>{isKn ? `ದಿನ ${day.day_number} ವೆಚ್ಚದ ಅಂದಾಜು` : `Day ${day.day_number} Daily Cost Breakdown`}</span>
           </h3>
           <p className="nk-card-desc">
@@ -248,8 +248,8 @@ export const DailyBudgetSummary: React.FC<DailyBudgetSummaryProps> = ({
             </strong>
           </div>
           {verifiedSubtotal > 0 && (
-            <div style={{ color: '#047857' }}>
-              ✓ {isKn ? 'ದೃಢೀಕೃತ ಮೊತ್ತ:' : 'Verified Portion:'}{' '}
+            <div style={{ color: '#047857', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={12} /> {isKn ? 'ದೃಢೀಕೃತ ಮೊತ್ತ:' : 'Verified Portion:'}{' '}
               <strong>₹{verifiedSubtotal.toLocaleString('en-IN')}</strong>
             </div>
           )}

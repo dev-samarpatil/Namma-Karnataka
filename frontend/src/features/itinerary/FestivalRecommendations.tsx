@@ -1,4 +1,5 @@
 import React from 'react';
+import { Plus, Ticket, Check, Info, MapPin, Landmark, AlertTriangle, ExternalLink } from 'lucide-react';
 import { CulturalEvent, Language } from '../../types';
 
 interface FestivalRecommendationsProps {
@@ -30,7 +31,7 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
         <div>
           <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🎪</span>
+            <Ticket size={20} color="#F59E0B" />
             <span>{isKn ? 'ನಿಮ್ಮ ಮಾರ್ಗದ ಸಮೀಪದ ಹಬ್ಬಗಳು ಮತ್ತು ಉತ್ಸವಗಳು' : 'Festivals & Cultural Events Near Your Route'}</span>
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#cbd5e1' }}>
@@ -100,12 +101,23 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                         border: `1px solid ${isConfirmed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
                         textTransform: 'uppercase',
                         letterSpacing: '0.04em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
                     >
-                      {isConfirmed ? (isKn ? '✓ ಪರಿಶೀಲಿತ ಆಚರಣೆ' : '✓ Verified Event') : (isKn ? 'ℹ️ ಕಾಲಿಕ' : 'ℹ️ Seasonal')}
+                      {isConfirmed ? (
+                        <>
+                          <Check size={11} /> {isKn ? 'ಪರಿಶೀಲಿತ ಆಚರಣೆ' : 'Verified Event'}
+                        </>
+                      ) : (
+                        <>
+                          <Info size={11} /> {isKn ? 'ಕಾಲಿಕ' : 'Seasonal'}
+                        </>
+                      )}
                     </span>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                      📍 {event.district_code}
+                    <span style={{ fontSize: '0.74rem', color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <MapPin size={11} /> {event.district_code}
                     </span>
                   </div>
 
@@ -113,8 +125,8 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                     {title}
                   </h4>
 
-                  <div style={{ fontSize: '0.78rem', color: '#fbbf24', marginBottom: '8px' }}>
-                    🏛️ {event.location_name}
+                  <div style={{ fontSize: '0.78rem', color: '#fbbf24', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Landmark size={12} /> {event.location_name}
                   </div>
 
                   <p style={{ margin: '0 0 10px 0', fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.45 }}>
@@ -126,12 +138,12 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                       <strong style={{ color: '#cbd5e1' }}>{isKn ? 'ಪ್ರವೇಶ ಶುಲ್ಕ:' : 'Admission:'}</strong> {costText}
                     </div>
                     {event.travel_advisory && (
-                      <div style={{ color: '#fed7aa' }}>
-                        ⚠️ <strong style={{ color: '#fed7aa' }}>{isKn ? 'ಪ್ರಯಾಣ ಸಲಹೆ:' : 'Advisory:'}</strong> {event.travel_advisory}
+                      <div style={{ color: '#fed7aa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={12} /> <strong style={{ color: '#fed7aa' }}>{isKn ? 'ಪ್ರಯಾಣ ಸಲಹೆ:' : 'Advisory:'}</strong> {event.travel_advisory}
                       </div>
                     )}
-                    <div style={{ color: '#64748b', fontSize: '0.7rem' }}>
-                      🏛️ {isKn ? 'ಮೂಲ:' : 'Source:'} {event.source_name}
+                    <div style={{ color: '#64748b', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Landmark size={11} /> {isKn ? 'ಮೂಲ:' : 'Source:'} {event.source_name}
                     </div>
                   </div>
                 </div>
@@ -156,7 +168,7 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                         gap: '4px',
                       }}
                     >
-                      🔗 {isKn ? 'ಅಧಿಕೃತ ವಿವರ ↗' : 'Official Details ↗'}
+                      <ExternalLink size={12} /> {isKn ? 'ಅಧಿಕೃತ ವಿವರ ↗' : 'Official Details ↗'}
                     </a>
                   )}
                   {onAddEventToDay && (
@@ -166,8 +178,8 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                       data-testid={`add-festival-btn-${event.id}`}
                       style={{
                         padding: '6px 12px',
-                        borderRadius: '6px',
-                        background: '#0284c7',
+                        borderRadius: '8px',
+                        background: '#0798B5',
                         border: 'none',
                         color: '#ffffff',
                         fontSize: '0.78rem',
@@ -175,10 +187,10 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                         cursor: 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '5px',
                       }}
                     >
-                      ➕ {isKn ? 'ಪ್ರವಾಸಕ್ಕೆ ಸೇರಿಸಿ' : 'Add to Day Itinerary'}
+                      <Plus size={13} strokeWidth={2.5} /> {isKn ? 'ಪ್ರವಾಸಕ್ಕೆ ಸೇರಿಸಿ' : 'Add to Day Itinerary'}
                     </button>
                   )}
                 </div>

@@ -30,6 +30,7 @@ class EventRead(StrictSchema):
     ticket_cost_status: str = "free"
     event_category: str = "cultural_festival"
     travel_advisory: str | None = None
+    image_url: str | None = None
 
     @property
     def event_id(self) -> str:

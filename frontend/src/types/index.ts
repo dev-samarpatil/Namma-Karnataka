@@ -202,6 +202,9 @@ export interface PlanningRequest {
   fuel_efficiency_km_per_litre?: number;
   fuel_price_per_litre?: number;
   is_return_trip?: boolean;
+  strict_budget?: boolean;
+  dietary_preference?: string;
+  accommodation_type_preference?: string;
   notes?: string;
 }
 
@@ -341,6 +344,7 @@ export interface CulturalEvent {
   ticket_cost_status: string;
   event_category: string;
   travel_advisory?: string | null;
+  image_url?: string | null;
 }
 
 export interface DayPlan {
@@ -374,6 +378,15 @@ export interface BudgetCategoryItem {
   subtotal_type?: string;
 }
 
+export interface BudgetAlternativeItem {
+  category: string;
+  expensive_choice: string;
+  alternative_choice: string;
+  potential_savings_inr: number;
+  action_type: string;
+  explanation: string;
+}
+
 export interface CompleteBudgetBreakdown {
   grand_total_min_inr?: number | null;
   grand_total_max_inr?: number | null;
@@ -391,6 +404,13 @@ export interface CompleteBudgetBreakdown {
   budget_scope?: 'total_trip' | 'per_person';
   is_budget_feasible?: boolean;
   budget_overrun_inr?: number;
+  feasibility_status?: 'within_budget' | 'near_budget' | 'exceeds_budget' | 'infeasible';
+  remaining_budget_inr?: number | null;
+  lowest_feasible_cost_inr?: number | null;
+  cost_drivers?: string[];
+  budget_alternatives?: BudgetAlternativeItem[];
+  infeasibility_reason?: string | null;
+  recommended_budget_increase_inr?: number | null;
   categories: BudgetCategoryItem[];
   has_unknown_costs: boolean;
   calculation_notes?: string[];

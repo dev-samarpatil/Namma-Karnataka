@@ -114,8 +114,8 @@ export const OvernightStayCard: React.FC<OvernightStayCardProps> = ({
           <span className="nk-grid-item-label">
             {isKn ? 'ಹೋಟೆಲ್ / ವಾಸ್ತವ್ಯ:' : 'Property / Area:'}
           </span>
-          <span className="nk-grid-item-val" title={stayName}>
-            🏨 {stayName}
+          <span className="nk-grid-item-val" title={stayName} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Bed size={14} color="#0798B5" /> {stayName}
           </span>
         </div>
 

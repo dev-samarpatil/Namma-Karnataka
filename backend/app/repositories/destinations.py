@@ -157,6 +157,16 @@ class InMemoryDestinationRepository:
     CANONICAL_ID_MAPPINGS: dict[str, str] = {
         "22222222-2222-4222-8222-222222222223": "11111111-1111-4111-8111-111111111121",
         "22222222-2222-4222-8222-222222222216": "11111111-1111-4111-8111-111111111134",
+        "kstdc-mysore-palace": "11111111-1111-4111-8111-111111111101",
+        "mysore-palace-official": "11111111-1111-4111-8111-111111111101",
+        "kstdc-chamundi-hills": "11111111-1111-4111-8111-111111111115",
+        "chamundi-hills-official": "11111111-1111-4111-8111-111111111115",
+        "kstdc-jog-falls": "11111111-1111-4111-8111-111111111118",
+        "jog-falls-official": "11111111-1111-4111-8111-111111111118",
+        "asi-pattadakal-group": "11111111-1111-4111-8111-111111111105",
+        "asi-aihole-durga-complex": "11111111-1111-4111-8111-111111111117",
+        "asi-chitradurga-fort": "11111111-1111-4111-8111-111111111119",
+        "asi-mahmud-gawan-madrasa-bidar": "11111111-1111-4111-8111-111111111124",
     }
     CANONICAL_SLUG_MAPPINGS: dict[str, str] = {
         "murudeshwara-temple-beach": "murudeshwar-temple-beach",
@@ -164,6 +174,13 @@ class InMemoryDestinationRepository:
         "kondajji-lake-nature-sanctuary": "kondajji-lake",
         "hampi": "vijaya-vittala-temple-hampi",
         "hampi-monuments": "vijaya-vittala-temple-hampi",
+        "mysore-palace-official": "mysore-palace",
+        "chamundi-hills-official": "chamundi-hill-temple",
+        "jog-falls-official": "jog-falls",
+        "pattadakal-group": "pattadakal-monuments",
+        "aihole-durga-complex": "aihole-temple-complex",
+        "chitradurga-fort-official": "chitradurga-fort",
+        "mahmud-gawan-madrasa-official": "mahmud-gawan-madrasa",
     }
 
     def get_by_id(self, destination_id: str) -> DestinationRead | None:
@@ -410,9 +427,10 @@ class SupabaseDestinationRepository:
 
     def list_destinations(
         self,
-        params: DestinationFilterParams,
+        params: DestinationFilterParams | None = None,
         published_only: bool = True,
     ) -> tuple[list[DestinationRead], int]:
+        params = params or DestinationFilterParams(limit=100, offset=0)
         if (
             self._is_schema_unmigrated()
             or params.q is not None
@@ -458,11 +476,13 @@ class SupabaseDestinationRepository:
                     return self._fallback_repo.list_destinations(params, published_only)
 
                 if res.status_code not in (200, 206):
-                    raise AppError(
-                        code="DATABASE_ERROR",
-                        message="Failed to fetch destination collection",
-                        status_code=502,
+                    logger.warning(
+                        "Supabase destination query returned status %s (%s); falling back to in-memory catalogue.",
+                        res.status_code,
+                        res.text[:200],
                     )
+                    self._mark_schema_unmigrated()
+                    return self._fallback_repo.list_destinations(params, published_only)
 
                 self._mark_schema_migrated()
                 total = 0

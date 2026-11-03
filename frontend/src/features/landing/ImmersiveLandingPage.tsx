@@ -73,12 +73,60 @@ export const ImmersiveLandingPage: React.FC<ImmersiveLandingPageProps> = ({
         overflowX: 'clip',
       }}
     >
-      {/* 1. CINEMATIC SCROLL EXPANSION HERO */}
+      {/* 1. CINEMATIC SCROLL EXPANSION HERO (Full-screen landing video) */}
       <ScrollExpansionHero
         language={language}
         onExploreClick={() => onNavigateTab('discovery')}
         onPlanClick={() => onNavigateTab('planner')}
       />
+
+      {/* 2. DEDICATED OFFICIAL NAMMA KARNATAKA BRAND LOGO SECTION */}
+      <section
+        className="landing-official-logo-section"
+        data-testid="landing-brand-showcase"
+        style={{
+          width: '100%',
+          position: 'relative',
+          padding: '48px 24px 36px 24px',
+          margin: 0,
+          boxSizing: 'border-box',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          background: 'transparent',
+          zIndex: 1,
+        }}
+      >
+        <div
+          className="landing-official-logo-container"
+          style={{
+            width: '100%',
+            maxWidth: '820px',
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          <img
+            src="/assets/namma-karnataka-banner.png"
+            alt="Namma Karnataka - Discover Karnataka. Experience More."
+            data-testid="landing-brand-logo-img"
+            loading="eager"
+            decoding="async"
+            style={{
+              width: '100%',
+              maxWidth: '800px',
+              height: 'auto',
+              maxHeight: '440px',
+              objectFit: 'contain',
+              display: 'block',
+              margin: '0 auto',
+            }}
+          />
+        </div>
+      </section>
 
       {/* EDITORIAL CONTENT FLOW */}
       <div

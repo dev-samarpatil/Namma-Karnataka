@@ -7,6 +7,8 @@ import {
   Clock,
   ArrowRight,
   Bed,
+  CalendarDays,
+  Map as MapIcon,
 } from 'lucide-react';
 import { MapView } from './MapView';
 import { BudgetSummary } from './BudgetSummary';
@@ -85,7 +87,7 @@ export const TripWideOverview: React.FC<TripWideOverviewProps> = ({
                 {isKn ? 'ಸಂಪೂರ್ಣ ಪ್ರವಾಸದ ಪಕ್ಷಿನೋಟ' : 'Complete Trip Summary'}
               </span>
               <span style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '3px 10px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>
-                {startHub} ➔ {finalHub === startHub ? (isKn ? 'ರೌಂಡ್ ಟ್ರಿಪ್' : 'Round Trip') : finalHub}
+                {startHub} → {finalHub === startHub ? (isKn ? 'ರೌಂಡ್ ಟ್ರಿಪ್' : 'Round Trip') : finalHub}
               </span>
             </div>
 
@@ -173,7 +175,7 @@ export const TripWideOverview: React.FC<TripWideOverviewProps> = ({
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🗓️</span>
+            <CalendarDays size={18} strokeWidth={2} color="#0798B5" />
             <span>{isKn ? 'ದಿನವಾರು ಪ್ರವಾಸ ಮಾರ್ಗ ಶ್ರೇಣಿ' : 'Day-wise Route Sequence'}</span>
           </h3>
           <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
@@ -219,7 +221,7 @@ export const TripWideOverview: React.FC<TripWideOverviewProps> = ({
                 <div style={{ fontSize: '0.78rem', color: '#64748B', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Navigation size={12} color="#0891B2" style={{ flexShrink: 0 }} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{startL} ➔ {endL}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{startL} → {endL}</span>
                   </div>
                   {day.accommodation_name && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -249,7 +251,7 @@ export const TripWideOverview: React.FC<TripWideOverviewProps> = ({
       {/* Full Trip Interactive Map */}
       <div className="nk-card">
         <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>🗺️</span>
+          <MapIcon size={18} strokeWidth={2} color="#0798B5" />
           <span>{isKn ? 'ಸಂಪೂರ್ಣ ಪ್ರವಾಸ ಮಾರ್ಗ ನಕ್ಷೆ' : 'Full Trip Interactive Route Map'}</span>
         </h3>
         <MapView

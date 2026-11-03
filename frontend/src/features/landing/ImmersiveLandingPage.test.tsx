@@ -63,6 +63,17 @@ describe('ImmersiveLandingPage Component', () => {
     expect(screen.getByText('DISCOVER')).toBeInTheDocument();
     expect(screen.getByText('KARNATAKA')).toBeInTheDocument();
 
+    // Dedicated NAMMA KARNATAKA Brand Logo Showcase Section
+    const brandShowcase = screen.getByTestId('landing-brand-showcase');
+    expect(brandShowcase).toBeInTheDocument();
+    const brandLogoImg = screen.getByTestId('landing-brand-logo-img');
+    expect(brandLogoImg).toBeInTheDocument();
+    expect(brandLogoImg).toHaveAttribute('src', '/assets/namma-karnataka-banner.png');
+    expect(brandLogoImg).toHaveAttribute(
+      'alt',
+      'Namma Karnataka - Discover Karnataka. Experience More.'
+    );
+
     // 3 Geographical Realms
     expect(screen.getByText(/Karavali Coastal/i)).toBeInTheDocument();
     expect(screen.getByText(/Malnad Rainforests/i)).toBeInTheDocument();

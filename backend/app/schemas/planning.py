@@ -117,6 +117,20 @@ class PlanningRequest(StrictSchema):
         True,
         description="Whether transport calculations include the return trip back to origin",
     )
+    strict_budget: bool = Field(
+        False,
+        description="When true, enforces hard budget optimization and reports structured infeasibility",
+    )
+    dietary_preference: str = Field(
+        "all",
+        pattern="^(all|vegetarian|vegan|jain|non_vegetarian|no_seafood)$",
+        description="Dietary preference: all, vegetarian, vegan, jain, non_vegetarian, no_seafood",
+    )
+    accommodation_type_preference: str = Field(
+        "any",
+        pattern="^(any|budget_hotel|homestay|mid_range|resort|hostel|hotel|heritage|lodge)$",
+        description="Preferred lodging tier: any, homestay, hotel, heritage, resort, budget_hotel, hostel, lodge",
+    )
     notes: str | None = Field(None, max_length=300, description="Optional brief user notes")
 
 
@@ -313,6 +327,17 @@ class BudgetCategoryItem(StrictSchema):
     )
 
 
+class BudgetAlternativeItem(StrictSchema):
+    """Actionable alternative suggestion to reduce trip cost."""
+
+    category: str = Field(..., description="Cost category: transport, accommodation, dining, attraction, distance")
+    expensive_choice: str = Field(..., description="Current selection or standard option")
+    alternative_choice: str = Field(..., description="Recommended budget-friendly alternative")
+    potential_savings_inr: float = Field(..., description="Estimated savings in INR")
+    action_type: str = Field(..., description="Action identifier e.g. switch_transport, switch_lodging, local_dining")
+    explanation: str = Field(..., description="Explanation of why this alternative saves cost without compromising safety")
+
+
 class CompleteBudgetBreakdown(StrictSchema):
     """Authoritative, Python-calculated budget breakdown with explicit cost statuses."""
 
@@ -332,6 +357,16 @@ class CompleteBudgetBreakdown(StrictSchema):
     budget_scope: str = "total_trip"
     is_budget_feasible: bool = True
     budget_overrun_inr: float | None = None
+    feasibility_status: str = Field(
+        "within_budget",
+        description="Feasibility status: 'within_budget', 'near_budget', 'exceeds_budget', or 'infeasible'",
+    )
+    remaining_budget_inr: float | None = None
+    lowest_feasible_cost_inr: float | None = None
+    cost_drivers: list[str] = Field(default_factory=list)
+    budget_alternatives: list[BudgetAlternativeItem] = Field(default_factory=list)
+    infeasibility_reason: str | None = None
+    recommended_budget_increase_inr: float | None = None
     categories: list[BudgetCategoryItem] = Field(default_factory=list)
     has_unknown_costs: bool = False
     calculation_notes: list[str] = Field(default_factory=list)

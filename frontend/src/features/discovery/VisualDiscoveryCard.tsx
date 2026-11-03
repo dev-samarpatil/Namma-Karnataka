@@ -1,4 +1,21 @@
 import React, { useState, useRef } from 'react';
+import {
+  Search,
+  Loader2,
+  Camera,
+  Video,
+  Lock,
+  AlertTriangle,
+  FolderOpen,
+  X,
+  MapPin,
+  Sparkles,
+  Eye,
+  Landmark,
+  Globe,
+  ExternalLink,
+  CheckCircle2,
+} from 'lucide-react';
 import { Language, VisualDiscoveryCandidate, VisualDiscoveryResponse } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { analyzeImageVisualDiscovery, analyzeVideoVisualDiscovery } from '../../lib/api';
@@ -202,7 +219,7 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0891B2', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            <span>📷</span> {t('identifyPlaceCardHeading')}
+            <Camera size={20} color="#0891B2" /> {t('identifyPlaceCardHeading')}
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#64748B', margin: '4px 0 0 0', maxWidth: '640px' }}>
             {t('identifyPlaceCardDesc')}
@@ -228,9 +245,13 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
               background: activeTab === 'photo' ? '#0891B2' : 'transparent',
               color: activeTab === 'photo' ? '#ffffff' : '#64748B',
               transition: 'all 0.15s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            📸 {t('uploadPhotoTab')}
+            <Camera size={14} />
+            <span>{t('uploadPhotoTab')}</span>
           </button>
           <button
             type="button"
@@ -249,9 +270,13 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
               background: activeTab === 'video' ? '#0891B2' : 'transparent',
               color: activeTab === 'video' ? '#ffffff' : '#64748B',
               transition: 'all 0.15s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            🎬 {t('uploadVideoTab')}
+            <Video size={14} />
+            <span>{t('uploadVideoTab')}</span>
           </button>
         </div>
       </div>
@@ -271,7 +296,7 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
           marginBottom: '16px',
         }}
       >
-        <span>🔒</span>
+        <Lock size={14} style={{ flexShrink: 0 }} />
         <span>{t('privacyBadge')}</span>
       </div>
 
@@ -292,7 +317,7 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
             gap: '8px',
           }}
         >
-          <span>⚠️</span>
+          <AlertTriangle size={15} style={{ flexShrink: 0 }} />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -313,8 +338,12 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
             transition: 'border-color 0.2s ease',
           }}
         >
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>
-            {activeTab === 'photo' ? '📸' : '🎥'}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+            {activeTab === 'photo' ? (
+              <Camera size={36} color="#0891B2" />
+            ) : (
+              <Video size={36} color="#0891B2" />
+            )}
           </div>
           <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: '0 0 6px 0', color: '#172033' }}>
             {activeTab === 'photo' ? t('dragDropPhoto') : t('dragDropVideo')}
@@ -339,7 +368,7 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
               fontSize: '0.85rem',
             }}
           >
-            📁 {t('selectMediaFile')}
+            <FolderOpen size={15} /> <span>{t('selectMediaFile')}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -413,9 +442,13 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
                   color: '#64748B',
                   cursor: 'pointer',
                   fontSize: '0.82rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
-                ✕ {t('removeChangeFile')}
+                <X size={14} />
+                <span>{t('removeChangeFile')}</span>
               </button>
               <button
                 type="button"
@@ -439,12 +472,12 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
               >
                 {isAnalyzing ? (
                   <>
-                    <span className="spinner-icon">🔄</span>
+                    <Loader2 size={16} strokeWidth={2} style={{ animation: 'nk-spin 0.7s linear infinite' }} />
                     <span>{statusMessage || t('analyzingVisual')}</span>
                   </>
                 ) : (
                   <>
-                    <span>🔍</span>
+                    <Search size={15} strokeWidth={2} />
                     <span>{t('identifyPlaceAction')}</span>
                   </>
                 )}
@@ -467,7 +500,7 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <h4 style={{ margin: 0, fontSize: '1rem', color: '#0891B2', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>📍</span> {discoveryResult.candidates && discoveryResult.candidates.length > 0 ? (
+                <MapPin size={16} /> {discoveryResult.candidates && discoveryResult.candidates.length > 0 ? (
                   `${t('candidateDestinationCount')}: ${discoveryResult.candidates.length}`
                 ) : (
                   t('noVisualMatchTitle')
@@ -485,11 +518,22 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
                   border: '1px solid #DCE6F2',
                 }}
               >
-                {discoveryResult.analysis_engine === 'ai_multimodal'
-                  ? (language === 'kn' ? '🤖 ಎಐ ಮಲ್ಟಿಮೋಡಲ್ ವಿಶ್ಲೇಷಣೆ' : '🤖 AI-Assisted Multimodal Recognition')
-                  : discoveryResult.analysis_engine === 'visual_similarity_engine'
-                  ? (language === 'kn' ? '👁️ ದೃಶ್ಯ ಹೋಲಿಕೆ ಎಂಜಿನ್' : '👁️ Visual Similarity Engine')
-                  : (language === 'kn' ? '🏛️ ಪರಿಶೀಲಿತ ದೃಶ್ಯ ಪ್ರೊಫೈಲ್ ಹೊಂದಾಣಿಕೆ' : '🏛️ Deterministic Profile Match')}
+                {discoveryResult.analysis_engine === 'ai_multimodal' ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Sparkles size={12} />
+                    <span>{language === 'kn' ? 'ಎಐ ಮಲ್ಟಿಮೋಡಲ್ ವಿಶ್ಲೇಷಣೆ' : 'AI-Assisted Multimodal Recognition'}</span>
+                  </span>
+                ) : discoveryResult.analysis_engine === 'visual_similarity_engine' ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Eye size={12} />
+                    <span>{language === 'kn' ? 'ದೃಶ್ಯ ಹೋಲಿಕೆ ಎಂಜಿನ್' : 'Visual Similarity Engine'}</span>
+                  </span>
+                ) : (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Landmark size={12} />
+                    <span>{language === 'kn' ? 'ಪರಿಶೀಲಿತ ದೃಶ್ಯ ಪ್ರೊಫೈಲ್ ಹೊಂದಾಣಿಕೆ' : 'Deterministic Profile Match'}</span>
+                  </span>
+                )}
               </span>
             </div>
             <button
@@ -522,19 +566,23 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
-                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#B45309', fontWeight: 700 }}>
-                    {language === 'kn' ? '🌐 ಗುರುತಿಸಲಾದ ಸ್ಥಳ — ಪಟ್ಟಿಮಾಡಲಾದ ಜಾಗವಲ್ಲ' : '🌐 Recognised Place — Outside Curated Catalogue'}
+                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#B45309', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Globe size={13} />
+                    <span>{language === 'kn' ? 'ಗುರುತಿಸಲಾದ ಸ್ಥಳ — ಪಟ್ಟಿಮಾಡಲಾದ ಜಾಗವಲ್ಲ' : 'Recognised Place — Outside Curated Catalogue'}</span>
                   </span>
                   <h4 style={{ margin: '4px 0 2px 0', fontSize: '1.2rem', color: '#92400E', fontWeight: 700 }}>
                     {discoveryResult.external_place.place_name}
                   </h4>
-                  <div style={{ fontSize: '0.82rem', color: '#78350F' }}>
-                    📍 {discoveryResult.external_place.location_summary || [
-                      discoveryResult.external_place.city,
-                      discoveryResult.external_place.district,
-                      discoveryResult.external_place.state || discoveryResult.external_place.state_or_region,
-                      discoveryResult.external_place.country
-                    ].filter(Boolean).join(', ')}
+                  <div style={{ fontSize: '0.82rem', color: '#78350F', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <MapPin size={12} style={{ flexShrink: 0 }} />
+                    <span>
+                      {discoveryResult.external_place.location_summary || [
+                        discoveryResult.external_place.city,
+                        discoveryResult.external_place.district,
+                        discoveryResult.external_place.state || discoveryResult.external_place.state_or_region,
+                        discoveryResult.external_place.country
+                      ].filter(Boolean).join(', ')}
+                    </span>
                   </div>
                 </div>
                 <span
@@ -559,10 +607,13 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
                 </p>
               )}
 
-              <div style={{ background: '#FFFFFF', border: '1px solid #FDE68A', borderRadius: '6px', padding: '10px 12px', marginTop: '10px', fontSize: '0.78rem', color: '#92400E' }}>
-                ⚠️ {discoveryResult.external_place.unverified_disclosure || discoveryResult.external_place.notes || (language === 'kn'
-                  ? 'ಈ ಸ್ಥಳವು ಪ್ರಸ್ತುತ ನಮ್ಮ ಪರಿಶೀಲಿತ ಕರ್ನಾಟಕ ತಾಣಗಳ ಕ್ಯಾಟಲಾಗ್‌ನಲ್ಲಿಲ್ಲ. ಅಧಿಕೃತ ಪ್ರವಾಸ ಕಾರ್ಯಕ್ರಮ ಮತ್ತು ಬಜೆಟ್ ವಿವರಗಳು ಲಭ್ಯವಿಲ್ಲದಿರಬಹುದು.'
-                  : 'This place is not currently in our verified destination catalogue. Some travel information and itinerary booking may be unavailable.')}
+              <div style={{ background: '#FFFFFF', border: '1px solid #FDE68A', borderRadius: '6px', padding: '10px 12px', marginTop: '10px', fontSize: '0.78rem', color: '#92400E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                <span>
+                  {discoveryResult.external_place.unverified_disclosure || discoveryResult.external_place.notes || (language === 'kn'
+                    ? 'ಈ ಸ್ಥಳವು ಪ್ರಸ್ತುತ ನಮ್ಮ ಪರಿಶೀಲಿತ ಕರ್ನಾಟಕ ತಾಣಗಳ ಕ್ಯಾಟಲಾಗ್‌ನಲ್ಲಿಲ್ಲ. ಅಧಿಕೃತ ಪ್ರವಾಸ ಕಾರ್ಯಕ್ರಮ ಮತ್ತು ಬಜೆಟ್ ವಿವರಗಳು ಲಭ್ಯವಿಲ್ಲದಿರಬಹುದು.'
+                    : 'This place is not currently in our verified destination catalogue. Some travel information and itinerary booking may be unavailable.')}
+                </span>
               </div>
 
               {(() => {
@@ -601,7 +652,8 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
                       gap: '6px',
                     }}
                   >
-                    🔗 {language === 'kn' ? 'ಮೂಲ ಮಾಹಿತಿ ವೀಕ್ಷಿಸಿ' : 'View Source Information'}
+                    <ExternalLink size={13} />
+                    <span>{language === 'kn' ? 'ಮೂಲ ಮಾಹಿತಿ ವೀಕ್ಷಿಸಿ' : 'View Source Information'}</span>
                   </a>
                 )}
                 <button
@@ -609,16 +661,19 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
                   onClick={resetSelection}
                   style={{
                     padding: '7px 14px',
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     background: '#F1F5F9',
                     border: '1px solid #CBD5E1',
                     color: '#172033',
                     fontWeight: 600,
                     fontSize: '0.8rem',
                     cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  🔍 {language === 'kn' ? 'ಕ್ಯಾಟಲಾಗ್ ತಾಣಗಳನ್ನು ಅನ್ವೇಷಿಸಿ' : 'Search Similar Destinations'}
+                  <Search size={14} strokeWidth={2} /> {language === 'kn' ? 'ಕ್ಯಾಟಲಾಗ್ ತಾಣಗಳನ್ನು ಅನ್ವೇಷಿಸಿ' : 'Search Similar Destinations'}
                 </button>
               </div>
             </div>
@@ -659,11 +714,13 @@ export const VisualDiscoveryCard: React.FC<VisualDiscoveryCardProps> = ({
                           <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#172033' }}>
                             {candName}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
-                            📍 {distName} • {cand.category}
+                          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <MapPin size={12} />
+                            <span>{distName} • {cand.category}</span>
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: '#059669', marginTop: '2px', fontWeight: 600 }}>
-                            ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿತ ಕ್ಯಾಟಲಾಗ್ ತಾಣ' : 'Verified Catalogue Destination'}
+                          <div style={{ fontSize: '0.72rem', color: '#059669', marginTop: '2px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle2 size={12} />
+                            <span>{language === 'kn' ? 'ಪರಿಶೀಲಿತ ಕ್ಯಾಟಲಾಗ್ ತಾಣ' : 'Verified Catalogue Destination'}</span>
                           </div>
                         </div>
                         <span

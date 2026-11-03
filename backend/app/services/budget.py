@@ -18,6 +18,7 @@ from app.schemas.planning import (
     RecommendedDestination,
     StopType,
 )
+from app.services.budget_optimizer import BudgetOptimizer
 from app.services.transport_cost import SupportedTransportMode, TransportCostCalculator
 
 
@@ -25,13 +26,13 @@ class BudgetCalculator:
     """Calculates structured, transparent, non-deceptive travel budgets."""
 
     SCENARIO_MEAL_RATES = {
-        "budget": {"breakfast": 80.0, "lunch": 150.0, "dinner": 200.0},
+        "budget": {"breakfast": 60.0, "lunch": 110.0, "dinner": 130.0},
         "standard": {"breakfast": 100.0, "lunch": 200.0, "dinner": 250.0},
         "comfort": {"breakfast": 160.0, "lunch": 350.0, "dinner": 450.0},
     }
 
     SCENARIO_HOTEL_RATES = {
-        "budget": {"min": 1200.0, "max": 1800.0, "desc": "Budget lodge / homestay lodging"},
+        "budget": {"min": 850.0, "max": 1400.0, "desc": "Verified budget homestay / dormitory / lodge"},
         "standard": {"min": 1800.0, "max": 3000.0, "desc": "Standard 3-star / KSTDC hotel"},
         "comfort": {"min": 3500.0, "max": 6000.0, "desc": "Heritage resort / Jungle Lodges (JLR)"},
     }
@@ -373,16 +374,42 @@ class BudgetCalculator:
         # Budget Feasibility Check
         budget_limit = getattr(request, "budget_limit_inr", None)
         budget_scope = getattr(request, "budget_scope", "total_trip") or "total_trip"
-        is_feasible = True
+
+        initial_breakdown = CompleteBudgetBreakdown(
+            grand_total_min_inr=grand_min,
+            grand_total_max_inr=grand_max,
+            per_person_min_inr=per_person_min,
+            per_person_max_inr=per_person_max,
+            verified_subtotal_inr=round(verified_subtotal, 2),
+            estimated_subtotal_min_inr=round(estimated_min_subtotal, 2),
+            estimated_subtotal_max_inr=round(estimated_max_subtotal, 2),
+            currency="INR",
+            traveler_count=travelers,
+            travel_mode_used=travel_mode,
+            budget_scenario_used=scenario,
+            is_return_trip=is_return,
+            budget_limit_inr=budget_limit,
+            budget_scope=budget_scope,
+            is_budget_feasible=True,
+            categories=categories,
+            has_unknown_costs=has_unknown_entry_fees,
+            calculation_notes=calculation_notes,
+            warnings=warnings,
+        )
+
+        feasibility = BudgetOptimizer.analyze_budget_feasibility(
+            request=request,
+            estimated_budget=initial_breakdown,
+            approx_corridor_km=cumulative_route_km,
+        )
+
+        is_feasible = feasibility.is_feasible
         budget_overrun: float | None = None
+        remaining_budget: float | None = None
 
         if budget_limit is not None and budget_limit > 0:
-            effective_target_total = (
-                budget_limit if budget_scope == "total_trip" else budget_limit * travelers
-            )
-
-            if grand_min > effective_target_total:
-                is_feasible = False
+            effective_target_total = feasibility.effective_budget_inr
+            if not is_feasible:
                 budget_overrun = round(grand_min - effective_target_total, 2)
                 scope_label = budget_scope.replace("_", " ")
                 warning_text = (
@@ -402,9 +429,11 @@ class BudgetCalculator:
                     f"Target exceeded by ₹{budget_overrun:,.0f}."
                 )
             else:
+                remaining_budget = max(0.0, feasibility.variance_inr)
                 calculation_notes.append(
                     f"Budget constraint: ₹{budget_limit:,.0f} ({budget_scope}). "
-                    f"Plan is within budget (estimated ₹{grand_min:,.0f} - ₹{grand_max:,.0f})."
+                    f"Plan is within budget (estimated ₹{grand_min:,.0f} - ₹{grand_max:,.0f}). "
+                    f"Remaining headroom: ₹{remaining_budget:,.0f}."
                 )
 
         return CompleteBudgetBreakdown(
@@ -424,6 +453,13 @@ class BudgetCalculator:
             budget_scope=budget_scope,
             is_budget_feasible=is_feasible,
             budget_overrun_inr=budget_overrun,
+            feasibility_status=feasibility.feasibility_status,
+            remaining_budget_inr=remaining_budget,
+            lowest_feasible_cost_inr=feasibility.lowest_feasible_cost_inr,
+            cost_drivers=feasibility.cost_drivers,
+            budget_alternatives=feasibility.alternatives,
+            infeasibility_reason=feasibility.infeasibility_reason,
+            recommended_budget_increase_inr=feasibility.recommended_budget_increase_inr,
             categories=categories,
             has_unknown_costs=has_unknown_entry_fees,
             calculation_notes=calculation_notes,

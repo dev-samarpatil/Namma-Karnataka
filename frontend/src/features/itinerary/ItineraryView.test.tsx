@@ -144,7 +144,7 @@ describe('ItineraryView rich travel planner features', () => {
     expect(screen.getByText(/08:30 – 09:15/i)).toBeInTheDocument();
 
     // Verify accommodation stop card rendered
-    expect(screen.getByText('Overnight Stay (Mysuru)')).toBeInTheDocument();
+    expect(screen.getAllByText('Overnight Stay (Mysuru)')[0]).toBeInTheDocument();
     expect(screen.getByText(/21:30 Check-in/i)).toBeInTheDocument();
 
     // Verify categorized budget cards render and redundant itemized table is absent (Workstream 5)

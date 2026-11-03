@@ -1,5 +1,5 @@
 import React from 'react';
-import { Landmark, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { LiquidMorphFloatingMenu } from '../ui/liquid-morph-floating-menu';
@@ -24,13 +24,18 @@ export const Header: React.FC<HeaderProps> = ({
   savedTripsCount = 0,
 }) => {
   const { t } = useTranslation(language);
+  const isLanding = currentTab === 'home';
 
   const toggleLanguage = () => {
     onLanguageChange(language === 'en' ? 'kn' : 'en');
   };
 
   return (
-    <header className="app-header" role="banner">
+    <header
+      className={`app-header ${isLanding ? 'is-landing' : ''}`}
+      role="banner"
+      data-testid="app-header"
+    >
       <div className="header-top">
         <div
           className="brand"
@@ -41,7 +46,11 @@ export const Header: React.FC<HeaderProps> = ({
           aria-label="Namma Karnataka Home"
         >
           <div className="brand-icon" aria-hidden="true">
-            <Landmark size={22} strokeWidth={2.2} />
+            <img
+              src="/assets/namma-karnataka-logo.png"
+              alt="Namma Karnataka Logo"
+              className="brand-logo-img"
+            />
           </div>
           <div className="brand-text">
             <h1 className="brand-title">

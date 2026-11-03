@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from app.schemas.planning import (
+    CompleteBudgetBreakdown,
     DayRegenerateRequest,
     ItineraryRecalculateRequest,
     PlanningRecommendationResponse,
@@ -120,3 +121,16 @@ async def regenerate_day(
         assumptions=[f"Day {day_regen_req.day_number} regenerated while preserving locked stops."],
         warnings=warnings,
     )
+
+
+@router.post("/optimize-budget", response_model=CompleteBudgetBreakdown)
+async def optimize_budget(
+    request: PlanningRequest,
+) -> CompleteBudgetBreakdown:
+    """Analyze feasibility, compute minimum costs, and suggest actionable alternatives."""
+    return BudgetCalculator.calculate_budget(
+        request=request,
+        days=[],
+        destinations=[],
+    )
+

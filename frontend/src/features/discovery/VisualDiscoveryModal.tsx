@@ -8,6 +8,27 @@
  */
 
 import React, { useState, useRef } from 'react';
+import {
+  Search,
+  Sparkles,
+  Camera,
+  Video,
+  FolderOpen,
+  Paperclip,
+  AlertTriangle,
+  Globe,
+  Target,
+  Info,
+  MapPin,
+  ExternalLink,
+  Check,
+  Landmark,
+  Mountain,
+  Eye,
+  Signpost,
+  RotateCcw,
+  X,
+} from 'lucide-react';
 import { Language, VisualDiscoveryCandidate, VisualDiscoveryResponse } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { analyzeImageVisualDiscovery, analyzeVideoVisualDiscovery } from '../../lib/api';
@@ -186,11 +207,14 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
         {/* Header */}
         <div className="modal-header">
           <div>
-            <h3 className="modal-title">📷 {t('visualDiscoveryTitle')}</h3>
+            <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Camera size={20} color="#0798B5" />
+              <span>{t('visualDiscoveryTitle')}</span>
+            </h3>
             <p className="modal-subtitle">{t('visualDiscoverySubtitle')}</p>
           </div>
-          <button type="button" className="close-btn" onClick={onClose} aria-label="Close">
-            ✕
+          <button type="button" className="close-btn" onClick={onClose} aria-label="Close" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={18} />
           </button>
         </div>
 
@@ -204,8 +228,10 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
               setActiveTab('photo');
               resetSelection();
             }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            📸 {t('uploadPhotoTab')}
+            <Camera size={14} />
+            <span>{t('uploadPhotoTab')}</span>
           </button>
           <button
             type="button"
@@ -215,8 +241,10 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
               setActiveTab('video');
               resetSelection();
             }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            🎬 {t('uploadVideoTab')}
+            <Video size={14} />
+            <span>{t('uploadVideoTab')}</span>
           </button>
         </div>
 
@@ -235,12 +263,15 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <div className="dropzone-icon">{activeTab === 'photo' ? '📸' : '🎥'}</div>
+              <div className="dropzone-icon" style={{ display: 'flex', justifyContent: 'center' }}>
+                {activeTab === 'photo' ? <Camera size={38} color="#0798B5" /> : <Video size={38} color="#0798B5" />}
+              </div>
               <p className="dropzone-text">
                 {activeTab === 'photo' ? t('dragDropPhoto') : t('dragDropVideo')}
               </p>
-              <button type="button" className="btn-secondary btn-sm">
-                📁 {t('selectMediaFile')}
+              <button type="button" className="btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <FolderOpen size={15} />
+                <span>{t('selectMediaFile')}</span>
               </button>
               <input
                 ref={fileInputRef}
@@ -255,7 +286,10 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
           ) : (
             <div className="selected-media-preview-container">
               <div className="preview-header">
-                <span className="file-name-label">📎 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)</span>
+                <span className="file-name-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Paperclip size={14} />
+                  <span>{selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)</span>
+                </span>
                 <button type="button" className="btn-text-danger" onClick={resetSelection}>
                   Remove / Replace
                 </button>
@@ -279,7 +313,7 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                     onClick={handleAnalyze}
                     data-testid="btn-analyze-media"
                   >
-                    🔍 {t('analyzeAction')}
+                    <Search size={15} strokeWidth={2} /> {t('analyzeAction')}
                   </button>
                 </div>
               )}
@@ -296,8 +330,9 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="visual-error-banner" data-testid="visual-error-banner">
-              ⚠️ {errorMessage}
+            <div className="visual-error-banner" data-testid="visual-error-banner" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+              <span>{errorMessage}</span>
             </div>
           )}
 
@@ -305,12 +340,23 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
           {discoveryResult && (
             <div className="discovery-results-section" data-testid="discovery-results">
               <div className="results-header-summary">
-                <h4>
-                  {discoveryResult.external_place
-                    ? '🌐 Open-World Place Recognition'
-                    : discoveryResult.is_confident
-                    ? '🎯 Grounded Match Found'
-                    : `ℹ️ ${t('noVisualMatchTitle')}`}
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {discoveryResult.external_place ? (
+                    <>
+                      <Globe size={18} color="#0798B5" />
+                      <span>Open-World Place Recognition</span>
+                    </>
+                  ) : discoveryResult.is_confident ? (
+                    <>
+                      <Target size={18} color="#0798B5" />
+                      <span>Grounded Match Found</span>
+                    </>
+                  ) : (
+                    <>
+                      <Info size={18} color="#0798B5" />
+                      <span>{t('noVisualMatchTitle')}</span>
+                    </>
+                  )}
                 </h4>
                 <p className="summary-text">
                   {language === 'kn' ? discoveryResult.message_kn : discoveryResult.message_en}
@@ -331,19 +377,23 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                     <div>
-                      <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#f59e0b', fontWeight: 700 }}>
-                        {language === 'kn' ? '🌐 ಗುರುತಿಸಲಾದ ಸ್ಥಳ — ಪಟ್ಟಿಮಾಡಲಾದ ಜಾಗವಲ್ಲ' : '🌐 Recognised Place — Outside Curated Catalogue'}
+                      <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#f59e0b', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Globe size={13} />
+                        <span>{language === 'kn' ? 'ಗುರುತಿಸಲಾದ ಸ್ಥಳ — ಪಟ್ಟಿಮಾಡಲಾದ ಜಾಗವಲ್ಲ' : 'Recognised Place — Outside Curated Catalogue'}</span>
                       </span>
                       <h4 style={{ margin: '4px 0 2px 0', fontSize: '1.2rem', color: '#f8fafc', fontWeight: 700 }}>
                         {discoveryResult.external_place.place_name}
                       </h4>
-                      <div style={{ fontSize: '0.82rem', color: '#cbd5e1' }}>
-                        📍 {discoveryResult.external_place.location_summary || [
-                          discoveryResult.external_place.city,
-                          discoveryResult.external_place.district,
-                          discoveryResult.external_place.state || discoveryResult.external_place.state_or_region,
-                          discoveryResult.external_place.country,
-                        ].filter(Boolean).join(', ')}
+                      <div style={{ fontSize: '0.82rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <MapPin size={12} style={{ flexShrink: 0 }} />
+                        <span>
+                          {discoveryResult.external_place.location_summary || [
+                            discoveryResult.external_place.city,
+                            discoveryResult.external_place.district,
+                            discoveryResult.external_place.state || discoveryResult.external_place.state_or_region,
+                            discoveryResult.external_place.country,
+                          ].filter(Boolean).join(', ')}
+                        </span>
                       </div>
                     </div>
                     <span
@@ -368,10 +418,13 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                     </p>
                   )}
 
-                  <div style={{ background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '6px', padding: '10px 12px', marginTop: '10px', fontSize: '0.78rem', color: '#94a3b8' }}>
-                    ⚠️ {discoveryResult.external_place.unverified_disclosure || discoveryResult.external_place.notes || (language === 'kn'
-                      ? 'ಈ ಸ್ಥಳವು ಪ್ರಸ್ತುತ ನಮ್ಮ ಪರಿಶೀಲಿತ ಕರ್ನಾಟಕ ತಾಣಗಳ ಕ್ಯಾಟಲಾಗ್‌ನಲ್ಲಿಲ್ಲ. ಅಧಿಕೃತ ಪ್ರವಾಸ ಕಾರ್ಯಕ್ರಮ ಮತ್ತು ಬಜೆಟ್ ವಿವರಗಳು ಲಭ್ಯವಿಲ್ಲದಿರಬಹುದು.'
-                      : 'This place is not currently in our verified destination catalogue. Some travel information and itinerary booking may be unavailable.')}
+                  <div style={{ background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '6px', padding: '10px 12px', marginTop: '10px', fontSize: '0.78rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                    <span>
+                      {discoveryResult.external_place.unverified_disclosure || discoveryResult.external_place.notes || (language === 'kn'
+                        ? 'ಈ ಸ್ಥಳವು ಪ್ರಸ್ತುತ ನಮ್ಮ ಪರಿಶೀಲಿತ ಕರ್ನಾಟಕ ತಾಣಗಳ ಕ್ಯಾಟಲಾಗ್‌ನಲ್ಲಿಲ್ಲ. ಅಧಿಕೃತ ಪ್ರವಾಸ ಕಾರ್ಯಕ್ರಮ ಮತ್ತು ಬಜೆಟ್ ವಿವರಗಳು ಲಭ್ಯವಿಲ್ಲದಿರಬಹುದು.'
+                        : 'This place is not currently in our verified destination catalogue. Some travel information and itinerary booking may be unavailable.')}
+                    </span>
                   </div>
 
                   {(() => {
@@ -410,7 +463,8 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                           gap: '6px',
                         }}
                       >
-                        🔗 {language === 'kn' ? 'ಮೂಲ ಮಾಹಿತಿ ವೀಕ್ಷಿಸಿ' : 'View Source Information'}
+                        <ExternalLink size={13} />
+                        <span>{language === 'kn' ? 'ಮೂಲ ಮಾಹಿತಿ ವೀಕ್ಷಿಸಿ' : 'View Source Information'}</span>
                       </a>
                     )}
                   </div>
@@ -441,7 +495,10 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                         <div className="cand-content">
                           <div className="cand-meta-row">
                             <span className="cand-category">{cand.category}</span>
-                            <span className="cand-district">📍 {cand.district_name_en || cand.district_code}</span>
+                            <span className="cand-district" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <MapPin size={12} />
+                              <span>{cand.district_name_en || cand.district_code}</span>
+                            </span>
                           </div>
 
                           <h4 className="cand-name">{name}</h4>
@@ -452,7 +509,10 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                               <strong>Why this matches:</strong>
                               <ul>
                                 {cand.matching_reasons.map((r, idx) => (
-                                  <li key={idx}>✓ {r}</li>
+                                  <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Check size={12} style={{ flexShrink: 0, color: '#059669' }} />
+                                    <span>{r}</span>
+                                  </li>
                                 ))}
                               </ul>
                             </div>
@@ -461,33 +521,42 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                           {cand.visual_evidence && (
                             <div className="visual-evidence-box">
                               {cand.visual_evidence.architectural_style && (
-                                <p className="evidence-item">
-                                  🏛️ <strong>{t('architecturalStyle')}:</strong> {cand.visual_evidence.architectural_style}
+                                <p className="evidence-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Landmark size={14} style={{ flexShrink: 0 }} />
+                                  <span><strong>{t('architecturalStyle')}:</strong> {cand.visual_evidence.architectural_style}</span>
                                 </p>
                               )}
                               {cand.visual_evidence.landscape_clues && (
-                                <p className="evidence-item">
-                                  🌄 <strong>{t('landscapeClues')}:</strong>{' '}
-                                  {Array.isArray(cand.visual_evidence.landscape_clues)
-                                    ? cand.visual_evidence.landscape_clues.join(', ')
-                                    : String(cand.visual_evidence.landscape_clues)}
+                                <p className="evidence-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Mountain size={14} style={{ flexShrink: 0 }} />
+                                  <span>
+                                    <strong>{t('landscapeClues')}:</strong>{' '}
+                                    {Array.isArray(cand.visual_evidence.landscape_clues)
+                                      ? cand.visual_evidence.landscape_clues.join(', ')
+                                      : String(cand.visual_evidence.landscape_clues)}
+                                  </span>
                                 </p>
                               )}
                               {Array.isArray(cand.visual_evidence.observed_features) && cand.visual_evidence.observed_features.length > 0 && (
-                                <p className="evidence-item">
-                                  👁️ <strong>{t('observedFeatures')}:</strong> {cand.visual_evidence.observed_features.join(', ')}
+                                <p className="evidence-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Eye size={14} style={{ flexShrink: 0 }} />
+                                  <span><strong>{t('observedFeatures')}:</strong> {cand.visual_evidence.observed_features.join(', ')}</span>
                                 </p>
                               )}
                               {cand.visual_evidence.detected_signage && (
-                                <p className="evidence-item">
-                                  🪧 <strong>{t('detectedSignage')}:</strong> {cand.visual_evidence.detected_signage}
+                                <p className="evidence-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Signpost size={14} style={{ flexShrink: 0 }} />
+                                  <span><strong>{t('detectedSignage')}:</strong> {cand.visual_evidence.detected_signage}</span>
                                 </p>
                               )}
                             </div>
                           )}
 
                           {cand.uncertainty_notes && (
-                            <p className="cand-uncertainty">⚠️ {cand.uncertainty_notes}</p>
+                            <p className="cand-uncertainty" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                              <span>{cand.uncertainty_notes}</span>
+                            </p>
                           )}
 
                           <div className="cand-actions">
@@ -499,8 +568,10 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                                 onClose();
                                 onOpenDestinationDetailsBySlug(cand.slug);
                               }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                             >
-                              ℹ️ {t('viewDetails')}
+                              <Info size={14} />
+                              <span>{t('viewDetails')}</span>
                             </button>
                             <button
                               type="button"
@@ -511,7 +582,7 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                                 onClose();
                               }}
                             >
-                              ✨ {t('planWithThis')}
+                              <Sparkles size={14} strokeWidth={2} /> {t('planWithThis')}
                             </button>
                           </div>
                         </div>
@@ -526,8 +597,9 @@ export const VisualDiscoveryModal: React.FC<VisualDiscoveryModalProps> = ({
                       ? 'ಈ ಫೋಟೋದಲ್ಲಿ ಪ್ರಮುಖ ಹೆಗ್ಗುರುತುಗಳು ಸ್ಪಷ್ಟವಾಗಿಲ್ಲದಿರಬಹುದು. ದಯವಿಟ್ಟು ಗೋಪುರ, ಅರಮನೆ, ಜಲಪಾತ ಅಥವಾ ನೈಸರ್ಗಿಕ ತಾಣಗಳ ಸ್ಪಷ್ಟ ಚಿತ್ರವನ್ನು ಪ್ರಯತ್ನಿಸಿ.'
                       : 'The image may not show distinctive architectural or natural landmarks. Try uploading a photo featuring prominent temple carvings, palace domes, waterfalls, or signboards.'}
                   </p>
-                  <button type="button" className="btn-secondary" onClick={resetSelection}>
-                    🔄 Try Another Media File
+                  <button type="button" className="btn-secondary" onClick={resetSelection} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <RotateCcw size={14} />
+                    <span>Try Another Media File</span>
                   </button>
                 </div>
               )}

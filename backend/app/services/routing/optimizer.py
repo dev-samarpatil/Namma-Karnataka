@@ -105,6 +105,39 @@ class RouteOptimizer:
         else:
             available_pool = list(corridor_pool)
 
+        from app.services.destination_uniqueness import (
+            _haversine_distance_m,
+            get_canonical_destination_id,
+        )
+
+        # Deduplicate available_pool against canonical identities
+        deduped_available_pool: list[DestinationRead] = []
+        seen_pool_canon_ids: set[str] = set()
+        seen_pool_coords: list[tuple[float, float]] = []
+
+        for cand in available_pool:
+            cand_canon = get_canonical_destination_id(
+                cand.id,
+                name=cand.name_en,
+                coordinates=cand.coordinates,
+                district_code=cand.district_code,
+            )
+            if cand_canon in seen_pool_canon_ids:
+                continue
+            if cand.coordinates:
+                too_close = False
+                for lat, lon in seen_pool_coords:
+                    if _haversine_distance_m(cand.coordinates.lat, cand.coordinates.lon, lat, lon) <= 500.0:
+                        too_close = True
+                        break
+                if too_close:
+                    continue
+                seen_pool_coords.append((cand.coordinates.lat, cand.coordinates.lon))
+            seen_pool_canon_ids.add(cand_canon)
+            deduped_available_pool.append(cand)
+
+        available_pool = deduped_available_pool
+
         budget_limit = getattr(request, "budget_limit_inr", None)
 
         def candidate_priority_score(
@@ -156,15 +189,15 @@ class RouteOptimizer:
         scheduled_stops: list[RecommendedDestination] = []
         current_departure = origin_coords
         all_visited_locations: list[Coordinates] = [origin_coords]
+        visited_canon_ids: set[str] = set()
+        visited_coords: list[tuple[float, float]] = []
 
         for day_num in range(1, request.duration_days + 1):
             day_candidates: list[DestinationRead] = []
             target_stops = min(stops_per_day, len(available_pool))
             day_start_coords = current_departure
 
-            for _ in range(target_stops):
-                if not available_pool:
-                    break
+            while len(day_candidates) < target_stops and available_pool:
                 # Pick best candidate closest to current position
                 available_pool.sort(
                     key=lambda d: candidate_priority_score(
@@ -172,11 +205,38 @@ class RouteOptimizer:
                     )
                 )
                 chosen = available_pool.pop(0)
+                chosen_canon = get_canonical_destination_id(
+                    chosen.id,
+                    name=chosen.name_en,
+                    coordinates=chosen.coordinates,
+                    district_code=chosen.district_code,
+                )
+                if chosen_canon in visited_canon_ids:
+                    continue
+                if chosen.coordinates:
+                    too_close = False
+                    for lat, lon in visited_coords:
+                        if _haversine_distance_m(chosen.coordinates.lat, chosen.coordinates.lon, lat, lon) <= 500.0:
+                            too_close = True
+                            break
+                    if too_close:
+                        continue
+                    visited_coords.append((chosen.coordinates.lat, chosen.coordinates.lon))
+
+                visited_canon_ids.add(chosen_canon)
                 day_candidates.append(chosen)
                 current_departure = chosen.coordinates
                 all_visited_locations.append(chosen.coordinates)
 
             if not day_candidates:
+                if day_num <= request.duration_days:
+                    sparse_msg = (
+                        f"Day {day_num} has no further unique attractions in this corridor to avoid repetition."
+                        if request.language != LanguageCode.KN
+                        else f"ಪುನರಾವರ್ತನೆ ತಪ್ಪಿಸಲು ದಿನ {day_num} ರಂದು ಈ ಸರ್ಕ್ಯೂಟ್‌ನಲ್ಲಿ ಹೆಚ್ಚುವರಿ ತಾಣಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ."
+                    )
+                    if sparse_msg not in warnings:
+                        warnings.append(sparse_msg)
                 break
 
             # Re-order the day's stops using 2-opt / nearest neighbor starting from day's departure
@@ -237,8 +297,19 @@ class RouteOptimizer:
                     access_status=dest.access_status,
                     is_offbeat=dest.is_offbeat,
                     sources=dest.sources,
+                    primary_image_url=dest.primary_image_url,
                 )
                 scheduled_stops.append(rec)
+
+        if len(scheduled_stops) < total_stops_needed:
+            sparse_warn = (
+                "Verified regional catalogue has limited unique destinations in the selected corridor. "
+                "Itinerary has been scheduled with genuine stops rather than repeating attractions."
+                if request.language != LanguageCode.KN
+                else "ಆಯ್ಕೆಮಾಡಿದ ಸರ್ಕ್ಯೂಟ್‌ನಲ್ಲಿ ಅನನ್ಯ ತಾಣಗಳ ಸಂಖ್ಯೆ ಸೀಮಿತವಾಗಿದ್ದು, ಪುನರಾವರ್ತನೆಯನ್ನು ತಪ್ಪಿಸಲು ನೈಜ ತಾಣಗಳನ್ನು ಮಾತ್ರ ನಿಗದಿಪಡಿಸಲಾಗಿದೆ."
+            )
+            if sparse_warn not in warnings:
+                warnings.append(sparse_warn)
 
         return scheduled_stops, warnings, corridor
 
@@ -288,10 +359,37 @@ class RouteOptimizer:
         candidate_map = {c.id: c for c in candidates}
         candidate_slug_map = {c.slug: c for c in candidates}
 
+        from app.services.destination_uniqueness import (
+            _haversine_distance_m,
+            get_canonical_destination_id,
+        )
+
         resolved_stops: list[tuple[DestinationRead, str | None]] = []
+        seen_canon_ids: set[str] = set()
+        seen_coords: list[tuple[float, float]] = []
+
         for item in ai_items:
             dest = candidate_map.get(item.id) or candidate_slug_map.get(item.slug)
             if dest and dest.coordinates:
+                canon_id = get_canonical_destination_id(
+                    dest.id,
+                    name=dest.name_en,
+                    coordinates=dest.coordinates,
+                    district_code=dest.district_code,
+                )
+                if canon_id in seen_canon_ids:
+                    continue
+
+                too_close = False
+                for lat, lon in seen_coords:
+                    if _haversine_distance_m(dest.coordinates.lat, dest.coordinates.lon, lat, lon) <= 500.0:
+                        too_close = True
+                        break
+                if too_close:
+                    continue
+
+                seen_canon_ids.add(canon_id)
+                seen_coords.append((dest.coordinates.lat, dest.coordinates.lon))
                 resolved_stops.append((dest, item.rationale))
 
         if not resolved_stops:
@@ -388,6 +486,7 @@ class RouteOptimizer:
                         access_status=dest.access_status,
                         is_offbeat=dest.is_offbeat,
                         sources=dest.sources,
+                        primary_image_url=dest.primary_image_url,
                     )
                 )
 

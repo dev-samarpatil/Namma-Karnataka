@@ -12,6 +12,11 @@ describe('Compact Header Component', () => {
   it('renders brand logo, title, and tagline in English', () => {
     render(<Header {...defaultProps} />);
 
+    const logoImg = screen.getByAltText('Namma Karnataka Logo');
+    expect(logoImg).toBeInTheDocument();
+    expect(logoImg).toHaveAttribute('src', '/assets/namma-karnataka-logo.png');
+    expect(logoImg).toHaveClass('brand-logo-img');
+
     expect(screen.getByText('Namma Karnataka')).toBeInTheDocument();
     expect(screen.getByText('(ನಮ್ಮ ಕರ್ನಾಟಕ)')).toBeInTheDocument();
     expect(screen.getByText(/Discover Karnataka\. Plan your journey\./i)).toBeInTheDocument();

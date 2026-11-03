@@ -1,4 +1,20 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  List,
+  Map as MapIcon,
+  Route,
+  RotateCcw,
+  Compass,
+  X,
+  Flag,
+  CheckCircle2,
+  Bed,
+  Car,
+  AlertTriangle,
+  Info,
+  MapPin,
+  ArrowRight,
+} from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { RecommendedDestination, DayPlan, Language, DirectionsResponse, DirectionsRequest, Waypoint } from '../../types';
@@ -596,10 +612,10 @@ export const MapView: React.FC<MapViewProps> = ({
       <div className="map-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
         <div>
           <h4 className="map-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🗺️</span> {t('mapTitle')}
+            <MapIcon size={18} /> {t('mapTitle')}
             {directionsData && (
-              <span style={{ fontSize: '0.75rem', background: '#0284c7', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                🛣️ {directionsData.provider.toUpperCase()} Road Route
+              <span style={{ fontSize: '0.75rem', background: '#0284c7', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Route size={12} /> {directionsData.provider.toUpperCase()} Road Route
               </span>
             )}
           </h4>
@@ -617,7 +633,7 @@ export const MapView: React.FC<MapViewProps> = ({
         <div className="map-controls" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {loadingDirections && (
             <span style={{ fontSize: '0.78rem', color: '#38bdf8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <span>🔄</span> {language === 'kn' ? 'ಮಾರ್ಗ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ...' : 'Routing...'}
+              <RotateCcw size={13} className="spin" /> {language === 'kn' ? 'ಮಾರ್ಗ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ...' : 'Routing...'}
             </span>
           )}
 
@@ -643,7 +659,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <span>🧭</span> {language === 'kn' ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ತೆರೆಯಿರಿ ↗' : 'Open in Google Maps ↗'}
+              <Compass size={14} /> {language === 'kn' ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ತೆರೆಯಿರಿ ↗' : 'Open in Google Maps ↗'}
             </a>
           )}
 
@@ -653,7 +669,17 @@ export const MapView: React.FC<MapViewProps> = ({
             onClick={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
             data-testid="toggle-map-list-view"
           >
-            {viewMode === 'map' ? `📋 ${t('toggleListView')}` : `🗺️ ${t('toggleMapView')}`}
+            {viewMode === 'map' ? (
+              <>
+                <List size={14} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }} />
+                {t('toggleListView')}
+              </>
+            ) : (
+              <>
+                <MapIcon size={14} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }} />
+                {t('toggleMapView')}
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -689,8 +715,9 @@ export const MapView: React.FC<MapViewProps> = ({
               cursor: 'pointer',
               fontSize: '1rem',
             }}
+            aria-label="Close"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
@@ -755,19 +782,19 @@ export const MapView: React.FC<MapViewProps> = ({
             gap: '8px',
           }}
         >
-          <div>
-            <span style={{ color: '#38bdf8', fontWeight: 600 }}>🚩 {currentDayPlan.start_location_name || originLabel}</span>
-            <span style={{ margin: '0 6px', color: '#64748b' }}>➔</span>
-            <span style={{ color: '#a78bfa', fontWeight: 600 }}>🏁 {currentDayPlan.end_location_name || 'Destination'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ color: '#38bdf8', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Flag size={13} /> {currentDayPlan.start_location_name || originLabel}</span>
+            <span style={{ margin: '0 2px', color: '#64748b' }}><ArrowRight size={12} /></span>
+            <span style={{ color: '#a78bfa', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={13} /> {currentDayPlan.end_location_name || 'Destination'}</span>
             {currentDayPlan.accommodation_name && (
-              <span style={{ marginLeft: '10px', fontSize: '0.8rem', color: '#94a3b8' }}>
-                🏨 {currentDayPlan.accommodation_name}
+              <span style={{ marginLeft: '10px', fontSize: '0.8rem', color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Bed size={13} /> {currentDayPlan.accommodation_name}
               </span>
             )}
           </div>
           {currentDayPlan.driving_distance_km && currentDayPlan.driving_distance_km > 0 ? (
-            <div style={{ color: '#38bdf8', fontWeight: 500, fontSize: '0.8rem' }}>
-              🚗 ~{currentDayPlan.driving_distance_km} km ({Math.round(currentDayPlan.transit_minutes || 0)} mins driving)
+            <div style={{ color: '#38bdf8', fontWeight: 500, fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Car size={13} /> ~{currentDayPlan.driving_distance_km} km ({Math.round(currentDayPlan.transit_minutes || 0)} mins driving)
             </div>
           ) : null}
         </div>
@@ -775,14 +802,14 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Warnings & Notices */}
       {missingCoordsCount > 0 && (
-        <div className="map-warning-banner" style={{ marginBottom: '10px' }}>
-          ⚠️ {missingCoordsCount} stop(s) do not have verified GPS coordinates and are listed in text view only.
+        <div className="map-warning-banner" style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <AlertTriangle size={14} /> {missingCoordsCount} stop(s) do not have verified GPS coordinates and are listed in text view only.
         </div>
       )}
 
       {directionsError && (
-        <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid #eab308', color: '#fef08a', padding: '8px 12px', borderRadius: '6px', fontSize: '0.8rem', marginBottom: '10px' }}>
-          ℹ️ {directionsError}
+        <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid #eab308', color: '#fef08a', padding: '8px 12px', borderRadius: '6px', fontSize: '0.8rem', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Info size={14} /> {directionsError}
         </div>
       )}
 
@@ -796,8 +823,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 <span className="coord-stop-badge">Day {stop.day_number} · #{stop.order}</span>
                 <strong>{stop.name}</strong> ({stop.district_name || stop.district_code})
                 {stop.coordinates ? (
-                  <span className="coord-text">
-                    📍 {stop.coordinates.lat.toFixed(4)}° N, {stop.coordinates.lon.toFixed(4)}° E
+                  <span className="coord-text" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <MapPin size={12} /> {stop.coordinates.lat.toFixed(4)}° N, {stop.coordinates.lon.toFixed(4)}° E
                   </span>
                 ) : (
                   <span className="coord-unavailable">Coordinates not available</span>
@@ -814,7 +841,7 @@ export const MapView: React.FC<MapViewProps> = ({
             id="road-route-leaflet-map"
             style={{
               width: '100%',
-              height: '420px',
+              height: 'clamp(320px, 46vh, 460px)',
               borderRadius: '10px',
               overflow: 'hidden',
               border: '1px solid #DCE6F2',
@@ -836,7 +863,7 @@ export const MapView: React.FC<MapViewProps> = ({
               }}
             >
               <h5 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#172033', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>🧭</span> {language === 'kn' ? 'ಪ್ರವಾಸ ಮಾರ್ಗ ಸೂಚಿಗಳು' : 'Leg-by-Leg Road Directions'} ({directionsData.legs.length} legs)
+                <Compass size={16} /> {language === 'kn' ? 'ಪ್ರವಾಸ ಮಾರ್ಗ ಸೂಚಿಗಳು' : 'Leg-by-Leg Road Directions'} ({directionsData.legs.length} legs)
               </h5>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

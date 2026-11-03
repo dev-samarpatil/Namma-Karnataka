@@ -1,4 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Sparkles,
+  Cloud,
+  Check,
+  User,
+  Lock,
+  X,
+  Zap,
+  Smartphone,
+  Inbox,
+  CalendarDays,
+  AlertTriangle,
+  CloudUpload,
+} from 'lucide-react';
 import { SavedTrip, SavedTripSummary, SavedTripDetail, Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { listCloudTrips, deleteCloudTrip, getCloudTrip, saveCloudTrip, ApiClientError } from '../../lib/api';
@@ -160,15 +174,16 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
 
       {/* Cloud Persistence Notice & Account Controls */}
       <div className="supabase-status-notice" data-testid="supabase-status-notice">
-        <div className="notice-icon" aria-hidden="true">☁️</div>
+        <div className="notice-icon" aria-hidden="true" style={{ display: 'flex', alignItems: 'center' }}><Cloud size={22} color="#0798B5" /></div>
         <div style={{ flex: 1 }}>
           <h4>{t('accountOverviewTitle')}</h4>
           <p>{t('supabaseNoticeDesc')}</p>
           <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             {authToken ? (
               <>
-                <span className="badge badge-success" data-testid="auth-status-badge">
-                  ✓ {t('signedInAs')}: {authToken.slice(0, 16)}...
+                <span className="badge badge-success" data-testid="auth-status-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Check size={12} strokeWidth={2.5} />
+                  <span>{t('signedInAs')}: {authToken.slice(0, 16)}...</span>
                 </span>
                 <button
                   type="button"
@@ -181,16 +196,19 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
               </>
             ) : (
               <>
-                <span className="badge badge-neutral" data-testid="guest-status-badge">
-                  👤 {t('guestModeActive')}
+                <span className="badge badge-neutral" data-testid="guest-status-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <User size={12} strokeWidth={2} />
+                  <span>{t('guestModeActive')}</span>
                 </span>
                 <button
                   type="button"
                   className="btn-secondary btn-sm"
                   onClick={() => setShowAuthModal(true)}
                   data-testid="connect-account-btn"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                 >
-                  🔐 {t('signInButton')}
+                  <Lock size={12} strokeWidth={2} />
+                  <span>{t('signInButton')}</span>
                 </button>
               </>
             )}
@@ -203,14 +221,18 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
         <div className="modal-backdrop" role="dialog" aria-modal="true" data-testid="auth-modal">
           <div className="modal-card" style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h3>🔐 {t('signInButton')}</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Lock size={18} strokeWidth={2} color="#0798B5" />
+                <span>{t('signInButton')}</span>
+              </h3>
               <button
                 type="button"
                 className="close-btn"
                 onClick={() => setShowAuthModal(false)}
                 aria-label={t('close')}
+                style={{ display: 'flex', alignItems: 'center' }}
               >
-                ✕
+                <X size={16} strokeWidth={2} />
               </button>
             </div>
             <div className="modal-body">
@@ -239,8 +261,10 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
                     handleSignIn('test-token-user-1');
                   }}
                   data-testid="demo-user-btn"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                 >
-                  ⚡ Use Demo User
+                  <Zap size={14} strokeWidth={2} />
+                  <span>Use Demo User</span>
                 </button>
                 <button
                   type="button"
@@ -252,8 +276,10 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
                   }}
                   disabled={!tokenInput.trim()}
                   data-testid="submit-auth-btn"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                 >
-                  ✓ Connect
+                  <Check size={14} strokeWidth={2.5} />
+                  <span>Connect</span>
                 </button>
               </div>
             </div>
@@ -280,15 +306,19 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
         <div className="modal-backdrop" role="dialog" aria-modal="true" data-testid="delete-cloud-modal">
           <div className="modal-card" style={{ maxWidth: '440px' }}>
             <div className="modal-header">
-              <h3>🗑️ {t('confirmDeleteCloudTitle')}</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} color="#DC2626" />
+                <span>{t('confirmDeleteCloudTitle')}</span>
+              </h3>
               <button
                 type="button"
                 className="close-btn"
                 onClick={() => setTripToDeleteCloud(null)}
                 disabled={isDeletingCloud}
                 aria-label={t('close')}
+                style={{ display: 'flex', alignItems: 'center' }}
               >
-                ✕
+                <X size={16} strokeWidth={2} />
               </button>
             </div>
             <div className="modal-body">
@@ -329,8 +359,10 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
           onClick={() => setActiveSubTab('local')}
           className={`filter-btn ${activeSubTab === 'local' ? 'active' : ''}`}
           data-testid="subtab-local-trips"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          📱 {t('deviceTripsTab')} ({savedTrips.length})
+          <Smartphone size={15} strokeWidth={2} />
+          <span>{t('deviceTripsTab')} ({savedTrips.length})</span>
         </button>
         <button
           type="button"
@@ -343,15 +375,22 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
           }}
           className={`filter-btn ${activeSubTab === 'cloud' ? 'active' : ''}`}
           data-testid="subtab-cloud-trips"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          ☁️ {t('myCloudTripsTab')} {authToken ? `(${cloudTrips.length})` : ''}
+          <Cloud size={15} strokeWidth={2} />
+          <span>{t('myCloudTripsTab')} {authToken ? `(${cloudTrips.length})` : ''}</span>
         </button>
       </div>
 
       {cloudError && (
-        <div className="app-error-banner" role="alert" style={{ marginBottom: '1rem' }} data-testid="cloud-error-banner">
-          <span>⚠️ {cloudError}</span>
-          <button type="button" onClick={() => setCloudError(null)}>✕</button>
+        <div className="app-error-banner" role="alert" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} data-testid="cloud-error-banner">
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={15} strokeWidth={2} />
+            <span>{cloudError}</span>
+          </span>
+          <button type="button" onClick={() => setCloudError(null)} aria-label="Dismiss error" style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'inherit' }}>
+            <X size={14} strokeWidth={2} />
+          </button>
         </div>
       )}
 
@@ -374,23 +413,26 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
               }}
               data-testid="transfer-banner"
             >
-              <span style={{ fontSize: '0.9rem', color: '#166534', fontWeight: 500 }}>
-                💡 {unlinkedTripsCount} {language === 'kn' ? 'ಪ್ರವಾಸಗಳು ಖಾತೆಗೆ ವರ್ಗಾಯಿಸಲು ಲಭ್ಯವಿದೆ.' : 'trip(s) saved on this device can be transferred to your account.'}
+              <span style={{ fontSize: '0.9rem', color: '#166534', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={14} strokeWidth={2} />
+                <span>{unlinkedTripsCount} {language === 'kn' ? 'ಪ್ರವಾಸಗಳು ಖಾತೆಗೆ ವರ್ಗಾಯಿಸಲು ಲಭ್ಯವಿದೆ.' : 'trip(s) saved on this device can be transferred to your account.'}</span>
               </span>
               <button
                 type="button"
                 className="btn-primary btn-sm"
                 onClick={() => setShowTransferModal(true)}
                 data-testid="open-transfer-modal-btn"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                ☁️ {t('guestTransferAction')}
+                <CloudUpload size={14} strokeWidth={2} />
+                <span>{t('guestTransferAction')}</span>
               </button>
             </div>
           )}
 
           {savedTrips.length === 0 ? (
             <div className="empty-saved-trips" data-testid="no-saved-trips">
-              <div className="empty-icon" aria-hidden="true">📭</div>
+              <div className="empty-icon" aria-hidden="true"><Inbox size={38} color="#94A3B8" /></div>
               <h3>{t('noSavedTrips')}</h3>
               <p>{t('noSavedTripsDesc')}</p>
               <button
@@ -399,7 +441,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
                 onClick={onNavigatePlanner}
                 data-testid="create-trip-btn"
               >
-                ✨ {t('navPlan')}
+                <Sparkles size={16} strokeWidth={2} /> {t('navPlan')}
               </button>
             </div>
           ) : (
@@ -407,24 +449,27 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
               {savedTrips.map((trip) => (
                 <article key={trip.id} className="saved-trip-card" data-testid={`saved-trip-${trip.id}`}>
                   <div className="saved-trip-header">
-                    <span className="badge badge-neutral">
-                      📅 {trip.plan.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.plan.items.length} stops
+                    <span className="badge badge-neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <CalendarDays size={13} strokeWidth={2} />
+                      <span>{trip.plan.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.plan.items.length} stops</span>
                     </span>
                     {trip.cloud_trip_id ? (
                       <span
                         className="badge badge-success"
-                        style={{ fontSize: '0.75rem' }}
+                        style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         data-testid={`badge-cloud-${trip.id}`}
                       >
-                        ☁️ {t('cloudSavedBadge')}
+                        <Cloud size={12} strokeWidth={2} />
+                        <span>{t('cloudSavedBadge')}</span>
                       </span>
                     ) : (
                       <span
                         className="badge badge-cached"
-                        style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px' }}
+                        style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         data-testid={`badge-device-${trip.id}`}
                       >
-                        📱 {t('localOnlyBadge')}
+                        <Smartphone size={12} strokeWidth={2} />
+                        <span>{t('localOnlyBadge')}</span>
                       </span>
                     )}
                     <span className="saved-trip-date">
@@ -464,8 +509,10 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
                         className="btn-secondary"
                         onClick={() => handleSingleTripTransfer(trip)}
                         data-testid={`transfer-btn-${trip.id}`}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                       >
-                        ☁️ {t('transferSelectedBtn')}
+                        <CloudUpload size={13} strokeWidth={2} />
+                        <span>{t('transferSelectedBtn')}</span>
                       </button>
                     )}
                     <button
@@ -493,7 +540,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
           </div>
         ) : cloudTrips.length === 0 ? (
           <div className="empty-saved-trips" data-testid="no-cloud-trips">
-            <div className="empty-icon" aria-hidden="true">☁️</div>
+            <div className="empty-icon" aria-hidden="true"><Cloud size={38} color="#94A3B8" /></div>
             <h3>{t('cloudTripsEmpty')}</h3>
             <p>Save an itinerary to the cloud using the planner to access it across devices.</p>
             <button
@@ -501,7 +548,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
               className="btn-primary"
               onClick={onNavigatePlanner}
             >
-              ✨ {t('navPlan')}
+              <Sparkles size={16} strokeWidth={2} /> {t('navPlan')}
             </button>
           </div>
         ) : (
@@ -509,8 +556,9 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
             {cloudTrips.map((trip) => (
               <article key={trip.id} className="saved-trip-card" data-testid={`cloud-trip-${trip.id}`}>
                 <div className="saved-trip-header">
-                  <span className="badge badge-success">
-                    ☁️ {t('cloudSavedBadge')} · {trip.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.total_stops} stops
+                  <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Cloud size={12} strokeWidth={2} />
+                    <span>{t('cloudSavedBadge')} · {trip.duration_days} {language === 'kn' ? 'ದಿನಗಳು' : 'Days'} · {trip.total_stops} stops</span>
                   </span>
                   <span className="saved-trip-date">
                     {t('savedOn')} {new Date(trip.created_at).toLocaleDateString()}

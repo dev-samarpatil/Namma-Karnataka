@@ -22,6 +22,8 @@ from app.schemas.destinations import (
     NearbyTransitItem,
 )
 from app.services.media.image_search import DestinationImageSearchService
+from app.services.destination_discovery import get_destination_discovery_service
+from app.services.destination_image_service import get_destination_image_service
 from app.services.places.service import PlacesService
 from app.services.transit.curated_provider import CuratedTransitProvider
 
@@ -357,6 +359,23 @@ async def get_destination_images(
     """Retrieve 5-8 verified, distinct photographs for a destination."""
     dest = repo.get_by_slug(id_or_slug) or repo.get_by_id(id_or_slug)
     if not dest or dest.content_status != "published" or not dest.active:
+        # Check dynamically discovered regional catalogue
+        disc_svc = get_destination_discovery_service()
+        discovered = disc_svc.discover_destinations(limit=100)
+        matched = next((d for d in discovered if d.id == id_or_slug or d.slug == id_or_slug), None)
+        if matched:
+            img_svc = get_destination_image_service()
+            metas = await img_svc.get_destination_images(
+                destination_id=matched.id,
+                name_en=matched.name_en,
+                district=matched.district,
+                category=matched.category,
+                limit=limit,
+            )
+            media_items = [m.to_destination_media(matched.name_en) for m in metas if m.image_url]
+            if media_items:
+                return media_items
+
         raise AppError(
             code="DESTINATION_NOT_FOUND",
             message=f"Destination '{id_or_slug}' was not found or is not published.",
@@ -381,6 +400,13 @@ def get_destination(
     destination = repo.get_by_slug(id_or_slug) or repo.get_by_id(id_or_slug)
 
     if not destination or destination.content_status != "published" or not destination.active:
+        # Fallback to discovered destinations
+        disc_svc = get_destination_discovery_service()
+        discovered = disc_svc.discover_destinations(limit=100)
+        matched = next((d for d in discovered if d.id == id_or_slug or d.slug == id_or_slug), None)
+        if matched:
+            return disc_svc.to_destination_read(matched)
+
         raise AppError(
             code="DESTINATION_NOT_FOUND",
             message=f"Destination '{id_or_slug}' was not found or is not published.",

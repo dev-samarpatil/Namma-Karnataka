@@ -346,38 +346,25 @@ export const PolaroidLineCarousel: React.FC<PolaroidLineCarouselProps> = ({
               const cardKey = `d${slide.dayNumber || dayNumber}-${slide.id || slide.destinationId || slide.title}-${idx}`;
               const key = slide.id || slide.destinationId || String(idx);
 
-              // Responsive dynamics: scale, rotation, vertical sag, opacity, z-index
+              // Clean, upright modern cards without disruptive tilt or sagging
               let scale = 1;
-              let dynamicTilt = 0;
+              const dynamicTilt = 0;
               let opacity = 1;
-              let sagOffset = 20;
+              const sagOffset = 0;
               let zIndex = 15;
 
               if (slides.length === 1) {
-                scale = 1.05;
-                dynamicTilt = 0;
+                scale = 1.02;
                 opacity = 1;
-                sagOffset = 22;
                 zIndex = 25;
               } else if (slides.length === 2) {
-                scale = isActive ? 1.06 : 0.94;
-                dynamicTilt = idx === 0 ? -2.2 : 2.2;
-                opacity = isActive ? 1 : 0.85;
-                sagOffset = 20;
+                scale = isActive ? 1.03 : 0.96;
+                opacity = isActive ? 1 : 0.88;
                 zIndex = isActive ? 25 : 15;
               } else {
-                // 3, 4, 5+ destinations
-                scale = isActive ? 1.08 : Math.abs(diff) === 1 ? 0.93 : 0.85;
-                const restingAngle =
-                  diff === 0 ? 0 :
-                  diff === -1 ? -3.5 :
-                  diff === 1 ? 3.5 :
-                  diff === -2 ? -5.5 :
-                  diff === 2 ? 5.5 :
-                  diff < 0 ? -7 : 7;
-                dynamicTilt = isDragging ? restingAngle + dragOffset * 0.02 : restingAngle;
-                opacity = isActive ? 1 : Math.abs(diff) === 1 ? 0.88 : Math.max(0.45, 0.8 - Math.abs(diff) * 0.15);
-                sagOffset = Math.max(8, 22 - Math.abs(diff) * 3);
+                // 3, 4, 5+ destinations: clean horizontal timeline flow
+                scale = isActive ? 1.04 : Math.abs(diff) === 1 ? 0.95 : 0.88;
+                opacity = isActive ? 1 : Math.abs(diff) === 1 ? 0.9 : Math.max(0.65, 0.85 - Math.abs(diff) * 0.1);
                 zIndex = isActive ? 25 : 18 - Math.min(10, Math.abs(diff));
               }
 

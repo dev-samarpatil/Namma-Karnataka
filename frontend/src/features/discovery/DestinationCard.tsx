@@ -1,4 +1,19 @@
 import React from 'react';
+import {
+  Check,
+  Info,
+  MapPin,
+  Star,
+  Landmark,
+  Mountain,
+  Waves,
+  Umbrella,
+  Compass,
+  Sparkles,
+  Eye,
+  Building2,
+  Utensils,
+} from 'lucide-react';
 import { DestinationRead, Language } from '../../types';
 import { useTranslation, TranslationKey } from '../../lib/i18n';
 import { getApiBaseUrl } from '../../lib/api';
@@ -32,7 +47,12 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
 
   const renderFee = () => {
     if (destination.entry_fee_min_inr === 0 && destination.entry_fee_max_inr === 0) {
-      return <span className="fee-tag fee-free">✓ {t('feeFree')}</span>;
+      return (
+        <span className="fee-tag fee-free" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <Check size={12} strokeWidth={2.5} />
+          <span>{t('feeFree')}</span>
+        </span>
+      );
     }
     if (destination.entry_fee_min_inr !== undefined && destination.entry_fee_min_inr !== null) {
       const min = destination.entry_fee_min_inr;
@@ -42,7 +62,12 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
       }
       return <span className="fee-tag fee-paid">₹{min}</span>;
     }
-    return <span className="fee-tag fee-unknown">ℹ️ {t('feeUnknown')}</span>;
+    return (
+      <span className="fee-tag fee-unknown" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+        <Info size={12} strokeWidth={2} />
+        <span>{t('feeUnknown')}</span>
+      </span>
+    );
   };
 
   const [imageError, setImageError] = React.useState(false);
@@ -60,21 +85,34 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
   const primaryMedia = destination.media?.[0];
   const isVerifiedAuthentic = primaryMedia?.verification_status === 'verified_authentic';
 
-  const CATEGORY_FALLBACK_ICONS: Record<string, string> = {
-    architecture: '🏛️',
-    heritage: '🏰',
-    nature: '🌲',
-    waterfall: '🌊',
-    hill_station: '⛰️',
-    beach: '🏖️',
-    wildlife: '🐅',
-    spiritual_cultural: '🛕',
-    adventure: '🧗',
-    viewpoint: '🔭',
-    museum: '🏛️',
-    town_city: '🏙️',
-    food_culture: '🍱',
-    other: '📍',
+  const renderCategoryFallbackIcon = (cat: string) => {
+    const iconProps = { size: 28, strokeWidth: 1.8, color: '#64748B' };
+    switch (cat) {
+      case 'architecture':
+      case 'heritage':
+      case 'museum':
+        return <Landmark {...iconProps} />;
+      case 'nature':
+      case 'hill_station':
+        return <Mountain {...iconProps} />;
+      case 'waterfall':
+        return <Waves {...iconProps} />;
+      case 'beach':
+        return <Umbrella {...iconProps} />;
+      case 'wildlife':
+      case 'adventure':
+        return <Compass {...iconProps} />;
+      case 'spiritual_cultural':
+        return <Sparkles {...iconProps} />;
+      case 'viewpoint':
+        return <Eye {...iconProps} />;
+      case 'town_city':
+        return <Building2 {...iconProps} />;
+      case 'food_culture':
+        return <Utensils {...iconProps} />;
+      default:
+        return <MapPin {...iconProps} />;
+    }
   };
 
   return (
@@ -96,19 +134,21 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
             }}
           />
           {isVerifiedAuthentic ? (
-            <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#34d399', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)', fontWeight: 600 }}>
-              ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic'}
+            <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#34d399', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <Check size={11} strokeWidth={2.5} />
+              <span>{language === 'kn' ? 'ಪರಿಶೀಲಿಸಿದ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'Verified Authentic'}</span>
             </span>
           ) : (
-            <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#fbbf24', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(251, 191, 36, 0.3)', fontWeight: 600 }}>
-              ℹ️ {language === 'kn' ? 'ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ' : 'Verification Pending'}
+            <span style={{ position: 'absolute', bottom: '6px', left: '8px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#fbbf24', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(251, 191, 36, 0.3)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <Info size={11} strokeWidth={2} />
+              <span>{language === 'kn' ? 'ಪರಿಶೀಲನೆ ಬಾಕಿಯಿದೆ' : 'Verification Pending'}</span>
             </span>
           )}
         </div>
       ) : (
         <div className="card-image-wrap card-image-fallback" style={{ width: '100%', height: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', color: '#64748B' }}>
-          <span style={{ fontSize: '2rem' }}>{CATEGORY_FALLBACK_ICONS[destination.category] || '📍'}</span>
-          <span style={{ fontSize: '0.72rem', marginTop: '4px', color: '#64748B' }}>
+          {renderCategoryFallbackIcon(destination.category)}
+          <span style={{ fontSize: '0.72rem', marginTop: '6px', color: '#64748B' }}>
             {language === 'kn' ? 'ಛಾಯಾಚಿತ್ರ ಲಭ್ಯವಿಲ್ಲ' : 'Photo unavailable'}
           </span>
         </div>
@@ -116,10 +156,14 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
       <div className="card-header">
         <div className="card-meta-row">
           <span className="card-category-pill">{categoryLabel}</span>
-          <span className="card-district-pill">📍 {districtName}</span>
+          <span className="card-district-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+            <MapPin size={12} strokeWidth={2} />
+            <span>{districtName}</span>
+          </span>
           {destination.is_offbeat && (
-            <span className="card-offbeat-badge" title="Editorially curated offbeat destination">
-              ⭐ {t('offbeatBadge')}
+            <span className="card-offbeat-badge" title="Editorially curated offbeat destination" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <Star size={11} strokeWidth={2} fill="#F59E0B" color="#F59E0B" />
+              <span>{t('offbeatBadge')}</span>
             </span>
           )}
         </div>

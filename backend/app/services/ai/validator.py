@@ -134,6 +134,7 @@ def parse_and_ground_plan(
             access_status=matched_dest.access_status,
             is_offbeat=matched_dest.is_offbeat,
             sources=matched_dest.sources,
+            primary_image_url=matched_dest.primary_image_url,
         )
         grounded_items.append(grounded)
 

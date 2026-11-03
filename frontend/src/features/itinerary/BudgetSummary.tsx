@@ -1,4 +1,19 @@
 import React, { useState } from 'react';
+import {
+  Users,
+  Car,
+  Tag,
+  Target,
+  AlertTriangle,
+  Check,
+  BarChart3,
+  Hotel,
+  Utensils,
+  Ticket,
+  Shield,
+  Info,
+  TrendingDown,
+} from 'lucide-react';
 import { RecommendedDestination, CompleteBudgetBreakdown, Language, CostStatus } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 
@@ -50,7 +65,7 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
               gap: '4px',
             }}
           >
-            ✓ {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}
+            <Check size={11} /> {language === 'kn' ? 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ' : 'Verified'}
           </span>
         );
       case 'estimated':
@@ -217,9 +232,12 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
                   background: '#E0F2FE',
                   color: '#0369A1',
                   border: '1px solid #BAE6FD',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
                 }}
               >
-                👥 {budget.traveler_count} {language === 'kn' ? 'ಪ್ರಯಾಣಿಕರು' : 'travelers'}
+                <Users size={13} /> {budget.traveler_count} {language === 'kn' ? 'ಪ್ರಯಾಣಿಕರು' : 'travelers'}
               </span>
               <span
                 style={{
@@ -230,9 +248,12 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
                   background: '#E0F2FE',
                   color: '#0369A1',
                   border: '1px solid #BAE6FD',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
                 }}
               >
-                🚗 {formatTransportMode(budget.travel_mode_used)} {budget.is_return_trip ? '(Round-trip)' : '(One-way)'}
+                <Car size={13} /> {formatTransportMode(budget.travel_mode_used)} {budget.is_return_trip ? '(Round-trip)' : '(One-way)'}
               </span>
               <span
                 style={{
@@ -243,32 +264,37 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
                   background: '#FEF3C7',
                   color: '#92400E',
                   border: '1px solid #FDE68A',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
                 }}
               >
-                🏷️ {formatScenario(budget.budget_scenario_used)}
+                <Tag size={13} /> {formatScenario(budget.budget_scenario_used)}
               </span>
             </div>
           )}
         </div>
 
-        {/* SECTION E: Budget Cap Comparison */}
+        {/* SECTION E: Budget Cap Comparison & Feasibility Status */}
         {budget && budget.budget_limit_inr !== undefined && budget.budget_limit_inr !== null && (
           <div
             data-testid="budget-limit-comparison-card"
             style={{
               marginTop: '16px',
-              padding: '12px 16px',
+              padding: '14px 18px',
               background: budget.is_budget_feasible ? '#ECFDF5' : '#FEF2F2',
               border: `1px solid ${budget.is_budget_feasible ? '#A7F3D0' : '#FECACA'}`,
               borderRadius: '8px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
+              gap: '8px',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.1rem' }}>{budget.is_budget_feasible ? '🎯' : '⚠️'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  {budget.is_budget_feasible ? <Target size={16} color="#059669" /> : <AlertTriangle size={16} color="#DC2626" />}
+                </span>
                 <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#172033' }}>
                   {language === 'kn' ? 'ನಿಗದಿಪಡಿಸಿದ ಬಜೆಟ್ ಮಿತಿ' : 'Target Budget Limit'}:
                 </span>
@@ -280,7 +306,7 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
                 </span>
               </div>
               <div>
-                {budget.is_budget_feasible ? (
+                {budget.feasibility_status === 'within_budget' || (budget.is_budget_feasible && !budget.feasibility_status) ? (
                   <span
                     style={{
                       fontSize: '0.78rem',
@@ -290,9 +316,46 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
                       background: '#D1FAE5',
                       color: '#065F46',
                       border: '1px solid #6EE7B7',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
                     }}
                   >
-                    ✓ {t('withinBudgetBadge')}
+                    <Check size={12} /> {t('withinBudgetBadge')}
+                  </span>
+                ) : budget.feasibility_status === 'near_budget' ? (
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      background: '#FEF3C7',
+                      color: '#92400E',
+                      border: '1px solid #FCD34D',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <Info size={12} /> {language === 'kn' ? 'ಬಜೆಟ್ ಮಿತಿಯ ಸಮೀಪ' : 'Near Budget Cap'}
+                  </span>
+                ) : budget.feasibility_status === 'infeasible' ? (
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      background: '#FEE2E2',
+                      color: '#991B1B',
+                      border: '1px solid #F87171',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <AlertTriangle size={12} /> {language === 'kn' ? 'ಬಜೆಟ್ ಅಸಾಧ್ಯ' : 'Infeasible Budget Target'}
                   </span>
                 ) : (
                   <span
@@ -304,20 +367,129 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
                       background: '#FEE2E2',
                       color: '#991B1B',
                       border: '1px solid #FCA5A5',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
                     }}
                   >
-                    ⚠️ {t('budgetOverrunBadge')}: +₹{Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}
+                    <AlertTriangle size={12} /> {t('budgetOverrunBadge')}: +₹{Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}
                   </span>
                 )}
               </div>
             </div>
-            {!budget.is_budget_feasible && (
-              <div style={{ fontSize: '0.8rem', color: '#DC2626', lineHeight: 1.4, marginTop: '2px' }}>
-                {language === 'kn'
-                  ? `ಅಂದಾಜು ಕನಿಷ್ಠ ವೆಚ್ಚವು ನಿಮ್ಮ ಗುರಿ ಮಿತಿಗಿಂತ ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')} ಹೆಚ್ಚಾಗಿದೆ. ಕಡಿಮೆ ವೆಚ್ಚದ ಆಕರ್ಷಣೆಗಳನ್ನು ಆಯ್ಕೆಮಾಡಲು ಅಥವಾ ವಸತಿ ವರ್ಗ ಬದಲಾಯಿಸಲು ಶಿಫಾರಸು ಮಾಡುತ್ತೇವೆ.`
-                  : `Estimated minimum expenses exceed your target budget cap by ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}. Consider switching to public transit or choosing budget homestay accommodation.`}
+
+            {/* Remaining budget headroom if within budget */}
+            {budget.is_budget_feasible && budget.remaining_budget_inr !== undefined && budget.remaining_budget_inr !== null && budget.remaining_budget_inr > 0 && (
+              <div style={{ fontSize: '0.8125rem', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Check size={13} strokeWidth={2.5} />
+                <span>
+                  {language === 'kn'
+                    ? `ಉಳಿದ ಮೊತ್ತ: ₹${Math.round(budget.remaining_budget_inr).toLocaleString('en-IN')} ಹೆಚ್ಚುವರಿ ವಿನೋದ ಅಥವಾ ಚಟುವಟಿಕೆಗಳಿಗೆ ಲಭ್ಯ.`
+                    : `Remaining Headroom: ₹${Math.round(budget.remaining_budget_inr).toLocaleString('en-IN')} available for shopping or unplanned activities.`}
+                </span>
               </div>
             )}
+
+            {/* Infeasibility or overrun diagnostic message */}
+            {!budget.is_budget_feasible && (
+              <div style={{ fontSize: '0.8125rem', color: '#B91C1C', lineHeight: 1.45, marginTop: '2px' }}>
+                {budget.infeasibility_reason || (
+                  language === 'kn'
+                    ? `ಅಂದಾಜು ಕನಿಷ್ಠ ವೆಚ್ಚವು ನಿಮ್ಮ ಗುರಿ ಮಿತಿಗಿಂತ ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')} ಹೆಚ್ಚಾಗಿದೆ. ಕಡಿಮೆ ವೆಚ್ಚದ ಆಕರ್ಷಣೆಗಳನ್ನು ಆಯ್ಕೆಮಾಡಲು ಅಥವಾ ವಸತಿ ವರ್ಗ ಬದಲಾಯಿಸಲು ಶಿಫಾರಸು ಮಾಡುತ್ತೇವೆ.`
+                    : `Estimated minimum expenses exceed your target budget cap by ₹${Math.round(budget.budget_overrun_inr || 0).toLocaleString('en-IN')}. Consider switching to public transit or choosing budget homestay accommodation.`
+                )}
+              </div>
+            )}
+
+            {/* Cost drivers tags */}
+            {budget.cost_drivers && budget.cost_drivers.length > 0 && (
+              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>
+                  {language === 'kn' ? 'ಪ್ರಮುಖ ವೆಚ್ಚ ಕಾರಣಗಳು:' : 'Primary Cost Drivers:'}
+                </span>
+                {budget.cost_drivers.map((driver, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      fontSize: '0.72rem',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: '#F1F5F9',
+                      border: '1px solid #CBD5E1',
+                      color: '#334155',
+                    }}
+                  >
+                    {driver}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SECTION: Actionable Budget Alternatives */}
+        {budget && budget.budget_alternatives && budget.budget_alternatives.length > 0 && (
+          <div
+            data-testid="budget-alternatives-card"
+            style={{
+              marginTop: '16px',
+              padding: '16px',
+              background: '#FFFFFF',
+              border: '1px solid #BAE6FD',
+              borderRadius: '8px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <TrendingDown size={16} color="#0891B2" strokeWidth={2.5} />
+              <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#172033' }}>
+                {language === 'kn' ? 'ಬಜೆಟ್ ಉಳಿತಾಯ ಮತ್ತು ಪರ್ಯಾಯ ಮಾರ್ಗಗಳು' : 'Actionable Budget Savings & Smart Alternatives'}
+              </h4>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {budget.budget_alternatives.map((alt, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    background: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#0798B5', letterSpacing: '0.04em' }}>
+                      {alt.category}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: '#DCFCE7',
+                        color: '#15803D',
+                        border: '1px solid #86EFAC',
+                      }}
+                    >
+                      Save ~₹{alt.potential_savings_inr.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#172033', fontWeight: 600 }}>
+                    <span style={{ textDecoration: 'line-through', color: '#94A3B8', marginRight: '6px' }}>
+                      {alt.expensive_choice}
+                    </span>
+                    → <span style={{ color: '#0369A1' }}>{alt.alternative_choice}</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#64748B', lineHeight: 1.4 }}>
+                    {alt.explanation}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -329,7 +501,7 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
         style={{ marginBottom: '24px' }}
       >
         <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0891B2', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>📊</span>
+          <BarChart3 size={18} />
           <span>{language === 'kn' ? 'ವಿವರವಾದ ವೆಚ್ಚದ ಪಟ್ಟಿ' : 'Itemized Cost Estimates'}</span>
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
@@ -347,8 +519,8 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1' }}>
-                  🚗 {t('categoryTransport')}
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <Car size={14} /> {t('categoryTransport')}
                 </span>
                 {renderStatusBadge(transportCat?.cost_status || 'estimated')}
               </div>
@@ -379,8 +551,8 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1' }}>
-                  🏨 {t('categoryAccommodation')}
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <Hotel size={14} /> {t('categoryAccommodation')}
                 </span>
                 {renderStatusBadge(lodgingCat?.cost_status || 'estimated')}
               </div>
@@ -411,8 +583,8 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1' }}>
-                  🍽️ {t('categoryFood')}
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <Utensils size={14} /> {t('categoryFood')}
                 </span>
                 {renderStatusBadge(foodCat?.cost_status || 'estimated')}
               </div>
@@ -443,8 +615,8 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1' }}>
-                  🎟️ {t('categoryTickets')}
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <Ticket size={14} /> {t('categoryTickets')}
                 </span>
                 {renderStatusBadge(ticketCat?.cost_status || (knownFeeCount > 0 ? 'verified' : 'unknown'))}
               </div>
@@ -475,8 +647,8 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1' }}>
-                  🛡️ {t('categoryContingency')}
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369A1', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <Shield size={14} /> {t('categoryContingency')}
                 </span>
                 <span
                   style={{
@@ -613,13 +785,13 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ stops, language, b
 
       {/* Warnings & Exclusions */}
       {budget && budget.has_unknown_costs && (
-        <div className="budget-warning-banner" role="alert" style={{ marginBottom: '10px' }}>
-          ⚠️ {language === 'kn' ? 'ಕೆಲವು ಆಕರ್ಷಣೆಗಳ ಪ್ರವೇಶ ಶುಲ್ಕ ಪರಿಶೀಲಿಸಿಲ್ಲ. ಇವುಗಳನ್ನು ಕನಿಷ್ಠ ವೆಚ್ಚದಲ್ಲಿ ಸೇರಿಸಲಾಗಿಲ್ಲ.' : 'Some attractions have unverified entry fees. These are excluded from minimum calculated totals.'}
+        <div className="budget-warning-banner" role="alert" style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <AlertTriangle size={15} /> {language === 'kn' ? 'ಕೆಲವು ಆಕರ್ಷಣೆಗಳ ಪ್ರವೇಶ ಶುಲ್ಕ ಪರಿಶೀಲಿಸಿಲ್ಲ. ಇವುಗಳನ್ನು ಕನಿಷ್ಠ ವೆಚ್ಚದಲ್ಲಿ ಸೇರಿಸಲಾಗಿಲ್ಲ.' : 'Some attractions have unverified entry fees. These are excluded from minimum calculated totals.'}
         </div>
       )}
 
-      <p className="budget-disclaimer" data-testid="budget-disclaimer" style={{ marginTop: '10px' }}>
-        ℹ️ {t('budgetDisclaimer')}
+      <p className="budget-disclaimer" data-testid="budget-disclaimer" style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Info size={14} /> {t('budgetDisclaimer')}
       </p>
     </div>
   );

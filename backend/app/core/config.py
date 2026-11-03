@@ -64,6 +64,16 @@ class Settings(BaseSettings):
     ROUTING_PROVIDER: str = "osrm"
     OSRM_BASE_URL: str = "https://router.project-osrm.org"
 
+    @field_validator("PORT", mode="before")
+    @classmethod
+    def _parse_port(cls, v: Any) -> int:
+        if v is None or str(v).strip() == "":
+            return 8000
+        try:
+            return int(str(v).strip())
+        except (ValueError, TypeError):
+            return 8000
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def _parse_cors_origins(cls, v: Any) -> list[str]:

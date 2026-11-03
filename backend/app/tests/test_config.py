@@ -30,3 +30,15 @@ def test_cors_origins_parsing():
     """Verify CORS origins list configuration."""
     cfg = Settings(CORS_ORIGINS=["https://nammakarnataka.example.com"])
     assert "https://nammakarnataka.example.com" in cfg.CORS_ORIGINS
+
+
+def test_port_parsing_empty_string():
+    """Verify empty string or invalid PORT environment values gracefully default to 8000."""
+    cfg_empty = Settings(PORT="")
+    assert cfg_empty.PORT == 8000
+
+    cfg_str = Settings(PORT="10000")
+    assert cfg_str.PORT == 10000
+
+    cfg_none = Settings(PORT=None)
+    assert cfg_none.PORT == 8000

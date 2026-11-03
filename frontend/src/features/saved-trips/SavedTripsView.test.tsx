@@ -77,6 +77,8 @@ const MOCK_CLOUD_TRIP_DETAIL: SavedTripDetail = {
 describe('SavedTripsView Component', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    delete MOCK_LOCAL_TRIP.cloud_trip_id;
+    delete MOCK_LOCAL_TRIP.sync_status;
   });
 
   it('renders local device trips tab by default and preserves guest trips', () => {
@@ -189,5 +191,114 @@ describe('SavedTripsView Component', () => {
     const signOutBtn = screen.getByTestId('sign-out-btn');
     fireEvent.click(signOutBtn);
     expect(onAuthTokenChange).toHaveBeenCalledWith(null);
+  });
+
+  it('transfers a single device trip to cloud when authenticated and preserves local copy', async () => {
+    const saveSpy = vi.spyOn(api, 'saveCloudTrip').mockResolvedValue(MOCK_CLOUD_TRIP_DETAIL);
+    vi.spyOn(api, 'listCloudTrips').mockResolvedValue({
+      items: [MOCK_CLOUD_TRIP_SUMMARY],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    });
+
+    render(
+      <SavedTripsView
+        savedTrips={[MOCK_LOCAL_TRIP]}
+        language="en"
+        onSelectTrip={vi.fn()}
+        onDeleteTrip={vi.fn()}
+        onNavigatePlanner={vi.fn()}
+        authToken="valid-auth-token-123"
+      />
+    );
+
+    // Single transfer button is present
+    const transferBtn = screen.getByTestId('transfer-btn-local-trip-1');
+    expect(transferBtn).toBeInTheDocument();
+    fireEvent.click(transferBtn);
+
+    await waitFor(() => {
+      expect(saveSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '2-Day Mysuru Heritage Journey',
+          origin_label: 'Bengaluru',
+          duration_days: 2,
+          currency_code: 'INR',
+        }),
+        'valid-auth-token-123',
+        'transfer-local-trip-1'
+      );
+    });
+
+    // Verify success toast appears
+    await waitFor(() => {
+      expect(
+        screen.getByText(/"2-Day Mysuru Heritage Journey" synced to cloud successfully\./i)
+      ).toBeInTheDocument();
+    });
+
+    // Local trip remains displayed (Copy to Cloud + Preserve Device Copy)
+    expect(screen.getByText('2-Day Mysuru Heritage Journey')).toBeInTheDocument();
+  });
+
+  it('supports selecting device trips and running batch import to cloud account', async () => {
+    const saveSpy = vi.spyOn(api, 'saveCloudTrip').mockResolvedValue(MOCK_CLOUD_TRIP_DETAIL);
+    vi.spyOn(api, 'listCloudTrips').mockResolvedValue({
+      items: [MOCK_CLOUD_TRIP_SUMMARY],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    });
+
+    render(
+      <SavedTripsView
+        savedTrips={[MOCK_LOCAL_TRIP]}
+        language="en"
+        onSelectTrip={vi.fn()}
+        onDeleteTrip={vi.fn()}
+        onNavigatePlanner={vi.fn()}
+        authToken="valid-auth-token-123"
+      />
+    );
+
+    // Checkbox is displayed on the card
+    const selectCheckbox = screen.getByLabelText(/Select 2-Day Mysuru Heritage Journey/i);
+    expect(selectCheckbox).not.toBeChecked();
+
+    // Select All
+    const selectAllBtn = screen.getByTestId('select-all-btn');
+    fireEvent.click(selectAllBtn);
+    expect(selectCheckbox).toBeChecked();
+
+    // Import Selected button
+    const importBtn = screen.getByTestId('import-selected-btn');
+    expect(importBtn).toHaveTextContent(/Import Selected \(1\)/i);
+    fireEvent.click(importBtn);
+
+    await waitFor(() => {
+      expect(saveSpy).toHaveBeenCalled();
+      expect(
+        screen.getByText(/1 selected → 1 imported, 0 already synced/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('renders clean empty state with CTA when no device trips exist', () => {
+    const onNavigatePlanner = vi.fn();
+    render(
+      <SavedTripsView
+        savedTrips={[]}
+        language="en"
+        onSelectTrip={vi.fn()}
+        onDeleteTrip={vi.fn()}
+        onNavigatePlanner={onNavigatePlanner}
+      />
+    );
+
+    expect(screen.getByTestId('no-saved-trips')).toBeInTheDocument();
+    const planCta = screen.getByTestId('create-trip-btn');
+    fireEvent.click(planCta);
+    expect(onNavigatePlanner).toHaveBeenCalled();
   });
 });

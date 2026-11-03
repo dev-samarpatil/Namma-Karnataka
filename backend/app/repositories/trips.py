@@ -591,7 +591,11 @@ class SupabaseTripRepository:
                     "duration_days": request.duration_days,
                     "pace": request.pace,
                     "is_offbeat_preferred": request.is_offbeat_preferred,
-                    "preferences": request.preferences,
+                    "preferences": {
+                        **request.preferences,
+                        "total_stops": request.itinerary.total_destinations,
+                        "language": getattr(request.itinerary, "language", "en"),
+                    },
                     "budget_min_inr": request.budget_min_inr,
                     "budget_max_inr": request.budget_max_inr,
                     "currency_code": request.currency_code,
@@ -717,7 +721,7 @@ class SupabaseTripRepository:
                         budget_min_inr=r.get("budget_min_inr"),
                         budget_max_inr=r.get("budget_max_inr"),
                         currency_code=r.get("currency_code", "INR"),
-                        total_stops=0,
+                        total_stops=(r.get("preferences") or {}).get("total_stops", 0),
                         created_at=r["created_at"],
                         updated_at=r["updated_at"],
                     )
@@ -772,7 +776,26 @@ class SupabaseTripRepository:
                     },
                 )
                 snap_rows = snap_res.json() if snap_res.status_code == 200 else []
-                snapshot_data = snap_rows[0] if snap_rows else {}
+                raw_snap = snap_rows[0] if snap_rows else {}
+                raw_items = raw_snap.get("items") or []
+
+                if isinstance(raw_items, dict) and "items" in raw_items:
+                    snapshot_obj = raw_items
+                else:
+                    pref = trip_record.get("preferences") or {}
+                    snapshot_obj = {
+                        "language": pref.get("language") or "en",
+                        "generation_mode": raw_snap.get("generation_mode", "fallback"),
+                        "provider_used": raw_snap.get("provider_used", "deterministic_fallback"),
+                        "items": raw_items if isinstance(raw_items, list) else [],
+                        "total_destinations": raw_snap.get("total_destinations", len(raw_items) if isinstance(raw_items, list) else 0),
+                        "duration_days": trip_record["duration_days"],
+                        "origin_label": trip_record.get("origin_label"),
+                        "days": [],
+                        "assumptions": [],
+                        "data_limitations": [],
+                        "warnings": [],
+                    }
 
                 return SavedTripDetail(
                     id=trip_record["id"],
@@ -787,7 +810,7 @@ class SupabaseTripRepository:
                     budget_max_inr=trip_record.get("budget_max_inr"),
                     currency_code=trip_record.get("currency_code", "INR"),
                     status=trip_record.get("status", "active"),
-                    snapshot=snapshot_data,
+                    snapshot=snapshot_obj,
                     created_at=trip_record["created_at"],
                     updated_at=trip_record["updated_at"],
                 )

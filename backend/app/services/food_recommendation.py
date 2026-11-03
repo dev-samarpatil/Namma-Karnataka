@@ -142,7 +142,6 @@ class FoodRecommendationService:
                 cultural_context="Originated in the royal kitchens of the Mysore Palace and perfected in Karnataka homes.",
                 primary_districts=["Bengaluru Urban", "Mysuru"],
             ),
-
             # 2. Mysuru & Mandya
             RegionalDish(
                 id="mys-ragi-mudde-nati-koli",
@@ -179,7 +178,6 @@ class FoodRecommendationService:
                 cultural_context="Born at Maddur Railway Station in 1917, iconic travel refreshment.",
                 primary_districts=["Mandya", "Mysuru", "Ramanagara"],
             ),
-
             # 3. Coastal Karavali
             RegionalDish(
                 id="kar-neer-dosa-kori-rotti",
@@ -216,7 +214,6 @@ class FoodRecommendationService:
                 cultural_context="A rainy-day and sunset coastal tea essential.",
                 primary_districts=["Dakshina Kannada", "Udupi"],
             ),
-
             # 4. Malnad
             RegionalDish(
                 id="mal-akki-rotti-chutney",
@@ -235,7 +232,6 @@ class FoodRecommendationService:
                 cultural_context="Traditional morning meal sustaining coffee plantation estates and hill villages.",
                 primary_districts=["Chikkamagaluru", "Shivamogga", "Hassan"],
             ),
-
             # 5. Kodagu
             RegionalDish(
                 id="kod-kadambuttu-pandi-curry",
@@ -255,7 +251,6 @@ class FoodRecommendationService:
                 cultural_context="The sovereign feast of Kodava festivals and weddings.",
                 primary_districts=["Kodagu"],
             ),
-
             # 6. North Karnataka
             RegionalDish(
                 id="nk-jolada-rotti-ennegayi-oota",
@@ -274,7 +269,6 @@ class FoodRecommendationService:
                 cultural_context="Ancient, healthy, low-glycemic heartland food culture of northern Karnataka.",
                 primary_districts=["Dharwad", "Belagavi", "Bagalkote", "Vijayapura", "Gadag"],
             ),
-
             # 7. Kalyana Karnataka
             RegionalDish(
                 id="kk-kalaburagi-tahari",
@@ -294,7 +288,6 @@ class FoodRecommendationService:
                 cultural_context="Signature celebratory dish of the Gulbarga and Bidar royal courts.",
                 primary_districts=["Kalaburagi", "Bidar", "Raichur"],
             ),
-
             # 8. Central Karnataka
             RegionalDish(
                 id="ck-davanagere-benne-dosa",
@@ -378,4 +371,3 @@ def get_food_recommendation_service() -> FoodRecommendationService:
     if _global_food_service is None:
         _global_food_service = FoodRecommendationService()
     return _global_food_service
-

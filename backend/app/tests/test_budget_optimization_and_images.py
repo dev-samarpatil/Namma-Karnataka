@@ -103,4 +103,3 @@ def test_budget_optimization_impossible_budget_diagnostics():
     assert "lower than the absolute minimum" in budget.infeasibility_reason
     assert budget.recommended_budget_increase_inr is not None
     assert budget.recommended_budget_increase_inr > 0.0
-

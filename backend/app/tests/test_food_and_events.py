@@ -45,7 +45,9 @@ def test_food_guide_dietary_filter():
     service = get_local_food_guide_service()
 
     # Vegetarian only in Dakshina Kannada
-    veg_dishes = service.get_specialities_for_district("Dakshina Kannada", dietary_preference="vegetarian")
+    veg_dishes = service.get_specialities_for_district(
+        "Dakshina Kannada", dietary_preference="vegetarian"
+    )
     for d in veg_dishes:
         assert d.is_vegetarian is True
         assert d.contains_seafood is False
@@ -138,6 +140,7 @@ def test_date_aware_event_matching():
 def test_discovered_destinations_verified_images():
     """Verify discovered destinations like Tonnur Kere have verified authentic images."""
     from app.services.destination_image_service import get_destination_image_service
+
     svc = get_destination_image_service()
     meta = svc.get_verified_media_for_id("gaz-tonnur-kere")
     assert meta is not None
@@ -183,7 +186,9 @@ def test_api_events_calendar_endpoints():
     assert any(e["id"] == "mysuru-dasara" for e in data_cal)
 
     # Happening during trip
-    res_trip = client.get("/api/v1/events/happening-during-trip?start_date=2026-10-12&duration_days=3&districts=KA-MYS")
+    res_trip = client.get(
+        "/api/v1/events/happening-during-trip?start_date=2026-10-12&duration_days=3&districts=KA-MYS"
+    )
     assert res_trip.status_code == 200
     data_trip = res_trip.json()
     assert any(e["id"] == "mysuru-dasara" for e in data_trip)

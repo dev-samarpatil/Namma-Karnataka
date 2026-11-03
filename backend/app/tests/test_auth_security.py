@@ -24,6 +24,7 @@ def configure_test_jwt_secret(monkeypatch):
     monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", TEST_SECRET)
     monkeypatch.setattr(settings, "APP_ENV", "development")
     import app.repositories.trips as trips_module
+
     trips_module._trip_repository_instance = InMemoryTripRepository()
     yield
     trips_module._trip_repository_instance = None
@@ -79,17 +80,18 @@ async def test_reject_expired_jwt():
 
 @pytest.mark.asyncio
 async def test_reject_tampered_signature():
-    """Verify that a token signed with the wrong key is rejected."""
+    """Verify that a token signed with the wrong key is rejected with HTTP 401."""
     wrong_key_token = create_test_jwt(secret="wrong-secret-signature-key-555555555")
     with pytest.raises(AppError) as exc_info:
         await verify_jwt_token(wrong_key_token)
 
-    assert exc_info.value.status_code in (401, 502, 503)
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.code == "INVALID_CREDENTIALS"
 
 
 @pytest.mark.asyncio
 async def test_reject_token_missing_sub():
-    """Verify that a token missing 'sub' claim is rejected."""
+    """Verify that a token missing 'sub' claim is rejected with HTTP 401."""
     now = int(time.time())
     payload = {"email": "nosub@example.com", "exp": now + 3600}
     token = jwt.encode(payload, key=TEST_SECRET, algorithm="HS256")
@@ -97,7 +99,8 @@ async def test_reject_token_missing_sub():
     with pytest.raises(AppError) as exc_info:
         await verify_jwt_token(token)
 
-    assert exc_info.value.status_code in (401, 502, 503)
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.code == "INVALID_CREDENTIALS"
 
 
 @pytest.mark.asyncio
@@ -136,8 +139,57 @@ def test_api_unauthorized_without_token():
     """Verify that protected API endpoint rejects calls with no Authorization header."""
     res = client.get("/api/v1/trips")
     assert res.status_code == 401
+    assert "www-authenticate" in res.headers
+    assert res.headers["www-authenticate"] == "Bearer"
     data = res.json()
     assert data["error"]["code"] == "UNAUTHORIZED"
+
+
+def test_api_invalid_malformed_token_rejected_with_401():
+    """Verify that malformed or non-JWT token is rejected with HTTP 401 and WWW-Authenticate."""
+    res = client.get("/api/v1/trips", headers={"Authorization": "Bearer totally-invalid-token"})
+    assert res.status_code == 401
+    assert "www-authenticate" in res.headers
+    assert "Bearer" in res.headers["www-authenticate"]
+    data = res.json()
+    assert data["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+@pytest.mark.asyncio
+async def test_auth_infrastructure_failure_when_unreachable(monkeypatch):
+    """Verify that network failure during external verification raises HTTP 503 AUTH_UNAVAILABLE."""
+    import httpx
+
+    from app.core.security import verify_token_against_supabase_api
+
+    monkeypatch.setattr(settings, "SUPABASE_URL", "https://unreachable.supabase.example.co")
+    monkeypatch.setattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "test-key")
+
+    async def mock_get(*args, **kwargs):
+        raise httpx.ConnectError("Connection refused by test")
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
+
+    with pytest.raises(AppError) as exc_info:
+        await verify_token_against_supabase_api("some.mock.jwt")
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.code == "AUTH_UNAVAILABLE"
+
+
+@pytest.mark.asyncio
+async def test_auth_unconfigured_infrastructure_failure(monkeypatch):
+    """Verify that when no auth service is configured, verifying an asymmetric JWT raises 503 AUTH_UNCONFIGURED."""
+    monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", None)
+    monkeypatch.setattr(settings, "SUPABASE_URL", None)
+
+    # Validly formatted 3-part token
+    token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJl"
+    with pytest.raises(AppError) as exc_info:
+        await verify_jwt_token(token)
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.code == "AUTH_UNCONFIGURED"
 
 
 def test_api_authorized_with_valid_jwt():

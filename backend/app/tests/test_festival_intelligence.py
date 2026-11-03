@@ -14,7 +14,16 @@ from app.services.events import get_events_service
 from app.services.scheduler import DeterministicScheduler
 
 
-def _create_mock_dest(dest_id: str, slug: str, name: str, district: str, lat: float, lon: float, day_number: int = 1, order: int = 1):
+def _create_mock_dest(
+    dest_id: str,
+    slug: str,
+    name: str,
+    district: str,
+    lat: float,
+    lon: float,
+    day_number: int = 1,
+    order: int = 1,
+):
     class MockCoords:
         def __init__(self, lat, lon):
             self.lat = lat
@@ -77,7 +86,11 @@ def test_event_source_links_and_verification_attached():
     for ev in events:
         assert ev.source_name, f"Event {ev.id} must have source_name"
         assert ev.source_url.startswith("http"), f"Event {ev.id} must have valid source_url"
-        assert ev.verification_status in ("verified_authentic", "editorial_verified", "source_reported")
+        assert ev.verification_status in (
+            "verified_authentic",
+            "editorial_verified",
+            "source_reported",
+        )
         assert ev.ticket_cost_status in ("free", "verified", "estimated", "unknown")
 
 

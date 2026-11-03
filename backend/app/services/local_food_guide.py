@@ -43,7 +43,9 @@ class RegionalSpeciality(BaseModel):
     is_jain_friendly: bool = False
     contains_meat: bool = False
     contains_seafood: bool = False
-    recommended_venue_type: str  # Darshini, Traditional Mess, Khanavali, Military Hotel, Coastal Shack
+    recommended_venue_type: (
+        str  # Darshini, Traditional Mess, Khanavali, Military Hotel, Coastal Shack
+    )
     cultural_context: str
 
 
@@ -60,7 +62,9 @@ class VerifiedEatery(BaseModel):
     longitude: float
     address_en: str
     address_kn: str
-    venue_type: str  # Heritage Darshini, Traditional Mess, Khanavali, Military Hotel, Coastal Seafood Shack
+    venue_type: (
+        str  # Heritage Darshini, Traditional Mess, Khanavali, Military Hotel, Coastal Seafood Shack
+    )
     cuisines: list[str] = Field(default_factory=list)
     signature_dishes: list[str] = Field(default_factory=list)
     price_tier: str = "budget"  # budget, mid_range, premium
@@ -159,7 +163,6 @@ REGIONAL_SPECIALITIES: list[RegionalSpeciality] = [
         recommended_venue_type="Highway Eatery",
         cultural_context="Legendary stopover cuisine along the Bengaluru-Mysuru old highway belt.",
     ),
-
     # Mysuru & Mandya
     RegionalSpeciality(
         id="mys-mylari-dosa",
@@ -238,7 +241,6 @@ REGIONAL_SPECIALITIES: list[RegionalSpeciality] = [
         recommended_venue_type="Traditional Mess / Military Hotel",
         cultural_context="Famous village feast delicacy across Mandya, Pandavapura, and Ramanagara farming belts.",
     ),
-
     # Mangaluru, Udupi & Coastal Karavali
     RegionalSpeciality(
         id="udp-goli-baje",
@@ -303,7 +305,6 @@ REGIONAL_SPECIALITIES: list[RegionalSpeciality] = [
         recommended_venue_type="Coastal Traditional Restaurant",
         cultural_context="Signature celebratory banquet centerpiece of the Bunt community of Coastal Karnataka.",
     ),
-
     # Kodagu (Coorg)
     RegionalSpeciality(
         id="kod-pandi-curry",
@@ -337,7 +338,6 @@ REGIONAL_SPECIALITIES: list[RegionalSpeciality] = [
         recommended_venue_type="Homestyle Cafe",
         cultural_context="Native rainforest forage cuisine showcasing seasonal harmony with the Western Ghats ecosystem.",
     ),
-
     # North Karnataka (Hubballi, Dharwad, Belagavi, Vijayapura, Gadag)
     RegionalSpeciality(
         id="nk-jolada-rotti-oota",
@@ -371,7 +371,6 @@ REGIONAL_SPECIALITIES: list[RegionalSpeciality] = [
         recommended_venue_type="Heritage Sweet Shop",
         cultural_context="GI-tagged pride of Dharwad with 175+ years of craft perfected by the Mishra lineage.",
     ),
-
     # Malnad & Central Karnataka (Shivamogga, Chikkamagaluru, Chitradurga)
     RegionalSpeciality(
         id="mal-shivamogga-benne-dosa",
@@ -475,7 +474,6 @@ VERIFIED_EATERIES: list[VerifiedEatery] = [
         source_name="Bangalore Heritage Directory",
         google_maps_query="Shri Sagar CTR Malleshwaram Bengaluru",
     ),
-
     # Mysuru
     VerifiedEatery(
         id="eatery-mylari-mysuru",
@@ -543,7 +541,6 @@ VERIFIED_EATERIES: list[VerifiedEatery] = [
         source_name="Karnataka Tourism Verified",
         google_maps_query="Guru Sweet Mart Sayyaji Rao Road Mysuru",
     ),
-
     # Mandya & Pandavapura / Tonnur
     VerifiedEatery(
         id="eatery-mandya-mess",
@@ -589,7 +586,6 @@ VERIFIED_EATERIES: list[VerifiedEatery] = [
         source_name="District Tourism Pandavapura Registry",
         google_maps_query="Tonnur Lake Tiffin Pandavapura Mandya",
     ),
-
     # Mangaluru & Udupi
     VerifiedEatery(
         id="eatery-mitra-samaj-udupi",
@@ -657,7 +653,6 @@ VERIFIED_EATERIES: list[VerifiedEatery] = [
         source_name="Karnataka Tourism Approved",
         google_maps_query="Machali Restaurant Kodialbail Mangaluru",
     ),
-
     # Kodagu (Coorg)
     VerifiedEatery(
         id="eatery-coorg-cuisine-madikeri",
@@ -681,7 +676,6 @@ VERIFIED_EATERIES: list[VerifiedEatery] = [
         source_name="Kodagu Tourism Directory",
         google_maps_query="Coorg Cuisine Restaurant Main Road Madikeri",
     ),
-
     # North Karnataka (Dharwad, Hubballi, Belagavi, Bagalkote)
     VerifiedEatery(
         id="eatery-basaveshwara-khanavali",
@@ -727,7 +721,6 @@ VERIFIED_EATERIES: list[VerifiedEatery] = [
         source_name="GI Tag Registry & Tourism Directory",
         google_maps_query="Mishra Pedha Line Bazaar Dharwad",
     ),
-
     # Malnad & Central (Shivamogga, Chitradurga)
     VerifiedEatery(
         id="eatery-town-canteen-shivamogga",
@@ -875,7 +868,13 @@ class LocalFoodGuideService:
         matched = [e for e in self._eateries if norm_dist in e.district.lower()]
         if not matched and norm_dist in _DISTRICT_TO_REGION:
             reg = _DISTRICT_TO_REGION[norm_dist]
-            matched = [e for e in self._eateries if norm_dist in e.city.lower() or norm_dist in e.address_en.lower() or _DISTRICT_TO_REGION.get(e.district.lower()) == reg]
+            matched = [
+                e
+                for e in self._eateries
+                if norm_dist in e.city.lower()
+                or norm_dist in e.address_en.lower()
+                or _DISTRICT_TO_REGION.get(e.district.lower()) == reg
+            ]
         return matched
 
     def get_specialities_for_district(
@@ -890,7 +889,11 @@ class LocalFoodGuideService:
 
         matched: list[RegionalSpeciality] = []
         for dish in self._specialities:
-            is_dist_match = norm_dist in dish.district.lower() or norm_dist in dish.region.lower() or dish.region.lower() == target_region
+            is_dist_match = (
+                norm_dist in dish.district.lower()
+                or norm_dist in dish.region.lower()
+                or dish.region.lower() == target_region
+            )
             if norm_dist and not is_dist_match:
                 continue
             if meal_type and dish.meal_type != meal_type.lower():
@@ -938,7 +941,11 @@ class LocalFoodGuideService:
                 continue
             if is_vegetarian_only and "vegetarian" not in [c.lower() for c in eatery.cuisines]:
                 # Skip non-veg focused military hotels / seafood shacks if strictly veg
-                if eatery.venue_type in ("Traditional Mess", "Coastal Seafood Shack", "Military Hotel"):
+                if eatery.venue_type in (
+                    "Traditional Mess",
+                    "Coastal Seafood Shack",
+                    "Military Hotel",
+                ):
                     continue
             results.append((dist, eatery))
 
@@ -973,7 +980,9 @@ class LocalFoodGuideService:
         chosen_eatery: VerifiedEatery | None = None
         distance_km: float | None = None
         if latitude is not None and longitude is not None:
-            is_veg = bool(dietary_preference and dietary_preference.lower() in ("vegetarian", "vegan", "jain"))
+            is_veg = bool(
+                dietary_preference and dietary_preference.lower() in ("vegetarian", "vegan", "jain")
+            )
             nearby = self.get_eateries_near(
                 latitude, longitude, radius_km=45.0, is_vegetarian_only=is_veg
             )
@@ -983,7 +992,9 @@ class LocalFoodGuideService:
         # If no coordinate match, match by district name
         if not chosen_eatery:
             norm_dist = district.lower().replace("district", "").strip()
-            chosen_eatery = next((e for e in self._eateries if norm_dist in e.district.lower()), None)
+            chosen_eatery = next(
+                (e for e in self._eateries if norm_dist in e.district.lower()), None
+            )
 
         meal_title = meal_type.capitalize()
         if chosen_eatery:
@@ -998,7 +1009,9 @@ class LocalFoodGuideService:
             headline_en = f"{meal_title} — Savor regional {dish.name_en}."
             headline_kn = f"{meal_title} — ಸಾಂಪ್ರದಾಯಿಕ {dish.name_kn} ಸವಿಯಿರಿ."
             desc_en = f"{dish.description_en} Recommended at a local {dish.recommended_venue_type} in {district}."
-            desc_kn = f"{dish.description_kn} {district}ದ ಸ್ಥಳೀಯ {dish.recommended_venue_type}ನಲ್ಲಿ ಉಪಹಾರ."
+            desc_kn = (
+                f"{dish.description_kn} {district}ದ ಸ್ಥಳೀಯ {dish.recommended_venue_type}ನಲ್ಲಿ ಉಪಹಾರ."
+            )
             map_url = f"https://www.google.com/maps/search/?api=1&query={dish.name_en.replace(' ', '+')}+{district}+Karnataka"
             loc_summary = f"{dish.recommended_venue_type}, {district}"
             is_verified = False

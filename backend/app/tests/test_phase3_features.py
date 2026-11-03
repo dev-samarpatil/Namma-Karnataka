@@ -90,6 +90,7 @@ def test_multi_source_destination_discovery():
 
 def test_discovery_geodesic_deduplication():
     """Verify that records within 300 meters are merged prioritizing verified source."""
+
     class MockProvider:
         def get_source_name(self):
             return ProvenanceSource.COMMUNITY_CURATED
@@ -191,4 +192,3 @@ def test_geographic_clustering_and_sequence():
         start_coords=Coordinates(lat=12.9716, lon=77.5946),
     )
     assert len(seq) == len(clusters[0])
-

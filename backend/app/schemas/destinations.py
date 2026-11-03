@@ -376,4 +376,3 @@ class DestinationNearbyResponse(StrictSchema):
     nearby_transit: list[NearbyTransitItem] = Field(default_factory=list)
     nearby_restaurants: list[dict[str, Any]] = Field(default_factory=list)
     nearby_accommodations: list[dict[str, Any]] = Field(default_factory=list)
-

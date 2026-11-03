@@ -182,8 +182,12 @@ def get_destination_nearby(
             # If no places found within initial radius, perform transparent radius expansion
             if not nearby_restaurants and not nearby_accommodations:
                 expanded_radius = min(max(radius_km * 2.0, 35.0), 60.0)
-                expanded_rests = places_svc.get_restaurants_near(lat, lon, radius_km=expanded_radius, max_results=6)
-                expanded_accs = places_svc.get_accommodations_near(lat, lon, radius_km=expanded_radius, max_results=6)
+                expanded_rests = places_svc.get_restaurants_near(
+                    lat, lon, radius_km=expanded_radius, max_results=6
+                )
+                expanded_accs = places_svc.get_accommodations_near(
+                    lat, lon, radius_km=expanded_radius, max_results=6
+                )
                 if expanded_rests or expanded_accs:
                     for r in expanded_rests:
                         nearby_restaurants.append(r.model_dump())
@@ -196,7 +200,9 @@ def get_destination_nearby(
                         f"Showing closest verified options within {expanded_radius} km."
                     )
                 else:
-                    radius_note = f"No curated food or lodging records within {radius_km} km radius."
+                    radius_note = (
+                        f"No curated food or lodging records within {radius_km} km radius."
+                    )
         except Exception:
             pass
 
@@ -249,7 +255,9 @@ async def proxy_destination_media(
     # 1. Local filesystem assets
     if clean_url.startswith(("/images/", "/static/")):
         filename = Path(clean_url).name
-        local_path = Path(__file__).resolve().parent.parent.parent / "static" / "destinations" / filename
+        local_path = (
+            Path(__file__).resolve().parent.parent.parent / "static" / "destinations" / filename
+        )
         frontend_path = (
             Path(__file__).resolve().parent.parent.parent.parent.parent
             / "frontend"
@@ -258,10 +266,16 @@ async def proxy_destination_media(
             / "destinations"
             / filename
         )
-        target_path = local_path if local_path.exists() else (frontend_path if frontend_path.exists() else None)
+        target_path = (
+            local_path
+            if local_path.exists()
+            else (frontend_path if frontend_path.exists() else None)
+        )
         if target_path:
             data = target_path.read_bytes()
-            content_type = "image/jpeg" if filename.lower().endswith((".jpg", ".jpeg")) else "image/png"
+            content_type = (
+                "image/jpeg" if filename.lower().endswith((".jpg", ".jpeg")) else "image/png"
+            )
             return Response(
                 content=data,
                 media_type=content_type,

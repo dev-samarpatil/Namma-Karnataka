@@ -27,7 +27,9 @@ router = APIRouter(prefix="/food", tags=["Regional Food"])
 def get_food_recommendations(
     district: str | None = Query(None, description="Karnataka district name"),
     meal_type: str | None = Query(None, description="breakfast, lunch, dinner, or snack"),
-    dietary_preference: str | None = Query(None, description="veg, vegan, jain, non_veg, no_seafood"),
+    dietary_preference: str | None = Query(
+        None, description="veg, vegan, jain, non_veg, no_seafood"
+    ),
     max_cost_inr: float | None = Query(None, ge=10.0, description="Max cost in INR"),
     limit: int = Query(6, ge=1, le=20, description="Max results"),
 ) -> list[RegionalDish]:
@@ -45,10 +47,7 @@ def get_food_recommendations(
 @router.get("/regions")
 def get_culinary_regions() -> list[dict[str, str]]:
     """Return the 8 authentic Karnataka culinary regions."""
-    return [
-        {"id": r.value, "label": r.name.replace("_", " ").title()}
-        for r in CulinaryRegion
-    ]
+    return [{"id": r.value, "label": r.name.replace("_", " ").title()} for r in CulinaryRegion]
 
 
 @router.get("/specialities", response_model=list[RegionalSpeciality])
@@ -112,5 +111,3 @@ def get_meal_recommendation(
         dietary_preference=dietary_preference,
         budget_scenario=budget_scenario,
     )
-
-

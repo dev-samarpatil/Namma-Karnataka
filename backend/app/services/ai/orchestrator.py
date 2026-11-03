@@ -183,11 +183,13 @@ class AIOrchestrator:
                     remaining_deadline,
                     req_id,
                 )
-                fallback_audit_log.append({
-                    "provider": provider_name,
-                    "failure_category": "DEADLINE_EXHAUSTED",
-                    "duration_seconds": round(elapsed, 2),
-                })
+                fallback_audit_log.append(
+                    {
+                        "provider": provider_name,
+                        "failure_category": "DEADLINE_EXHAUSTED",
+                        "duration_seconds": round(elapsed, 2),
+                    }
+                )
                 break
 
             call_timeout = min(remaining_deadline, max_call_timeout)
@@ -226,12 +228,14 @@ class AIOrchestrator:
                     call_duration,
                     req_id,
                 )
-                fallback_audit_log.append({
-                    "provider": provider_name,
-                    "model": model_used,
-                    "status": "success",
-                    "duration_seconds": call_duration,
-                })
+                fallback_audit_log.append(
+                    {
+                        "provider": provider_name,
+                        "model": model_used,
+                        "status": "success",
+                        "duration_seconds": call_duration,
+                    }
+                )
 
                 # Post-AI Geographic Optimization:
                 # Ensure Day 1 starts at origin and sequential continuity
@@ -254,12 +258,14 @@ class AIOrchestrator:
                     getattr(request, "strict_budget", False)
                     or (request.budget_limit_inr and request.budget_limit_inr > 0)
                 ):
-                    opt_days, opt_items, opt_budget, was_optimized = BudgetOptimizer.optimize_itinerary_for_budget(
-                        request=request,
-                        destinations=grounded_items,
-                        days=days,
-                        budget=budget,
-                        candidates=candidates,
+                    opt_days, opt_items, opt_budget, was_optimized = (
+                        BudgetOptimizer.optimize_itinerary_for_budget(
+                            request=request,
+                            destinations=grounded_items,
+                            days=days,
+                            budget=budget,
+                            candidates=candidates,
+                        )
                     )
                     if was_optimized:
                         days = opt_days
@@ -270,7 +276,9 @@ class AIOrchestrator:
                         )
 
                 all_warnings = corridor_warnings + schedule_warnings
-                provider_display = f"{provider_name} ({model_used})" if model_used != "default" else provider_name
+                provider_display = (
+                    f"{provider_name} ({model_used})" if model_used != "default" else provider_name
+                )
 
                 fest_seen = set()
                 trip_festivals = []
@@ -282,6 +290,7 @@ class AIOrchestrator:
 
                 if not trip_festivals:
                     from app.services.karnataka_events import get_karnataka_events_service
+
                     k_events = get_karnataka_events_service().match_trip_events(
                         start_date=request.start_date,
                         duration_days=request.duration_days,
@@ -328,11 +337,13 @@ class AIOrchestrator:
                     req_id,
                     exc,
                 )
-                fallback_audit_log.append({
-                    "provider": provider_name,
-                    "failure_category": "TIMEOUT",
-                    "duration_seconds": call_duration,
-                })
+                fallback_audit_log.append(
+                    {
+                        "provider": provider_name,
+                        "failure_category": "TIMEOUT",
+                        "duration_seconds": call_duration,
+                    }
+                )
                 continue
             except (AIProviderError, AIValidationError) as exc:
                 call_duration = round(time.monotonic() - provider_start, 2)
@@ -344,11 +355,13 @@ class AIOrchestrator:
                     call_duration,
                     exc,
                 )
-                fallback_audit_log.append({
-                    "provider": provider_name,
-                    "failure_category": error_code,
-                    "duration_seconds": call_duration,
-                })
+                fallback_audit_log.append(
+                    {
+                        "provider": provider_name,
+                        "failure_category": error_code,
+                        "duration_seconds": call_duration,
+                    }
+                )
                 continue
             except Exception as exc:
                 call_duration = round(time.monotonic() - provider_start, 2)
@@ -358,11 +371,13 @@ class AIOrchestrator:
                     call_duration,
                     exc,
                 )
-                fallback_audit_log.append({
-                    "provider": provider_name,
-                    "failure_category": "UNEXPECTED_ERROR",
-                    "duration_seconds": call_duration,
-                })
+                fallback_audit_log.append(
+                    {
+                        "provider": provider_name,
+                        "failure_category": "UNEXPECTED_ERROR",
+                        "duration_seconds": call_duration,
+                    }
+                )
                 continue
 
         # 5. Deterministic Offline Fallback
@@ -392,12 +407,14 @@ class AIOrchestrator:
             getattr(request, "strict_budget", False)
             or (request.budget_limit_inr and request.budget_limit_inr > 0)
         ):
-            opt_days, opt_items, opt_budget, was_optimized = BudgetOptimizer.optimize_itinerary_for_budget(
-                request=request,
-                destinations=fallback_items,
-                days=days,
-                budget=budget,
-                candidates=candidates,
+            opt_days, opt_items, opt_budget, was_optimized = (
+                BudgetOptimizer.optimize_itinerary_for_budget(
+                    request=request,
+                    destinations=fallback_items,
+                    days=days,
+                    budget=budget,
+                    candidates=candidates,
+                )
             )
             if was_optimized:
                 days = opt_days
@@ -429,6 +446,7 @@ class AIOrchestrator:
 
         if not fallback_festivals:
             from app.services.karnataka_events import get_karnataka_events_service
+
             k_events = get_karnataka_events_service().match_trip_events(
                 start_date=request.start_date,
                 duration_days=request.duration_days,

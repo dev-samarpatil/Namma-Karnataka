@@ -87,4 +87,3 @@ class DiscoveryProvider(ABC):
     ) -> list[DiscoveredDestination]:
         """Search and return discovered destinations matching query parameters."""
         pass
-

@@ -310,7 +310,9 @@ async def test_orchestrator_gemini_quota_exhausted_falls_back_to_groq(repo, monk
     gemini_mock = MockAIProvider(
         "gemini",
         configured=True,
-        error=AIProviderRateLimitError("Gemini quota exhausted across all models", provider="gemini"),
+        error=AIProviderRateLimitError(
+            "Gemini quota exhausted across all models", provider="gemini"
+        ),
     )
     groq_mock = MockAIProvider(
         "groq",
@@ -393,4 +395,3 @@ async def test_orchestrator_both_providers_fail_graceful_deterministic_fallback(
     assert res.budget_breakdown is not None
     assert gemini_mock.call_count == 1
     assert groq_mock.call_count == 1
-

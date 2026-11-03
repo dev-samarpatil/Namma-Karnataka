@@ -186,7 +186,9 @@ def get_canonical_destination_id(
         )
         for cand in all_dests:
             cand_norm = normalize_destination_name(cand.name_en)
-            if cand_norm and (norm_name == cand_norm or norm_name in cand_norm or cand_norm in norm_name):
+            if cand_norm and (
+                norm_name == cand_norm or norm_name in cand_norm or cand_norm in norm_name
+            ):
                 if not district_code or cand.district_code == district_code:
                     return cand.id
 
@@ -202,8 +204,16 @@ def are_same_destination(
     if dest_a is dest_b:
         return True
 
-    id_a = getattr(dest_a, "destination_id", None) or getattr(dest_a, "id", None) or getattr(dest_a, "slug", None)
-    id_b = getattr(dest_b, "destination_id", None) or getattr(dest_b, "id", None) or getattr(dest_b, "slug", None)
+    id_a = (
+        getattr(dest_a, "destination_id", None)
+        or getattr(dest_a, "id", None)
+        or getattr(dest_a, "slug", None)
+    )
+    id_b = (
+        getattr(dest_b, "destination_id", None)
+        or getattr(dest_b, "id", None)
+        or getattr(dest_b, "slug", None)
+    )
 
     name_a = getattr(dest_a, "name", None) or getattr(dest_a, "name_en", None)
     name_b = getattr(dest_b, "name", None) or getattr(dest_b, "name_en", None)
@@ -214,8 +224,12 @@ def are_same_destination(
     dist_a = getattr(dest_a, "district_code", None)
     dist_b = getattr(dest_b, "district_code", None)
 
-    canon_a = get_canonical_destination_id(id_a, name=name_a, coordinates=coords_a, district_code=dist_a)
-    canon_b = get_canonical_destination_id(id_b, name=name_b, coordinates=coords_b, district_code=dist_b)
+    canon_a = get_canonical_destination_id(
+        id_a, name=name_a, coordinates=coords_a, district_code=dist_a
+    )
+    canon_b = get_canonical_destination_id(
+        id_b, name=name_b, coordinates=coords_b, district_code=dist_b
+    )
 
     if canon_a and canon_b and canon_a != "unknown" and canon_a == canon_b:
         return True
@@ -237,13 +251,13 @@ def validate_trip_destination_uniqueness(
     """Validate global destination uniqueness across the entire multi-day itinerary.
 
     Returns: (is_valid, validation_errors, repaired_itinerary)
-    
+
     Checks:
     1. Destination IDs appearing on more than one day.
     2. Multiple stops on the same day referring to the same destination.
     3. Alias and canonical destination deduplication.
     4. Geodesic duplicate detection (<= 500m).
-    
+
     If repair=True and duplicates are detected:
     - Retains the FIRST scheduled visit to the attraction in the trip.
     - Removes subsequent duplicate visits.
@@ -341,9 +355,15 @@ def validate_trip_destination_uniqueness(
                 "items": items,
                 "total_destinations": len(items),
                 "budget_breakdown": budget,
-                "warnings": list(set(itinerary.warnings + warnings + [
-                    "Duplicate destination visits were automatically consolidated to preserve itinerary variety."
-                ])),
+                "warnings": list(
+                    set(
+                        itinerary.warnings
+                        + warnings
+                        + [
+                            "Duplicate destination visits were automatically consolidated to preserve itinerary variety."
+                        ]
+                    )
+                ),
             }
         )
         return False, validation_errors, repaired_response
@@ -360,12 +380,18 @@ def filter_candidate_pool_for_uniqueness(
     used_coordinates: list[tuple[float, float]] = []
 
     for item in existing_destinations:
-        ident = getattr(item, "destination_id", None) or getattr(item, "id", None) or getattr(item, "slug", None)
+        ident = (
+            getattr(item, "destination_id", None)
+            or getattr(item, "id", None)
+            or getattr(item, "slug", None)
+        )
         name = getattr(item, "name", None) or getattr(item, "name_en", None)
         coords = getattr(item, "coordinates", None)
         district = getattr(item, "district_code", None)
 
-        canon = get_canonical_destination_id(ident, name=name, coordinates=coords, district_code=district)
+        canon = get_canonical_destination_id(
+            ident, name=name, coordinates=coords, district_code=district
+        )
         if canon:
             used_canonical_ids.add(canon)
         if coords:
@@ -388,7 +414,10 @@ def filter_candidate_pool_for_uniqueness(
         if cand.coordinates:
             too_close = False
             for lat, lon in used_coordinates:
-                if _haversine_distance_m(cand.coordinates.lat, cand.coordinates.lon, lat, lon) <= 500.0:
+                if (
+                    _haversine_distance_m(cand.coordinates.lat, cand.coordinates.lon, lat, lon)
+                    <= 500.0
+                ):
                     too_close = True
                     break
             if too_close:

@@ -788,7 +788,10 @@ class SupabaseTripRepository:
                         "generation_mode": raw_snap.get("generation_mode", "fallback"),
                         "provider_used": raw_snap.get("provider_used", "deterministic_fallback"),
                         "items": raw_items if isinstance(raw_items, list) else [],
-                        "total_destinations": raw_snap.get("total_destinations", len(raw_items) if isinstance(raw_items, list) else 0),
+                        "total_destinations": raw_snap.get(
+                            "total_destinations",
+                            len(raw_items) if isinstance(raw_items, list) else 0,
+                        ),
                         "duration_days": trip_record["duration_days"],
                         "origin_label": trip_record.get("origin_label"),
                         "days": [],

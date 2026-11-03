@@ -44,7 +44,9 @@ class BudgetOptimizer:
     """Optimizes itinerary candidate selection, travel modes, and lodging to fit user budget."""
 
     # Absolute baseline survival costs per day per traveler in Karnataka (Tier 3/Rural/Town)
-    MIN_DAILY_MEAL_COST_BUDGET = 320.0  # Tiffin breakfast ₹70 + Thali lunch ₹120 + Light dinner ₹130
+    MIN_DAILY_MEAL_COST_BUDGET = (
+        320.0  # Tiffin breakfast ₹70 + Thali lunch ₹120 + Light dinner ₹130
+    )
     MIN_NIGHTLY_LODGING_PER_ROOM = 800.0  # Verified budget dharamsala / dormitory / budget lodge
     MIN_LOCAL_TRANSIT_PER_DAY = 120.0  # State bus / town shuttle
 
@@ -95,9 +97,7 @@ class BudgetOptimizer:
         travelers = max(1, request.travelers_count)
         budget_limit = request.budget_limit_inr or 0.0
         effective_limit = (
-            budget_limit
-            if request.budget_scope == "total_trip"
-            else budget_limit * travelers
+            budget_limit if request.budget_scope == "total_trip" else budget_limit * travelers
         )
 
         grand_min = estimated_budget.grand_total_min_inr or 0.0
@@ -130,7 +130,10 @@ class BudgetOptimizer:
                 travelers_count=travelers,
                 is_return_trip=request.is_return_trip,
             )
-            cab_cat = next((c for c in estimated_budget.categories if "Transportation" in c.category_name), None)
+            cab_cat = next(
+                (c for c in estimated_budget.categories if "Transportation" in c.category_name),
+                None,
+            )
             current_trans_cost = cab_cat.estimated_min_inr if cab_cat else 8000.0
             savings = max(0.0, current_trans_cost - public_est.total_cost_min_inr)
             if savings > 500:
@@ -150,7 +153,10 @@ class BudgetOptimizer:
                 travelers_count=travelers,
                 is_return_trip=request.is_return_trip,
             )
-            car_cat = next((c for c in estimated_budget.categories if "Transportation" in c.category_name), None)
+            car_cat = next(
+                (c for c in estimated_budget.categories if "Transportation" in c.category_name),
+                None,
+            )
             current_trans_cost = car_cat.estimated_min_inr if car_cat else 4500.0
             savings = max(0.0, current_trans_cost - public_est.total_cost_min_inr)
             if savings > 600 and travelers <= 2:
@@ -170,8 +176,14 @@ class BudgetOptimizer:
         rooms = math.ceil(travelers / 2)
         scenario = getattr(request, "budget_scenario", "standard")
         if scenario in ("comfort", "standard") and nights > 0:
-            stay_cat = next((c for c in estimated_budget.categories if "Accommodation" in c.category_name), None)
-            current_stay_cost = (stay_cat.estimated_min_inr or (nights * rooms * 2500.0)) if stay_cat else nights * rooms * 2500.0
+            stay_cat = next(
+                (c for c in estimated_budget.categories if "Accommodation" in c.category_name), None
+            )
+            current_stay_cost = (
+                (stay_cat.estimated_min_inr or (nights * rooms * 2500.0))
+                if stay_cat
+                else nights * rooms * 2500.0
+            )
             budget_homestay_cost = nights * rooms * 1200.0
             stay_savings = max(0.0, current_stay_cost - budget_homestay_cost)
             if stay_savings > 400:
@@ -188,8 +200,14 @@ class BudgetOptimizer:
 
         # 3. Dining Alternative
         if scenario in ("comfort", "standard"):
-            meal_cat = next((c for c in estimated_budget.categories if "Meals" in c.category_name), None)
-            curr_meal = (meal_cat.estimated_min_inr or (request.duration_days * travelers * 600.0)) if meal_cat else request.duration_days * travelers * 600.0
+            meal_cat = next(
+                (c for c in estimated_budget.categories if "Meals" in c.category_name), None
+            )
+            curr_meal = (
+                (meal_cat.estimated_min_inr or (request.duration_days * travelers * 600.0))
+                if meal_cat
+                else request.duration_days * travelers * 600.0
+            )
             darshini_meal = request.duration_days * travelers * 430.0  # Budget meal rates
             meal_savings = max(0.0, curr_meal - darshini_meal)
             if meal_savings > 300:
@@ -205,7 +223,9 @@ class BudgetOptimizer:
                 )
 
         # 4. Paid Attraction Reduction
-        attr_cat = next((c for c in estimated_budget.categories if "Attraction" in c.category_name), None)
+        attr_cat = next(
+            (c for c in estimated_budget.categories if "Attraction" in c.category_name), None
+        )
         curr_attr = (attr_cat.estimated_min_inr or 0.0) if attr_cat else 0.0
         if curr_attr > 500 * travelers:
             alternatives.append(
@@ -335,7 +355,11 @@ class BudgetOptimizer:
 
         Returns: (optimized_days, optimized_destinations, optimized_budget, was_optimized)
         """
-        if budget.is_budget_feasible or not request.budget_limit_inr or request.budget_limit_inr <= 0:
+        if (
+            budget.is_budget_feasible
+            or not request.budget_limit_inr
+            or request.budget_limit_inr <= 0
+        ):
             return days, destinations, budget, False
 
         travelers = max(1, request.travelers_count)
@@ -382,7 +406,9 @@ class BudgetOptimizer:
         opt_destinations: list[RecommendedDestination] = []
         replaced_count = 0
         used_canon_ids = {
-            get_canonical_destination_id(d.id, name=d.name, coordinates=d.coordinates, district_code=d.district_code)
+            get_canonical_destination_id(
+                d.id, name=d.name, coordinates=d.coordinates, district_code=d.district_code
+            )
             for d in destinations
         }
         used_coords = [
@@ -398,14 +424,22 @@ class BudgetOptimizer:
                 substitute = None
                 for fr in free_recs:
                     fr_canon = get_canonical_destination_id(
-                        fr.id, name=fr.name, coordinates=fr.coordinates, district_code=fr.district_code
+                        fr.id,
+                        name=fr.name,
+                        coordinates=fr.coordinates,
+                        district_code=fr.district_code,
                     )
                     if fr_canon in used_canon_ids:
                         continue
                     if fr.coordinates:
                         too_close = False
                         for lat, lon in used_coords:
-                            if _haversine_distance_m(fr.coordinates.lat, fr.coordinates.lon, lat, lon) <= 500.0:
+                            if (
+                                _haversine_distance_m(
+                                    fr.coordinates.lat, fr.coordinates.lon, lat, lon
+                                )
+                                <= 500.0
+                            ):
                                 too_close = True
                                 break
                         if too_close:
@@ -425,7 +459,10 @@ class BudgetOptimizer:
                         )
                     )
                     sub_canon = get_canonical_destination_id(
-                        substitute.id, name=substitute.name, coordinates=substitute.coordinates, district_code=substitute.district_code
+                        substitute.id,
+                        name=substitute.name,
+                        coordinates=substitute.coordinates,
+                        district_code=substitute.district_code,
                     )
                     used_canon_ids.add(sub_canon)
                     if substitute.coordinates:
@@ -450,5 +487,3 @@ class BudgetOptimizer:
             return opt_days, opt_destinations, opt_budget, True
 
         return opt_days, opt_destinations, opt_budget, False
-
-

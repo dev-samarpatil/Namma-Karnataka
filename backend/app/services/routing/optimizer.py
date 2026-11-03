@@ -127,7 +127,10 @@ class RouteOptimizer:
             if cand.coordinates:
                 too_close = False
                 for lat, lon in seen_pool_coords:
-                    if _haversine_distance_m(cand.coordinates.lat, cand.coordinates.lon, lat, lon) <= 500.0:
+                    if (
+                        _haversine_distance_m(cand.coordinates.lat, cand.coordinates.lon, lat, lon)
+                        <= 500.0
+                    ):
                         too_close = True
                         break
                 if too_close:
@@ -216,7 +219,12 @@ class RouteOptimizer:
                 if chosen.coordinates:
                     too_close = False
                     for lat, lon in visited_coords:
-                        if _haversine_distance_m(chosen.coordinates.lat, chosen.coordinates.lon, lat, lon) <= 500.0:
+                        if (
+                            _haversine_distance_m(
+                                chosen.coordinates.lat, chosen.coordinates.lon, lat, lon
+                            )
+                            <= 500.0
+                        ):
                             too_close = True
                             break
                     if too_close:
@@ -382,7 +390,10 @@ class RouteOptimizer:
 
                 too_close = False
                 for lat, lon in seen_coords:
-                    if _haversine_distance_m(dest.coordinates.lat, dest.coordinates.lon, lat, lon) <= 500.0:
+                    if (
+                        _haversine_distance_m(dest.coordinates.lat, dest.coordinates.lon, lat, lon)
+                        <= 500.0
+                    ):
                         too_close = True
                         break
                 if too_close:

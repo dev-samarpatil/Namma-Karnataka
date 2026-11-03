@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     def _parse_model_list(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
             import json
+
             try:
                 parsed = json.loads(v)
                 if isinstance(parsed, list):

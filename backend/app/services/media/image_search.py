@@ -94,8 +94,7 @@ class DestinationImageSearchService:
         self._api_url = "https://commons.wikimedia.org/w/api.php"
         self._headers = {
             "User-Agent": (
-                "NammaKarnatakaTravelApp/1.0 "
-                "(https://karnataka.gov.in; tourism@nammakarnataka.org)"
+                "NammaKarnatakaTravelApp/1.0 (https://karnataka.gov.in; tourism@nammakarnataka.org)"
             ),
             "Accept": "application/json",
         }
@@ -109,37 +108,49 @@ class DestinationImageSearchService:
         name_en = dest.name_en or dest.slug.replace("-", " ").title()
         district_name = dest.district.name_en if dest.district else ""
 
-        category_val = dest.category.value if hasattr(dest.category, "value") else str(dest.category)
+        category_val = (
+            dest.category.value if hasattr(dest.category, "value") else str(dest.category)
+        )
         queries: list[str] = []
 
         if category_val in ("heritage", "temple", "monument", "fort", "palace"):
-            queries.extend([
-                f"{name_en} exterior Karnataka",
-                f"{name_en} architecture",
-                f"{name_en} stone temple ruins",
-            ])
+            queries.extend(
+                [
+                    f"{name_en} exterior Karnataka",
+                    f"{name_en} architecture",
+                    f"{name_en} stone temple ruins",
+                ]
+            )
         elif category_val in ("nature", "waterfall", "hill_station", "viewpoint"):
-            queries.extend([
-                f"{name_en} landscape viewpoint",
-                f"{name_en} Karnataka scenic",
-                f"{name_en} nature hills",
-            ])
+            queries.extend(
+                [
+                    f"{name_en} landscape viewpoint",
+                    f"{name_en} Karnataka scenic",
+                    f"{name_en} nature hills",
+                ]
+            )
         elif category_val in ("wildlife", "national_park"):
-            queries.extend([
-                f"{name_en} wildlife safari",
-                f"{name_en} national park sanctuary",
-                f"{name_en} forest landscape",
-            ])
+            queries.extend(
+                [
+                    f"{name_en} wildlife safari",
+                    f"{name_en} national park sanctuary",
+                    f"{name_en} forest landscape",
+                ]
+            )
         elif category_val in ("coastal", "beach"):
-            queries.extend([
-                f"{name_en} beach coastal Karnataka",
-                f"{name_en} Arabian Sea coast",
-            ])
+            queries.extend(
+                [
+                    f"{name_en} beach coastal Karnataka",
+                    f"{name_en} Arabian Sea coast",
+                ]
+            )
         else:
-            queries.extend([
-                f"{name_en} {district_name} Karnataka",
-                f"{name_en} landmark",
-            ])
+            queries.extend(
+                [
+                    f"{name_en} {district_name} Karnataka",
+                    f"{name_en} landmark",
+                ]
+            )
 
         if district_name and f"{name_en} {district_name}" not in queries:
             queries.append(f"{name_en} {district_name} Karnataka")
@@ -220,10 +231,22 @@ class DestinationImageSearchService:
                 title = page_data.get("title", "")
                 # Ignore non-photographic graphics
                 title_lower = title.lower()
-                if any(x in title_lower for x in [
-                    "map", "coat of arms", "flag of", "seal of", "locator",
-                    "diagram", "chart", "icon", "logo", "plan of", "sketch"
-                ]):
+                if any(
+                    x in title_lower
+                    for x in [
+                        "map",
+                        "coat of arms",
+                        "flag of",
+                        "seal of",
+                        "locator",
+                        "diagram",
+                        "chart",
+                        "icon",
+                        "logo",
+                        "plan of",
+                        "sketch",
+                    ]
+                ):
                     continue
 
                 imageinfo = page_data.get("imageinfo", [])
@@ -246,12 +269,18 @@ class DestinationImageSearchService:
                     continue
 
                 extmeta = info.get("extmetadata", {})
-                artist_raw = extmeta.get("Artist", {}).get("value") or extmeta.get("Credit", {}).get("value")
+                artist_raw = extmeta.get("Artist", {}).get("value") or extmeta.get(
+                    "Credit", {}
+                ).get("value")
                 artist = self._clean_html(artist_raw) or "Wikimedia Commons Contributor"
-                license_raw = extmeta.get("LicenseShortName", {}).get("value") or extmeta.get("UsageTerms", {}).get("value")
+                license_raw = extmeta.get("LicenseShortName", {}).get("value") or extmeta.get(
+                    "UsageTerms", {}
+                ).get("value")
                 license_name = self._clean_html(license_raw) or "Creative Commons"
                 desc_raw = extmeta.get("ImageDescription", {}).get("value")
-                desc = self._clean_html(desc_raw) or title.replace("File:", "").replace(".jpg", "").replace(".png", "")
+                desc = self._clean_html(desc_raw) or title.replace("File:", "").replace(
+                    ".jpg", ""
+                ).replace(".png", "")
 
                 media_id = f"wm-{page_id}"
                 results.append(

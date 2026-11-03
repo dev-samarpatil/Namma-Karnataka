@@ -46,7 +46,9 @@ class DestinationClusteringService:
 
         # If we have fewer destinations than days, distribute evenly
         if len(dests) <= days_count:
-            clusters: list[list[DestinationRead | RecommendedDestination]] = [[] for _ in range(days_count)]
+            clusters: list[list[DestinationRead | RecommendedDestination]] = [
+                [] for _ in range(days_count)
+            ]
             for i, d in enumerate(dests):
                 clusters[i].append(d)
             return clusters
@@ -57,8 +59,12 @@ class DestinationClusteringService:
                 key=lambda d: _haversine_km(
                     origin_coords.lat,
                     origin_coords.lon,
-                    d.coordinates.lat if hasattr(d, "coordinates") and d.coordinates else d.latitude,
-                    d.coordinates.lon if hasattr(d, "coordinates") and d.coordinates else d.longitude,
+                    d.coordinates.lat
+                    if hasattr(d, "coordinates") and d.coordinates
+                    else d.latitude,
+                    d.coordinates.lon
+                    if hasattr(d, "coordinates") and d.coordinates
+                    else d.longitude,
                 )
             )
 
@@ -92,16 +98,32 @@ class DestinationClusteringService:
         if curr_lat is None or curr_lon is None:
             first = remaining.pop(0)
             ordered.append(first)
-            curr_lat = first.coordinates.lat if hasattr(first, "coordinates") and first.coordinates else first.latitude
-            curr_lon = first.coordinates.lon if hasattr(first, "coordinates") and first.coordinates else first.longitude
+            curr_lat = (
+                first.coordinates.lat
+                if hasattr(first, "coordinates") and first.coordinates
+                else first.latitude
+            )
+            curr_lon = (
+                first.coordinates.lon
+                if hasattr(first, "coordinates") and first.coordinates
+                else first.longitude
+            )
 
         while remaining:
             best_idx = 0
             best_dist = float("inf")
 
             for idx, candidate in enumerate(remaining):
-                c_lat = candidate.coordinates.lat if hasattr(candidate, "coordinates") and candidate.coordinates else candidate.latitude
-                c_lon = candidate.coordinates.lon if hasattr(candidate, "coordinates") and candidate.coordinates else candidate.longitude
+                c_lat = (
+                    candidate.coordinates.lat
+                    if hasattr(candidate, "coordinates") and candidate.coordinates
+                    else candidate.latitude
+                )
+                c_lon = (
+                    candidate.coordinates.lon
+                    if hasattr(candidate, "coordinates") and candidate.coordinates
+                    else candidate.longitude
+                )
 
                 dist = _haversine_km(curr_lat, curr_lon, c_lat, c_lon)
                 if dist < best_dist:
@@ -110,8 +132,15 @@ class DestinationClusteringService:
 
             next_stop = remaining.pop(best_idx)
             ordered.append(next_stop)
-            curr_lat = next_stop.coordinates.lat if hasattr(next_stop, "coordinates") and next_stop.coordinates else next_stop.latitude
-            curr_lon = next_stop.coordinates.lon if hasattr(next_stop, "coordinates") and next_stop.coordinates else next_stop.longitude
+            curr_lat = (
+                next_stop.coordinates.lat
+                if hasattr(next_stop, "coordinates") and next_stop.coordinates
+                else next_stop.latitude
+            )
+            curr_lon = (
+                next_stop.coordinates.lon
+                if hasattr(next_stop, "coordinates") and next_stop.coordinates
+                else next_stop.longitude
+            )
 
         return ordered
-

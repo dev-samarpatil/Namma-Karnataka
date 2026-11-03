@@ -246,7 +246,11 @@ async def test_gemini_adapter_model_fallback_on_429(test_request, test_candidate
             {
                 "finishReason": "STOP",
                 "content": {
-                    "parts": [{"text": '{"items": [{"destination_id": "mysore-palace", "day_number": 1, "order": 1, "rationale": "Great"}]}'}]
+                    "parts": [
+                        {
+                            "text": '{"items": [{"destination_id": "mysore-palace", "day_number": 1, "order": 1, "rationale": "Great"}]}'
+                        }
+                    ]
                 },
             }
         ]
@@ -281,7 +285,11 @@ async def test_gemini_adapter_model_fallback_on_404(test_request, test_candidate
             {
                 "finishReason": "STOP",
                 "content": {
-                    "parts": [{"text": '{"items": [{"destination_id": "hampi", "day_number": 1, "order": 1, "rationale": "Ruins"}]}'}]
+                    "parts": [
+                        {
+                            "text": '{"items": [{"destination_id": "hampi", "day_number": 1, "order": 1, "rationale": "Ruins"}]}'
+                        }
+                    ]
                 },
             }
         ]
@@ -298,4 +306,3 @@ async def test_gemini_adapter_model_fallback_on_404(test_request, test_candidate
 
     assert "hampi" in res
     assert adapter.last_model_used == "gemini-1.5-flash"
-

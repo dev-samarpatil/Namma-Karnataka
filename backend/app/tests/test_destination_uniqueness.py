@@ -181,7 +181,9 @@ def test_validate_and_repair_trip_destination_uniqueness():
     assert "Day 3 is a duplicate" in errors[0]
 
     # 2. Validation with repair should remove duplicate stop from Day 3
-    is_valid, errors, repaired = validate_trip_destination_uniqueness(mock_resp, repair=True, request=req)
+    is_valid, errors, repaired = validate_trip_destination_uniqueness(
+        mock_resp, repair=True, request=req
+    )
     repaired_d3_attractions = [
         s for s in repaired.days[2].stops if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY)
     ]
@@ -243,7 +245,9 @@ async def test_day_regeneration_excludes_other_days():
             for s in d.stops:
                 if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY):
                     other_day_canons.add(
-                        get_canonical_destination_id(s.destination_id, name=s.name, coordinates=s.coordinates)
+                        get_canonical_destination_id(
+                            s.destination_id, name=s.name, coordinates=s.coordinates
+                        )
                     )
 
     # Regenerate Day 3
@@ -256,7 +260,9 @@ async def test_day_regeneration_excludes_other_days():
     # Ensure no regenerated stop on Day 3 matches any stop from Day 1 or Day 2
     for s in regenerated_day.stops:
         if s.stop_type in (StopType.ATTRACTION, StopType.ACTIVITY):
-            s_canon = get_canonical_destination_id(s.destination_id, name=s.name, coordinates=s.coordinates)
+            s_canon = get_canonical_destination_id(
+                s.destination_id, name=s.name, coordinates=s.coordinates
+            )
             assert s_canon not in other_day_canons, (
                 f"Regenerated stop '{s.name}' ({s_canon}) on Day 3 duplicates an attraction from another day!"
             )
@@ -266,7 +272,9 @@ def test_sparse_catalogue_honest_handling():
     """Test E: Sparse catalogue does not repeat destinations or hallucinate when unique spots run out."""
     repo = get_destination_repository()
     # Mock small candidate list of only 2 destinations
-    dests, _ = repo.list_destinations(DestinationFilterParams(limit=10, offset=0), published_only=True)
+    dests, _ = repo.list_destinations(
+        DestinationFilterParams(limit=10, offset=0), published_only=True
+    )
     small_pool = dests[:2]
 
     req = PlanningRequest(
@@ -285,13 +293,18 @@ def test_sparse_catalogue_honest_handling():
     assert len(scheduled_ids) == len(set(scheduled_ids))
     assert len(scheduled) <= 2
     # Must have an honest warning about limited unique destinations
-    assert any("limited" in w.lower() or "unique" in w.lower() or "repetition" in w.lower() for w in warnings)
+    assert any(
+        "limited" in w.lower() or "unique" in w.lower() or "repetition" in w.lower()
+        for w in warnings
+    )
 
 
 def test_filter_candidate_pool_for_uniqueness():
     """Test F: filter_candidate_pool_for_uniqueness excludes used destinations and proximity neighbors."""
     repo = get_destination_repository()
-    dests, _ = repo.list_destinations(DestinationFilterParams(limit=100, offset=0), published_only=True)
+    dests, _ = repo.list_destinations(
+        DestinationFilterParams(limit=100, offset=0), published_only=True
+    )
 
     mysore_dest = next(d for d in dests if "mysore-palace" in d.slug)
     # Filter with Mysore Palace already in existing
@@ -306,7 +319,9 @@ def test_filter_candidate_pool_for_uniqueness():
     for cand in filtered:
         if cand.coordinates and mysore_dest.coordinates:
             dist = _haversine_distance_m(
-                cand.coordinates.lat, cand.coordinates.lon,
-                mysore_dest.coordinates.lat, mysore_dest.coordinates.lon
+                cand.coordinates.lat,
+                cand.coordinates.lon,
+                mysore_dest.coordinates.lat,
+                mysore_dest.coordinates.lon,
             )
             assert dist > 500.0

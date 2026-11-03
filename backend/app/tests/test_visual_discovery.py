@@ -64,9 +64,7 @@ def test_analyze_image_generic_filename_pixel_similarity(client):
     (no landmark keywords in filename), is correctly identified via the visual similarity
     engine using pixel spatial traits.
     """
-    img_bytes = create_spatial_test_image(
-        sky_color=(60, 120, 210), ground_color=(152, 144, 136)
-    )
+    img_bytes = create_spatial_test_image(sky_color=(60, 120, 210), ground_color=(152, 144, 136))
     files = {"file": ("IMG_1234.jpg", img_bytes, "image/jpeg")}
     response = client.post(
         "/api/v1/visual-discovery/analyze-image",

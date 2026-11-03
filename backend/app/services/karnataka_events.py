@@ -173,7 +173,6 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         image_url="https://upload.wikimedia.org/wikipedia/commons/7/7d/Karnataka-rajyotsava.jpg",
         image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
-
     # 2. Regional Festivals & Indigenous Traditions
     KarnatakaEvent(
         id="dakshina-kannada-kambala",
@@ -310,7 +309,6 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         image_url="https://upload.wikimedia.org/wikipedia/commons/f/fc/Melukote_BNC.jpg",
         image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
-
     # 3. Cultural Festivals & Arts
     KarnatakaEvent(
         id="hampi-utsav",
@@ -366,7 +364,6 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/7th_-_9th_century_Hindu_and_Jain_temples%2C_Pattadakal_monuments_Karnataka_7.jpg/960px-7th_-_9th_century_Hindu_and_Jain_temples%2C_Pattadakal_monuments_Karnataka_7.jpg",
         image_attribution="Photo by Ms Sarah Welch / Wikimedia Commons, CC BY-SA 4.0",
     ),
-
     # 4. Seasonal Nature & Environmental Phenomena
     KarnatakaEvent(
         id="lalbagh-flower-show-republic-day",
@@ -486,9 +483,12 @@ class KarnatakaEventsCalendarService:
             candidates = self.get_events_for_date_range(start_date, end_date)
         elif month is not None:
             candidates = [
-                e for e in self._events
+                e
+                for e in self._events
                 if (e.start_month <= month <= e.end_month)
-                or (e.start_month > e.end_month and (month >= e.start_month or month <= e.end_month))
+                or (
+                    e.start_month > e.end_month and (month >= e.start_month or month <= e.end_month)
+                )
             ]
 
         results: list[tuple[float, KarnatakaEvent]] = []

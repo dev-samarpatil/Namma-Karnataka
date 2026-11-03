@@ -133,4 +133,3 @@ async def optimize_budget(
         days=[],
         destinations=[],
     )
-

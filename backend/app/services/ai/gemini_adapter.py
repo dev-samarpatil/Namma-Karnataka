@@ -143,9 +143,7 @@ class GeminiAdapter:
                 break
 
             model_timeout = min(remaining_time, float(settings.AI_PROVIDER_TIMEOUT_SECONDS))
-            endpoint = (
-                f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
-            )
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
 
             logger.info(
                 "Calling Gemini model [%d/%d]: '%s' (timeout=%.1fs)",
@@ -175,7 +173,8 @@ class GeminiAdapter:
 
                     # 1. Authentication / Permission Error (401 / 403 / 400 invalid key)
                     if response.status_code in (401, 403) or (
-                        response.status_code == 400 and ("API_KEY" in response.text or "key" in response.text.lower())
+                        response.status_code == 400
+                        and ("API_KEY" in response.text or "key" in response.text.lower())
                     ):
                         logger.error(
                             "Gemini authentication/permission failure: HTTP %d for model '%s'",

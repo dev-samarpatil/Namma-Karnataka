@@ -35,7 +35,14 @@ def list_events(
     if district_code:
         kevs = [k for k in k_service.get_all_events() if k.district_code == district_code]
         if month is not None:
-            kevs = [k for k in kevs if (k.start_month <= month <= k.end_month) or (k.start_month > k.end_month and (month >= k.start_month or month <= k.end_month))]
+            kevs = [
+                k
+                for k in kevs
+                if (k.start_month <= month <= k.end_month)
+                or (
+                    k.start_month > k.end_month and (month >= k.start_month or month <= k.end_month)
+                )
+            ]
         if kevs:
             return [k.to_event_read() for k in kevs]
         return get_events_service().get_events_for_districts([district_code], month=month)
@@ -43,7 +50,8 @@ def list_events(
     all_k = [k.to_event_read() for k in k_service.get_all_events()]
     if month is not None:
         all_k = [
-            e for e in all_k
+            e
+            for e in all_k
             if (e.start_month <= month <= e.end_month)
             or (e.start_month > e.end_month and (month >= e.start_month or month <= e.end_month))
         ]
@@ -52,7 +60,10 @@ def list_events(
 
 @router.get("/calendar", response_model=list[KarnatakaEvent])
 def get_events_calendar(
-    category: str | None = Query(None, description="major_festival, regional_festival, cultural_performance, seasonal_celebration"),
+    category: str | None = Query(
+        None,
+        description="major_festival, regional_festival, cultural_performance, seasonal_celebration",
+    ),
     month: int | None = Query(None, ge=1, le=12, description="Month of travel (1-12)"),
 ) -> list[KarnatakaEvent]:
     """Retrieve canonical Karnataka events calendar with dates, venues, and photos."""
@@ -62,7 +73,8 @@ def get_events_calendar(
         events = [e for e in events if e.category.lower() == category.lower()]
     if month:
         events = [
-            e for e in events
+            e
+            for e in events
             if (e.start_month <= month <= e.end_month)
             or (e.start_month > e.end_month and (month >= e.start_month or month <= e.end_month))
         ]
@@ -73,7 +85,9 @@ def get_events_calendar(
 def get_happening_during_trip(
     start_date: str = Query(..., description="Trip start date YYYY-MM-DD"),
     duration_days: int = Query(3, ge=1, le=14, description="Trip duration in days"),
-    districts: str | None = Query(None, description="Comma-separated district codes e.g. KA-MYS,KA-BLR"),
+    districts: str | None = Query(
+        None, description="Comma-separated district codes e.g. KA-MYS,KA-BLR"
+    ),
 ) -> list[EventRead]:
     """Retrieve verified events specifically happening during the traveler's dates."""
     svc = get_karnataka_events_service()
@@ -98,4 +112,3 @@ def get_event(event_id: str) -> EventRead:
         if e.id == event_id:
             return e
     raise HTTPException(status_code=404, detail=f"Event '{event_id}' not found.")
-

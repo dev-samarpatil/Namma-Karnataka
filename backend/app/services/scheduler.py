@@ -858,7 +858,11 @@ class DeterministicScheduler:
             # 1. Breakfast (08:30 - 09:15)
             bfast_end = current_time + timedelta(minutes=45)
             food_guide_svc = get_local_food_guide_service()
-            budget_scenario_str = "budget" if scenario == "budget" else ("comfort" if scenario == "comfort" else "standard")
+            budget_scenario_str = (
+                "budget"
+                if scenario == "budget"
+                else ("comfort" if scenario == "comfort" else "standard")
+            )
             bfast_rec = food_guide_svc.recommend_meal(
                 district=primary_district,
                 meal_type="breakfast",
@@ -867,8 +871,16 @@ class DeterministicScheduler:
                 dietary_preference=getattr(request, "dietary_preference", None),
                 budget_scenario=budget_scenario_str,
             )
-            bfast_name = bfast_rec.headline_en if request.language == LanguageCode.EN else bfast_rec.headline_kn
-            bfast_desc = bfast_rec.description_en if request.language == LanguageCode.EN else bfast_rec.description_kn
+            bfast_name = (
+                bfast_rec.headline_en
+                if request.language == LanguageCode.EN
+                else bfast_rec.headline_kn
+            )
+            bfast_desc = (
+                bfast_rec.description_en
+                if request.language == LanguageCode.EN
+                else bfast_rec.description_kn
+            )
             bfast_cost_min = round(bfast_rec.estimated_cost_inr * request.travelers_count, 2)
             bfast_cost_max = round(bfast_cost_min * 1.35, 2)
             bfast_source = bfast_rec.location_summary if bfast_rec.is_verified_eatery else None
@@ -890,7 +902,9 @@ class DeterministicScheduler:
                     cost_min_inr=bfast_cost_min,
                     cost_max_inr=bfast_cost_max,
                     currency="INR",
-                    cost_status=CostStatus.VERIFIED if bfast_rec.is_verified_eatery else CostStatus.ESTIMATED,
+                    cost_status=CostStatus.VERIFIED
+                    if bfast_rec.is_verified_eatery
+                    else CostStatus.ESTIMATED,
                     source_reference=bfast_source,
                     notes=bfast_notes,
                     rationale=(
@@ -942,12 +956,28 @@ class DeterministicScheduler:
                         dietary_preference=getattr(request, "dietary_preference", None),
                         budget_scenario=budget_scenario_str,
                     )
-                    lunch_name = lunch_rec.headline_en if request.language == LanguageCode.EN else lunch_rec.headline_kn
-                    lunch_desc = lunch_rec.description_en if request.language == LanguageCode.EN else lunch_rec.description_kn
-                    lunch_cost_min = round(lunch_rec.estimated_cost_inr * request.travelers_count, 2)
+                    lunch_name = (
+                        lunch_rec.headline_en
+                        if request.language == LanguageCode.EN
+                        else lunch_rec.headline_kn
+                    )
+                    lunch_desc = (
+                        lunch_rec.description_en
+                        if request.language == LanguageCode.EN
+                        else lunch_rec.description_kn
+                    )
+                    lunch_cost_min = round(
+                        lunch_rec.estimated_cost_inr * request.travelers_count, 2
+                    )
                     lunch_cost_max = round(lunch_cost_min * 1.35, 2)
-                    lunch_cost_status = CostStatus.VERIFIED if lunch_rec.is_verified_eatery else CostStatus.ESTIMATED
-                    lunch_source = lunch_rec.location_summary if lunch_rec.is_verified_eatery else None
+                    lunch_cost_status = (
+                        CostStatus.VERIFIED
+                        if lunch_rec.is_verified_eatery
+                        else CostStatus.ESTIMATED
+                    )
+                    lunch_source = (
+                        lunch_rec.location_summary if lunch_rec.is_verified_eatery else None
+                    )
                     lunch_notes = lunch_rec.map_search_url
                     lunch_coords = Coordinates(lat=coords.lat, lon=coords.lon) if coords else None
 
@@ -1062,11 +1092,21 @@ class DeterministicScheduler:
                     dietary_preference=getattr(request, "dietary_preference", None),
                     budget_scenario=budget_scenario_str,
                 )
-                lunch_name = lunch_rec.headline_en if request.language == LanguageCode.EN else lunch_rec.headline_kn
-                lunch_desc = lunch_rec.description_en if request.language == LanguageCode.EN else lunch_rec.description_kn
+                lunch_name = (
+                    lunch_rec.headline_en
+                    if request.language == LanguageCode.EN
+                    else lunch_rec.headline_kn
+                )
+                lunch_desc = (
+                    lunch_rec.description_en
+                    if request.language == LanguageCode.EN
+                    else lunch_rec.description_kn
+                )
                 lunch_cost_min = round(lunch_rec.estimated_cost_inr * request.travelers_count, 2)
                 lunch_cost_max = round(lunch_cost_min * 1.35, 2)
-                lunch_cost_status = CostStatus.VERIFIED if lunch_rec.is_verified_eatery else CostStatus.ESTIMATED
+                lunch_cost_status = (
+                    CostStatus.VERIFIED if lunch_rec.is_verified_eatery else CostStatus.ESTIMATED
+                )
                 lunch_source = lunch_rec.location_summary if lunch_rec.is_verified_eatery else None
                 lunch_notes = lunch_rec.map_search_url
                 stops.append(
@@ -1168,11 +1208,21 @@ class DeterministicScheduler:
                 dietary_preference=getattr(request, "dietary_preference", None),
                 budget_scenario=budget_scenario_str,
             )
-            dinner_name = dinner_rec.headline_en if request.language == LanguageCode.EN else dinner_rec.headline_kn
-            dinner_desc = dinner_rec.description_en if request.language == LanguageCode.EN else dinner_rec.description_kn
+            dinner_name = (
+                dinner_rec.headline_en
+                if request.language == LanguageCode.EN
+                else dinner_rec.headline_kn
+            )
+            dinner_desc = (
+                dinner_rec.description_en
+                if request.language == LanguageCode.EN
+                else dinner_rec.description_kn
+            )
             dinner_cost_min = round(dinner_rec.estimated_cost_inr * request.travelers_count, 2)
             dinner_cost_max = round(dinner_cost_min * 1.35, 2)
-            dinner_cost_status = CostStatus.VERIFIED if dinner_rec.is_verified_eatery else CostStatus.ESTIMATED
+            dinner_cost_status = (
+                CostStatus.VERIFIED if dinner_rec.is_verified_eatery else CostStatus.ESTIMATED
+            )
             dinner_source = dinner_rec.location_summary if dinner_rec.is_verified_eatery else None
             dinner_notes = dinner_rec.map_search_url
             dinner_coords = dinner_ref_coords
@@ -1210,7 +1260,9 @@ class DeterministicScheduler:
             places_svc = get_places_service()
             if day_num < request.duration_days:
                 pref_acc_type = getattr(request, "accommodation_type_preference", None)
-                acc_type_filter = pref_acc_type if pref_acc_type and pref_acc_type != "any" else None
+                acc_type_filter = (
+                    pref_acc_type if pref_acc_type and pref_acc_type != "any" else None
+                )
                 nearby_accs = (
                     places_svc.get_accommodations_near(
                         dinner_ref_coords.lat,
@@ -1513,7 +1565,10 @@ class DeterministicScheduler:
                 if s.coordinates:
                     too_close = False
                     for lat, lon in seen_trip_coords:
-                        if _haversine_distance_m(s.coordinates.lat, s.coordinates.lon, lat, lon) <= 500.0:
+                        if (
+                            _haversine_distance_m(s.coordinates.lat, s.coordinates.lon, lat, lon)
+                            <= 500.0
+                        ):
                             too_close = True
                             break
                     if too_close:
@@ -1549,7 +1604,11 @@ class DeterministicScheduler:
             # 1. Breakfast (08:30 - 09:15)
             bfast_end = current_time + timedelta(minutes=45)
             food_guide_svc = get_local_food_guide_service()
-            budget_scenario_str = "budget" if scenario == "budget" else ("comfort" if scenario == "comfort" else "standard")
+            budget_scenario_str = (
+                "budget"
+                if scenario == "budget"
+                else ("comfort" if scenario == "comfort" else "standard")
+            )
             bfast_rec = food_guide_svc.recommend_meal(
                 district=primary_district,
                 meal_type="breakfast",
@@ -1558,8 +1617,16 @@ class DeterministicScheduler:
                 dietary_preference=getattr(request, "dietary_preference", None),
                 budget_scenario=budget_scenario_str,
             )
-            bfast_name = bfast_rec.headline_en if request.language == LanguageCode.EN else bfast_rec.headline_kn
-            bfast_desc = bfast_rec.description_en if request.language == LanguageCode.EN else bfast_rec.description_kn
+            bfast_name = (
+                bfast_rec.headline_en
+                if request.language == LanguageCode.EN
+                else bfast_rec.headline_kn
+            )
+            bfast_desc = (
+                bfast_rec.description_en
+                if request.language == LanguageCode.EN
+                else bfast_rec.description_kn
+            )
             bfast_cost_min = round(bfast_rec.estimated_cost_inr * request.travelers_count, 2)
             bfast_cost_max = round(bfast_cost_min * 1.35, 2)
             bfast_source = bfast_rec.location_summary if bfast_rec.is_verified_eatery else None
@@ -1581,7 +1648,9 @@ class DeterministicScheduler:
                     cost_min_inr=bfast_cost_min,
                     cost_max_inr=bfast_cost_max,
                     currency="INR",
-                    cost_status=CostStatus.VERIFIED if bfast_rec.is_verified_eatery else CostStatus.ESTIMATED,
+                    cost_status=CostStatus.VERIFIED
+                    if bfast_rec.is_verified_eatery
+                    else CostStatus.ESTIMATED,
                     source_reference=bfast_source,
                     notes=bfast_notes,
                     rationale=(
@@ -1629,12 +1698,28 @@ class DeterministicScheduler:
                         dietary_preference=getattr(request, "dietary_preference", None),
                         budget_scenario=budget_scenario_str,
                     )
-                    lunch_name = lunch_rec.headline_en if request.language == LanguageCode.EN else lunch_rec.headline_kn
-                    lunch_desc = lunch_rec.description_en if request.language == LanguageCode.EN else lunch_rec.description_kn
-                    lunch_cost_min = round(lunch_rec.estimated_cost_inr * request.travelers_count, 2)
+                    lunch_name = (
+                        lunch_rec.headline_en
+                        if request.language == LanguageCode.EN
+                        else lunch_rec.headline_kn
+                    )
+                    lunch_desc = (
+                        lunch_rec.description_en
+                        if request.language == LanguageCode.EN
+                        else lunch_rec.description_kn
+                    )
+                    lunch_cost_min = round(
+                        lunch_rec.estimated_cost_inr * request.travelers_count, 2
+                    )
                     lunch_cost_max = round(lunch_cost_min * 1.35, 2)
-                    lunch_cost_status = CostStatus.VERIFIED if lunch_rec.is_verified_eatery else CostStatus.ESTIMATED
-                    lunch_source = lunch_rec.location_summary if lunch_rec.is_verified_eatery else None
+                    lunch_cost_status = (
+                        CostStatus.VERIFIED
+                        if lunch_rec.is_verified_eatery
+                        else CostStatus.ESTIMATED
+                    )
+                    lunch_source = (
+                        lunch_rec.location_summary if lunch_rec.is_verified_eatery else None
+                    )
                     lunch_notes = lunch_rec.map_search_url
                     lunch_coords = Coordinates(lat=coords.lat, lon=coords.lon) if coords else None
 
@@ -1724,7 +1809,11 @@ class DeterministicScheduler:
                         attr.destination_id
                     )
 
-                if not rescheduled_attr.primary_image_url and dest_rec and dest_rec.primary_image_url:
+                if (
+                    not rescheduled_attr.primary_image_url
+                    and dest_rec
+                    and dest_rec.primary_image_url
+                ):
                     rescheduled_attr.primary_image_url = dest_rec.primary_image_url
 
                 slug = dest_rec.slug if dest_rec else attr.stop_id.replace("stop-", "")
@@ -1761,7 +1850,9 @@ class DeterministicScheduler:
                         ),
                         is_offbeat=dest_rec.is_offbeat if dest_rec else False,
                         sources=dest_rec.sources if dest_rec else [],
-                        primary_image_url=dest_rec.primary_image_url if dest_rec else attr.primary_image_url,
+                        primary_image_url=dest_rec.primary_image_url
+                        if dest_rec
+                        else attr.primary_image_url,
                     )
                 )
 
@@ -1781,11 +1872,21 @@ class DeterministicScheduler:
                     dietary_preference=getattr(request, "dietary_preference", None),
                     budget_scenario=budget_scenario_str,
                 )
-                lunch_name = lunch_rec.headline_en if request.language == LanguageCode.EN else lunch_rec.headline_kn
-                lunch_desc = lunch_rec.description_en if request.language == LanguageCode.EN else lunch_rec.description_kn
+                lunch_name = (
+                    lunch_rec.headline_en
+                    if request.language == LanguageCode.EN
+                    else lunch_rec.headline_kn
+                )
+                lunch_desc = (
+                    lunch_rec.description_en
+                    if request.language == LanguageCode.EN
+                    else lunch_rec.description_kn
+                )
                 lunch_cost_min = round(lunch_rec.estimated_cost_inr * request.travelers_count, 2)
                 lunch_cost_max = round(lunch_cost_min * 1.35, 2)
-                lunch_cost_status = CostStatus.VERIFIED if lunch_rec.is_verified_eatery else CostStatus.ESTIMATED
+                lunch_cost_status = (
+                    CostStatus.VERIFIED if lunch_rec.is_verified_eatery else CostStatus.ESTIMATED
+                )
                 lunch_source = lunch_rec.location_summary if lunch_rec.is_verified_eatery else None
                 lunch_notes = lunch_rec.map_search_url
                 stops.append(
@@ -1826,11 +1927,21 @@ class DeterministicScheduler:
                 dietary_preference=getattr(request, "dietary_preference", None),
                 budget_scenario=budget_scenario_str,
             )
-            dinner_name = dinner_rec.headline_en if request.language == LanguageCode.EN else dinner_rec.headline_kn
-            dinner_desc = dinner_rec.description_en if request.language == LanguageCode.EN else dinner_rec.description_kn
+            dinner_name = (
+                dinner_rec.headline_en
+                if request.language == LanguageCode.EN
+                else dinner_rec.headline_kn
+            )
+            dinner_desc = (
+                dinner_rec.description_en
+                if request.language == LanguageCode.EN
+                else dinner_rec.description_kn
+            )
             dinner_cost_min = round(dinner_rec.estimated_cost_inr * request.travelers_count, 2)
             dinner_cost_max = round(dinner_cost_min * 1.35, 2)
-            dinner_cost_status = CostStatus.VERIFIED if dinner_rec.is_verified_eatery else CostStatus.ESTIMATED
+            dinner_cost_status = (
+                CostStatus.VERIFIED if dinner_rec.is_verified_eatery else CostStatus.ESTIMATED
+            )
             dinner_source = dinner_rec.location_summary if dinner_rec.is_verified_eatery else None
             dinner_notes = dinner_rec.map_search_url
             dinner_coords = dinner_ref_coords
@@ -1868,7 +1979,9 @@ class DeterministicScheduler:
             if day_num < request.duration_days:
                 rooms = math.ceil(request.travelers_count / 2)
                 pref_acc_type = getattr(request, "accommodation_type_preference", None)
-                acc_type_filter = pref_acc_type if pref_acc_type and pref_acc_type != "any" else None
+                acc_type_filter = (
+                    pref_acc_type if pref_acc_type and pref_acc_type != "any" else None
+                )
                 nearby_accs = (
                     places_svc.get_accommodations_near(
                         dinner_ref_coords.lat,
@@ -2086,7 +2199,10 @@ class DeterministicScheduler:
                             )
                             if dist_ev <= 80.0:
                                 day_events.append(mev.to_event_read())
-                        elif mev.district_code in [primary_district, f"KA-{primary_district[:3].upper()}"]:
+                        elif mev.district_code in [
+                            primary_district,
+                            f"KA-{primary_district[:3].upper()}",
+                        ]:
                             day_events.append(mev.to_event_read())
 
             rescheduled_days.append(
@@ -2194,8 +2310,10 @@ class DeterministicScheduler:
                 target_dest.id, name=target_dest.name_en, coordinates=target_dest.coordinates
             )
             candidate_pool = [
-                d for d in candidate_pool
-                if get_canonical_destination_id(d.id, name=d.name_en, coordinates=d.coordinates) != target_canon
+                d
+                for d in candidate_pool
+                if get_canonical_destination_id(d.id, name=d.name_en, coordinates=d.coordinates)
+                != target_canon
             ]
 
         scored_candidates: list[tuple[float, StopRegenerateCandidate]] = []

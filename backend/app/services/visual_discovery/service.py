@@ -553,13 +553,13 @@ def extract_spatial_visual_traits(image_bytes: bytes) -> dict[str, Any]:
         c_mean_lum = sum(c_lums) / len(c_lums)
 
         is_nature_lush = ground_g_ratio > 0.38 and g_g > 55.0
-        is_coastal_marine = (mid_b_ratio > 0.36 and m_b > 65.0) and (bot_r_ratio > 0.33 or b_b < m_b)
+        is_coastal_marine = (mid_b_ratio > 0.36 and m_b > 65.0) and (
+            bot_r_ratio > 0.33 or b_b < m_b
+        )
 
         # Waterfall: bright cascade column flanked by Western Ghats canopy
         is_waterfall_plume = (
-            c_mean_lum > (ground_mean_lum + 16.0)
-            and is_nature_lush
-            and ground_variance >= 12.0
+            c_mean_lum > (ground_mean_lum + 16.0) and is_nature_lush and ground_variance >= 12.0
         )
 
         # Granite temple ruins / ancient stone: balanced chroma in ground region, stone texture
@@ -858,7 +858,9 @@ class VisualDiscoveryService:
 
         # 1. Open-world check: recognized prominent landmark outside curated catalogue
         for ext_id, ext_info in EXTERNAL_LANDMARKS.items():
-            if any(re.search(r"\b" + re.escape(kw) + r"\b", fname_clean) for kw in ext_info["keywords"]):
+            if any(
+                re.search(r"\b" + re.escape(kw) + r"\b", fname_clean) for kw in ext_info["keywords"]
+            ):
                 evidence = VisualEvidence(
                     observed_features=ext_info["features"],
                     architectural_style="Historic Architecture",
@@ -978,7 +980,10 @@ class VisualDiscoveryService:
         msg_en = ""
         msg_kn = ""
 
-        if re.search(r"\b(temple|ruins|chariot|gopuram|pillars|mantapa|monument|sculpture|carvings)\b", fname_clean):
+        if re.search(
+            r"\b(temple|ruins|chariot|gopuram|pillars|mantapa|monument|sculpture|carvings)\b",
+            fname_clean,
+        ):
             suggested_slugs = [
                 "virupaksha-temple-hampi",
                 "vijaya-vittala-temple-hampi",
@@ -988,7 +993,10 @@ class VisualDiscoveryService:
                 "badami-cave-temples",
             ]
             style_desc = "Karnataka Heritage Temple Architecture & Historic Ruins"
-            obs_clues = ["Stone carvings and pillar mantapa elements", "Dravidian/Hoysala/Chalukyan architecture"]
+            obs_clues = [
+                "Stone carvings and pillar mantapa elements",
+                "Dravidian/Hoysala/Chalukyan architecture",
+            ]
             msg_en = "Identified temple ruins and historic stone architectural characteristics. Showing top matching UNESCO and heritage destinations in Karnataka."
             msg_kn = "ದೇವಾಲಯದ ಅವಶೇಷಗಳು ಮತ್ತು ಐತಿಹಾಸಿಕ ಶಿಲ್ಪಕಲೆಯ ಲಕ್ಷಣಗಳು ಕಂಡುಬಂದಿವೆ. ಕರ್ನಾಟಕದ ಪ್ರಮುಖ ಪರಂಪರೆ ತಾಣಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
         elif re.search(r"\b(fort|kote|bastion|rampart|citadel)\b", fname_clean):
@@ -1073,7 +1081,11 @@ class VisualDiscoveryService:
                         "ಸಂಬಂಧಿತ ಜಲಪಾತಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
                     )
                 elif traits["is_coastal_marine"]:
-                    suggested_slugs = ["om-beach-gokarna", "murudeshwar-temple-beach", "malpe-beach-st-marys"]
+                    suggested_slugs = [
+                        "om-beach-gokarna",
+                        "murudeshwar-temple-beach",
+                        "malpe-beach-st-marys",
+                    ]
                     style_desc = "Arabian Sea Coastal Shoreline & Marine Landmarks"
                     obs_clues = [
                         "Coastal marine water horizon",
@@ -1088,7 +1100,11 @@ class VisualDiscoveryService:
                         "ಕರಾವಳಿ ತಾಣಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
                     )
                 elif traits["is_palace_architecture"]:
-                    suggested_slugs = ["mysore-palace", "bangalore-palace", "tipu-sultans-summer-palace"]
+                    suggested_slugs = [
+                        "mysore-palace",
+                        "bangalore-palace",
+                        "tipu-sultans-summer-palace",
+                    ]
                     style_desc = "Indo-Saracenic & Royal Wadiyar Palace Architecture"
                     obs_clues = [
                         "Symmetrical palace facade, domes and arched courtyards",
@@ -1103,7 +1119,11 @@ class VisualDiscoveryService:
                         "ಕರ್ನಾಟಕದ ಪ್ರಸಿದ್ಧ ಅರಮನೆಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ."
                     )
                 elif traits["is_nature_lush"]:
-                    suggested_slugs = ["mullayanagiri-peak", "kudremukh-peak-trek", "bandipur-national-park"]
+                    suggested_slugs = [
+                        "mullayanagiri-peak",
+                        "kudremukh-peak-trek",
+                        "bandipur-national-park",
+                    ]
                     style_desc = "Western Ghats Montane & Forest Biome"
                     obs_clues = [
                         "Lush green canopy and rolling montane ridges",
@@ -1136,7 +1156,8 @@ class VisualDiscoveryService:
 
                     # 2. Evidence overlap: how many specific features from this profile match the filename / observation clues
                     matching_features = [
-                        feat for feat in prof["features"]
+                        feat
+                        for feat in prof["features"]
                         if re.search(r"\b" + re.escape(feat) + r"\b", fname_clean)
                         or any(feat in clue.lower() for clue in obs_clues)
                     ]
@@ -1145,14 +1166,18 @@ class VisualDiscoveryService:
                     # 3. Direct landmark name or slug term presence in filename
                     slug_terms = [t for t in s.split("-") if len(t) > 3]
                     direct_name_match = any(
-                        re.search(r"\b" + re.escape(term) + r"\b", fname_clean) for term in slug_terms
+                        re.search(r"\b" + re.escape(term) + r"\b", fname_clean)
+                        for term in slug_terms
                     )
                     name_bonus = 0.06 if direct_name_match else 0.0
 
                     # 4. Position adjustment to avoid identical scores across distinct candidates
                     rank_penalty = rank_idx * 0.03
 
-                    calculated_score = max(0.55, min(0.96, round(base_score + feature_bonus + name_bonus - rank_penalty, 2)))
+                    calculated_score = max(
+                        0.55,
+                        min(0.96, round(base_score + feature_bonus + name_bonus - rank_penalty, 2)),
+                    )
 
                     # Calibrated qualitative confidence label based on actual score
                     if calculated_score >= 0.85:
@@ -1174,7 +1199,9 @@ class VisualDiscoveryService:
                         f"Regional characteristics match {dest.district_code} catalogue profile",
                     ]
                     if matching_features:
-                        cand_reasons.append(f"Observable traits: {', '.join(matching_features[:2])}")
+                        cand_reasons.append(
+                            f"Observable traits: {', '.join(matching_features[:2])}"
+                        )
 
                     candidates.append(
                         self._create_candidate_from_destination(
@@ -1278,7 +1305,7 @@ class VisualDiscoveryService:
                     catalogue_status="outside_catalogue",
                     notes=raw_external.get(
                         "notes",
-                        "This place is not currently part of the curated Karnataka destination catalogue."
+                        "This place is not currently part of the curated Karnataka destination catalogue.",
                     ),
                 )
 
@@ -1335,7 +1362,11 @@ class VisualDiscoveryService:
 
             conf_str = raw.get("confidence_label", "possible_match")
             if conf_str not in ("strong_match", "possible_match", "uncertain_suggestion"):
-                conf_str = "strong_match" if score >= 0.85 else ("possible_match" if score >= 0.70 else "uncertain_suggestion")
+                conf_str = (
+                    "strong_match"
+                    if score >= 0.85
+                    else ("possible_match" if score >= 0.70 else "uncertain_suggestion")
+                )
             confidence = ConfidenceLabel(conf_str)
 
             reasons = raw.get("matching_reasons", [])

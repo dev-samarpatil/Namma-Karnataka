@@ -29,6 +29,7 @@ async def get_current_user(
             code="UNAUTHORIZED",
             message="Authentication credentials were not provided",
             status_code=401,
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return await verify_jwt_token(credentials.credentials)
@@ -49,4 +50,3 @@ async def get_optional_user(
         return await verify_jwt_token(credentials.credentials)
     except AppError:
         return None
-

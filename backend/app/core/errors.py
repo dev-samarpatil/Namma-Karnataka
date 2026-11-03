@@ -22,12 +22,14 @@ class AppException(Exception):
         message: str,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
         details: list[dict[str, Any]] | None = None,
+        headers: dict[str, str] | None = None,
     ):
         super().__init__(message)
         self.code = code
         self.message = message
         self.status_code = status_code
         self.details = details
+        self.headers = headers
 
 
 # Backward-compatible alias
@@ -112,10 +114,18 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
             details=exc.details,
         )
     )
+    headers: dict[str, str] = {}
+    if request_id:
+        headers["X-Request-ID"] = request_id
+    if getattr(exc, "headers", None):
+        headers.update(exc.headers)
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED and "WWW-Authenticate" not in headers:
+        headers["WWW-Authenticate"] = "Bearer"
+
     return JSONResponse(
         status_code=exc.status_code,
         content=response_payload.model_dump(exclude_none=True),
-        headers={"X-Request-ID": request_id} if request_id else None,
+        headers=headers if headers else None,
     )
 
 

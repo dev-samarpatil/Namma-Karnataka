@@ -38,8 +38,12 @@ class DestinationImageMetadata(BaseModel):
     license: str
     attribution_text: str
     destination_id: str
-    retrieved_at: str = Field(default_factory=lambda: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
-    verification_status: str = "VERIFIED_AUTHENTIC"  # VERIFIED_AUTHENTIC, COMMUNITY_VERIFIED, UNAVAILABLE
+    retrieved_at: str = Field(
+        default_factory=lambda: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    )
+    verification_status: str = (
+        "VERIFIED_AUTHENTIC"  # VERIFIED_AUTHENTIC, COMMUNITY_VERIFIED, UNAVAILABLE
+    )
 
     def to_destination_media(self, alt_text: str = "") -> DestinationMedia:
         """Convert to internal DestinationMedia schema."""
@@ -273,8 +277,7 @@ class DestinationImageService:
         self._api_url = "https://commons.wikimedia.org/w/api.php"
         self._headers = {
             "User-Agent": (
-                "NammaKarnatakaTravelApp/1.0 "
-                "(https://karnataka.gov.in; info@nammakarnataka.org)"
+                "NammaKarnatakaTravelApp/1.0 (https://karnataka.gov.in; info@nammakarnataka.org)"
             ),
             "Accept": "application/json",
         }
@@ -375,7 +378,9 @@ class DestinationImageService:
         }
 
         if self._client:
-            resp = await self._client.get(self._api_url, params=params, headers=self._headers, timeout=6.0)
+            resp = await self._client.get(
+                self._api_url, params=params, headers=self._headers, timeout=6.0
+            )
         else:
             async with httpx.AsyncClient(timeout=6.0) as client:
                 resp = await client.get(self._api_url, params=params, headers=self._headers)
@@ -394,10 +399,22 @@ class DestinationImageService:
             title_lower = title.lower()
 
             # Strict relevance & non-photo filter
-            if any(x in title_lower for x in [
-                "map", "flag", "coat of arms", "seal", "diagram", "icon", "logo",
-                "sketch", "plan of", "chart", "locator"
-            ]):
+            if any(
+                x in title_lower
+                for x in [
+                    "map",
+                    "flag",
+                    "coat of arms",
+                    "seal",
+                    "diagram",
+                    "icon",
+                    "logo",
+                    "sketch",
+                    "plan of",
+                    "chart",
+                    "locator",
+                ]
+            ):
                 continue
 
             imageinfo = page.get("imageinfo", [])
@@ -420,9 +437,13 @@ class DestinationImageService:
                 continue
 
             extmeta = info.get("extmetadata", {})
-            artist_raw = extmeta.get("Artist", {}).get("value") or extmeta.get("Credit", {}).get("value")
+            artist_raw = extmeta.get("Artist", {}).get("value") or extmeta.get("Credit", {}).get(
+                "value"
+            )
             artist = self._clean_html(artist_raw) or "Wikimedia Contributor"
-            license_raw = extmeta.get("LicenseShortName", {}).get("value") or extmeta.get("UsageTerms", {}).get("value")
+            license_raw = extmeta.get("LicenseShortName", {}).get("value") or extmeta.get(
+                "UsageTerms", {}
+            ).get("value")
             license_name = self._clean_html(license_raw) or "Creative Commons"
 
             page_url = f"https://commons.wikimedia.org/wiki/{title.replace(' ', '_')}"
@@ -454,4 +475,3 @@ def get_destination_image_service() -> DestinationImageService:
     if _global_image_service is None:
         _global_image_service = DestinationImageService()
     return _global_image_service
-

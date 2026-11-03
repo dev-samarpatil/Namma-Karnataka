@@ -32,7 +32,11 @@ class BudgetCalculator:
     }
 
     SCENARIO_HOTEL_RATES = {
-        "budget": {"min": 850.0, "max": 1400.0, "desc": "Verified budget homestay / dormitory / lodge"},
+        "budget": {
+            "min": 850.0,
+            "max": 1400.0,
+            "desc": "Verified budget homestay / dormitory / lodge",
+        },
         "standard": {"min": 1800.0, "max": 3000.0, "desc": "Standard 3-star / KSTDC hotel"},
         "comfort": {"min": 3500.0, "max": 6000.0, "desc": "Heritage resort / Jungle Lodges (JLR)"},
     }

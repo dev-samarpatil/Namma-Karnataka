@@ -330,12 +330,19 @@ class BudgetCategoryItem(StrictSchema):
 class BudgetAlternativeItem(StrictSchema):
     """Actionable alternative suggestion to reduce trip cost."""
 
-    category: str = Field(..., description="Cost category: transport, accommodation, dining, attraction, distance")
+    category: str = Field(
+        ..., description="Cost category: transport, accommodation, dining, attraction, distance"
+    )
     expensive_choice: str = Field(..., description="Current selection or standard option")
     alternative_choice: str = Field(..., description="Recommended budget-friendly alternative")
     potential_savings_inr: float = Field(..., description="Estimated savings in INR")
-    action_type: str = Field(..., description="Action identifier e.g. switch_transport, switch_lodging, local_dining")
-    explanation: str = Field(..., description="Explanation of why this alternative saves cost without compromising safety")
+    action_type: str = Field(
+        ..., description="Action identifier e.g. switch_transport, switch_lodging, local_dining"
+    )
+    explanation: str = Field(
+        ...,
+        description="Explanation of why this alternative saves cost without compromising safety",
+    )
 
 
 class CompleteBudgetBreakdown(StrictSchema):

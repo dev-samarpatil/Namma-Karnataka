@@ -120,7 +120,9 @@ class DestinationDiscoveryService:
                 )
                 raw_candidates.extend(results)
             except Exception as exc:
-                logger.warning("Provider %s error during search: %s", provider.get_source_name(), exc)
+                logger.warning(
+                    "Provider %s error during search: %s", provider.get_source_name(), exc
+                )
 
         # Deduplicate candidates within 300 meters
         deduped: list[DiscoveredDestination] = []
@@ -183,7 +185,9 @@ class DestinationDiscoveryService:
         img_svc = get_destination_image_service()
         meta = img_svc.get_verified_media_for_id(discovered.id)
         effective_image_url = discovered.image_url or (meta.image_url if meta else None)
-        media_list = [meta.to_destination_media(discovered.name_en)] if meta and meta.image_url else []
+        media_list = (
+            [meta.to_destination_media(discovered.name_en)] if meta and meta.image_url else []
+        )
 
         return DestinationRead(
             id=discovered.id,
@@ -233,7 +237,9 @@ class DestinationDiscoveryService:
             ],
         )
 
-    def to_recommended_destination(self, discovered: DiscoveredDestination, order_index: int = 1) -> RecommendedDestination:
+    def to_recommended_destination(
+        self, discovered: DiscoveredDestination, order_index: int = 1
+    ) -> RecommendedDestination:
         """Convert a discovered record to a RecommendedDestination schema."""
         img_svc = get_destination_image_service()
         meta = img_svc.get_verified_media_for_id(discovered.id)

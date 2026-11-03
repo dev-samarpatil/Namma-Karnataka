@@ -47,7 +47,9 @@ async def verify_token_against_supabase_api(token: str) -> AuthenticatedUser:
         clean_url = clean_url[: -len("/rest/v1")]
 
     headers = {"Authorization": f"Bearer {token}"}
-    if settings.SUPABASE_SERVICE_ROLE_KEY and not settings.SUPABASE_SERVICE_ROLE_KEY.startswith("placeholder"):
+    if settings.SUPABASE_SERVICE_ROLE_KEY and not settings.SUPABASE_SERVICE_ROLE_KEY.startswith(
+        "placeholder"
+    ):
         headers["apikey"] = settings.SUPABASE_SERVICE_ROLE_KEY
 
     try:
@@ -120,9 +122,12 @@ async def verify_jwt_token(token: str) -> AuthenticatedUser:
                 code="UNAUTHORIZED",
                 message="Demo access tokens are not permitted in this environment.",
                 status_code=401,
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Demo tokens not allowed in production"'
+                },
             )
 
-        suffix = clean_token[len("test-token-user-"):]
+        suffix = clean_token[len("test-token-user-") :]
         test_uuid = f"00000000-0000-0000-0000-00000000000{suffix}" if len(suffix) == 1 else suffix
         return AuthenticatedUser(
             user_id=test_uuid,
@@ -133,9 +138,42 @@ async def verify_jwt_token(token: str) -> AuthenticatedUser:
             user_metadata={"full_name": f"Demo User {suffix}"},
         )
 
-    # 2. Local cryptographic JWT verification when SUPABASE_JWT_SECRET is configured
+    # 2. Structural sanity check for compact JWT format (header.payload.signature)
+    if clean_token.count(".") != 2:
+        logger.warning(
+            "Bearer token rejected: malformed JWT structure (must contain exactly 3 dot-separated segments)"
+        )
+        raise AppError(
+            code="INVALID_CREDENTIALS",
+            message="Invalid or malformed authentication token.",
+            status_code=401,
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Malformed token format"'
+            },
+        )
+
+    try:
+        unverified_header = jwt.get_unverified_header(clean_token)
+    except jwt.InvalidTokenError as exc:
+        logger.warning("Bearer token rejected: invalid JWT header (%s)", exc)
+        raise AppError(
+            code="INVALID_CREDENTIALS",
+            message="Invalid or malformed authentication token.",
+            status_code=401,
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid token header"'
+            },
+        ) from exc
+
+    alg = unverified_header.get("alg", "HS256")
     jwt_secret = settings.SUPABASE_JWT_SECRET
-    if jwt_secret and not jwt_secret.startswith("placeholder"):
+    has_jwt_secret = bool(jwt_secret and not jwt_secret.startswith("placeholder"))
+    has_supabase_url = bool(
+        settings.SUPABASE_URL and not settings.SUPABASE_URL.startswith("placeholder")
+    )
+
+    # 3. Local cryptographic JWT verification for HS256 tokens when secret is configured
+    if alg == "HS256" and has_jwt_secret:
         try:
             # We allow a 15-second leeway for system clock drift across servers
             claims = jwt.decode(
@@ -156,6 +194,9 @@ async def verify_jwt_token(token: str) -> AuthenticatedUser:
                     code="INVALID_CREDENTIALS",
                     message="Token missing subject identifier (sub).",
                     status_code=401,
+                    headers={
+                        "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Missing subject claim"'
+                    },
                 )
 
             # Validate audience if aud claim exists (Supabase uses 'authenticated')
@@ -166,6 +207,9 @@ async def verify_jwt_token(token: str) -> AuthenticatedUser:
                     code="INVALID_CREDENTIALS",
                     message="Token audience is invalid.",
                     status_code=401,
+                    headers={
+                        "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Audience mismatch"'
+                    },
                 )
 
             return AuthenticatedUser(
@@ -182,11 +226,51 @@ async def verify_jwt_token(token: str) -> AuthenticatedUser:
                 code="TOKEN_EXPIRED",
                 message="Authentication token has expired. Please sign in again.",
                 status_code=401,
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="The token has expired"'
+                },
+            ) from exc
+        except jwt.InvalidSignatureError as exc:
+            logger.warning("HS256 token signature verification failed: %s", exc)
+            raise AppError(
+                code="INVALID_CREDENTIALS",
+                message="Invalid or incorrectly signed authentication token.",
+                status_code=401,
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid signature"'
+                },
             ) from exc
         except jwt.InvalidTokenError as exc:
-            # Signature might be RS256/ES256 from Supabase new key management,
-            # attempt fallback to Supabase /auth/v1/user endpoint before rejecting.
-            logger.debug("Local JWT decode failed (%s), attempting Supabase API fallback", exc)
+            logger.warning("HS256 token validation failed: %s", exc)
+            raise AppError(
+                code="INVALID_CREDENTIALS",
+                message="Invalid authentication token.",
+                status_code=401,
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid token"'
+                },
+            ) from exc
 
-    # 3. Remote Supabase Auth fallback
-    return await verify_token_against_supabase_api(clean_token)
+    # 4. Asymmetric or rotated keys fallback to Supabase /auth/v1/user endpoint
+    if has_supabase_url:
+        return await verify_token_against_supabase_api(clean_token)
+
+    # 5. Fallback when Supabase URL is not configured
+    if has_jwt_secret:
+        # Secret is available for HS256, but token specifies unsupported algorithm
+        logger.warning("Unsupported token algorithm '%s' without remote Supabase URL", alg)
+        raise AppError(
+            code="INVALID_CREDENTIALS",
+            message=f"Unsupported token algorithm '{alg}'.",
+            status_code=401,
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Unsupported algorithm"'
+            },
+        )
+
+    # Neither secret nor Supabase URL is configured: infrastructure failure
+    raise AppError(
+        code="AUTH_UNCONFIGURED",
+        message="Supabase authentication service is not configured.",
+        status_code=503,
+    )

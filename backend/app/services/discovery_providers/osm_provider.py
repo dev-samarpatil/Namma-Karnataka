@@ -70,7 +70,13 @@ class OSMProvider(DiscoveryProvider):
                 offbeat_score=0.78,
                 is_offbeat=True,
                 confidence_score=0.92,
-                tags=["gothic_ruins", "submerged", "reservoir", "french_architecture", "photography"],
+                tags=[
+                    "gothic_ruins",
+                    "submerged",
+                    "reservoir",
+                    "french_architecture",
+                    "photography",
+                ],
             ),
             DiscoveredDestination(
                 id="osm-node-maravanthe-beach",
@@ -159,7 +165,11 @@ class OSMProvider(DiscoveryProvider):
             if offbeat_only and not dest.is_offbeat:
                 continue
 
-            if district and dest.district.lower() != district.lower() and dest.district_code.lower() != district.lower():
+            if (
+                district
+                and dest.district.lower() != district.lower()
+                and dest.district_code.lower() != district.lower()
+            ):
                 continue
 
             if categories and dest.category not in categories:
@@ -173,4 +183,3 @@ class OSMProvider(DiscoveryProvider):
             results.append(dest)
 
         return results[:limit]
-

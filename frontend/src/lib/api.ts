@@ -84,7 +84,7 @@ export class ApiClientError extends Error {
 }
 
 const DEFAULT_TIMEOUT_MS = 25000;
-const PLANNING_TIMEOUT_MS = 35000; // Allows backend 28s monotonic deadline to complete
+const PLANNING_TIMEOUT_MS = 45000; // Allows backend 28s monotonic deadline and cold starts to complete
 
 export function getApiBaseUrl(): string {
   const envUrl = import.meta.env.VITE_API_BASE_URL;

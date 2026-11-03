@@ -130,6 +130,37 @@ def normalize_destination_name(name: str | None) -> str:
     return cleaned if len(cleaned) >= 3 else re.sub(r"[^a-z0-9]", "", name.lower())
 
 
+_CATALOG_DESTINATIONS_CACHE: list[DestinationRead] | None = None
+_CATALOG_MAP_CACHE: dict[str, DestinationRead] = {}
+
+
+def _get_catalog_records() -> tuple[list[DestinationRead], dict[str, DestinationRead]]:
+    """Retrieve catalog destinations from in-memory cache or repository."""
+    global _CATALOG_DESTINATIONS_CACHE, _CATALOG_MAP_CACHE
+    if _CATALOG_DESTINATIONS_CACHE is not None:
+        return _CATALOG_DESTINATIONS_CACHE, _CATALOG_MAP_CACHE
+
+    repo = get_destination_repository()
+    fallback_repo = getattr(repo, "_fallback_repo", None)
+    target_repo = fallback_repo if fallback_repo is not None else repo
+
+    try:
+        all_dests, _ = target_repo.list_destinations(
+            DestinationFilterParams(limit=100, offset=0), published_only=False
+        )
+    except Exception:
+        all_dests = []
+
+    _CATALOG_DESTINATIONS_CACHE = all_dests
+    _CATALOG_MAP_CACHE = {}
+    for d in all_dests:
+        _CATALOG_MAP_CACHE[d.id] = d
+        _CATALOG_MAP_CACHE[d.slug] = d
+        for alias in getattr(d, "aliases", []):
+            _CATALOG_MAP_CACHE[alias] = d
+    return _CATALOG_DESTINATIONS_CACHE, _CATALOG_MAP_CACHE
+
+
 def get_canonical_destination_id(
     identifier: str | None,
     name: str | None = None,
@@ -152,10 +183,11 @@ def get_canonical_destination_id(
         if canonical_slug in GLOBAL_CANONICAL_ID_MAPPINGS:
             return GLOBAL_CANONICAL_ID_MAPPINGS[canonical_slug]
 
-    repo = get_destination_repository()
-    # Query repository directly if identifier matches an existing record
+    all_dests, dest_map = _get_catalog_records()
+
+    # Query repository cache directly if identifier matches an existing record
     if raw_key:
-        dest = repo.get_by_id(raw_key) or repo.get_by_slug(raw_key)
+        dest = dest_map.get(raw_key)
         if dest:
             return dest.id
 
@@ -169,9 +201,6 @@ def get_canonical_destination_id(
             lat, lon = coordinates.lat, coordinates.lon
 
     if lat is not None and lon is not None:
-        all_dests, _ = repo.list_destinations(
-            DestinationFilterParams(limit=100, offset=0), published_only=False
-        )
         for cand in all_dests:
             if cand.coordinates:
                 dist_m = _haversine_distance_m(lat, lon, cand.coordinates.lat, cand.coordinates.lon)
@@ -181,9 +210,6 @@ def get_canonical_destination_id(
     # Fallback to normalized name matching if name supplied
     norm_name = normalize_destination_name(name)
     if norm_name and len(norm_name) >= 4:
-        all_dests, _ = repo.list_destinations(
-            DestinationFilterParams(limit=100, offset=0), published_only=False
-        )
         for cand in all_dests:
             cand_norm = normalize_destination_name(cand.name_en)
             if cand_norm and (

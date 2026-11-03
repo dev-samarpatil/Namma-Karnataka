@@ -1208,16 +1208,16 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               return (
                 <React.Fragment key={stop.stop_id}>
                   {travelLegElement}
-                  <article className="timeline-stop-card event-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #f59e0b' }}>
-                    <div className="stop-order-indicator stop-type-event" style={{ background: '#f59e0b' }}>
+                  <article className="timeline-stop-card event-stop-card" data-testid={stopCardTestId}>
+                    <div className="stop-order-indicator stop-type-event">
                       <span className="order-icon" aria-hidden="true">🎪</span>
                     </div>
                     <div className="stop-content">
                       <div className="stop-header-row">
-                        <h4 className="stop-name" style={{ color: '#fef08a' }}>{stop.name}</h4>
+                        <h4 className="stop-name">{stop.name}</h4>
                         <div className="stop-pills">
                           <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
-                          <span className="card-category-pill event-pill" style={{ background: '#78350f', color: '#fef3c7' }}>
+                          <span className="card-category-pill event-pill">
                             🎪 {language === 'kn' ? 'ಸಾಂಸ್ಕೃತಿಕ ಉತ್ಸವ / ಜಾತ್ರೆ' : 'Cultural Festival'}
                           </span>
                           {stop.source_reference && (
@@ -1250,8 +1250,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               return (
                 <React.Fragment key={stop.stop_id}>
                   {travelLegElement}
-                  <article className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId} style={{ borderLeft: '4px solid #38bdf8' }}>
-                    <div className="stop-order-indicator stop-type-transport" style={{ background: '#0284c7' }}>
+                  <article className="timeline-stop-card transport-stop-card" data-testid={stopCardTestId}>
+                    <div className="stop-order-indicator stop-type-transport">
                       <span className="order-icon" aria-hidden="true">🚗</span>
                     </div>
                     <div className="stop-content">
@@ -1296,7 +1296,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                     <div className="stop-header-row">
                       <h4 className="stop-name">{stop.name}</h4>
                       <div className="stop-pills">
-                        <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time} ({stop.duration_minutes}m)</span>
+                        <span className="stop-time-badge">⏰ {stop.start_time} – {stop.end_time}</span>
+                        <span className="stop-duration-badge">⏳ {stop.duration_minutes}m</span>
                         <span className="card-category-pill">{categoryLabel}</span>
                         {matchedItem && (
                           <span className="card-district-pill">📍 {matchedItem.district_name || matchedItem.district_code}</span>
@@ -1358,7 +1359,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                     {stop.rationale && (
                       <div className="stop-rationale-box">
-                        <strong>{t('whyThisStop')}</strong> {stop.rationale}
+                        <span className="stop-rationale-label">💡 <strong>{t('whyThisStop')}</strong></span>{' '}
+                        <span className="stop-rationale-text">{stop.rationale}</span>
                       </div>
                     )}
 

@@ -62,4 +62,15 @@ describe('Compact Header Component', () => {
     fireEvent.click(langBtn);
     expect(onLanguageChange).toHaveBeenCalledWith('en');
   });
+
+  it('renders sign in and create account buttons and triggers modal view correctly', () => {
+    render(<Header {...defaultProps} />);
+
+    const signInBtn = screen.getByTestId('header-signin-btn');
+    const signUpBtn = screen.getByTestId('header-signup-btn');
+
+    expect(signInBtn).toBeInTheDocument();
+    expect(signUpBtn).toBeInTheDocument();
+    expect(signUpBtn).toHaveTextContent('Create Account');
+  });
 });

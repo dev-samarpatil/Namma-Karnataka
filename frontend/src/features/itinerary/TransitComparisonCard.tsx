@@ -51,98 +51,66 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
   };
 
   return (
-    <div className="transit-comparison-wrapper" style={{ marginTop: '8px', marginBottom: '8px' }}>
+    <div className="transit-comparison-wrapper">
       <button
         type="button"
-        className="btn-transit-toggle"
+        className={`btn-transit-toggle ${isOpen ? 'btn-transit-toggle-open' : ''}`}
         onClick={handleToggle}
         data-testid="toggle-transit-comparison-btn"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          background: '#f0fdf4',
-          border: '1px solid #86efac',
-          color: '#166534',
-          fontSize: '0.82rem',
-          fontWeight: 600,
-          padding: '4px 10px',
-          borderRadius: '6px',
-          cursor: 'pointer',
-        }}
       >
-        <Bus size={14} /> {isOpen ? t('hideTransitComparison') : t('compareTransit')}
+        <Bus size={13} strokeWidth={2} />
+        <span>{isOpen ? t('hideTransitComparison') : t('compareTransit')}</span>
       </button>
 
       {isOpen && (
         <div
           className="transit-comparison-panel"
           data-testid="transit-comparison-panel"
-          style={{
-            marginTop: '8px',
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          }}
         >
-          <h5 style={{ margin: '0 0 10px 0', fontSize: '0.92rem', color: '#0f172a' }}>
+          <h5 className="transit-comparison-title">
             {t('transitComparisonTitle')}
           </h5>
 
           {loading && (
-            <div style={{ fontSize: '0.85rem', color: '#64748b', padding: '8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Loader2 size={14} className="spin" /> Querying KSRTC, BMTC & SWR schedules...
+            <div className="transit-comparison-loading">
+              <Loader2 size={13} className="spin" />
+              <span>Querying KSRTC, BMTC & SWR schedules...</span>
             </div>
           )}
 
           {error && (
-            <div style={{ fontSize: '0.85rem', color: '#b91c1c', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <AlertTriangle size={14} /> {error}
+            <div className="transit-comparison-error">
+              <AlertTriangle size={13} />
+              <span>{error}</span>
             </div>
           )}
 
           {comparison && !loading && (
-            <div className="comparison-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="comparison-grid">
               {/* Road / Cab Option */}
-              <div
-                className="comparison-card road-card"
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '6px',
-                  padding: '10px',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Car size={14} /> {t('roadOption')}
+              <div className="comparison-card road-card">
+                <div className="comparison-card-header road-header">
+                  <Car size={14} />
+                  <span>{t('roadOption')}</span>
                 </div>
-                <div style={{ fontSize: '0.82rem', color: '#475569' }}>
+                <div className="comparison-card-body">
                   <div><strong>Distance:</strong> ~{comparison.road_distance_km} km</div>
                   <div><strong>Est. Time:</strong> {comparison.road_duration_minutes} mins</div>
                   <div><strong>Est. Cab Cost:</strong> ₹{comparison.road_estimated_cab_cost_inr}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
+                  <div className="comparison-footnote">
                     * Terrain-adjusted geographic estimate
                   </div>
                 </div>
               </div>
 
               {/* Public Transit Option */}
-              <div
-                className="comparison-card transit-card"
-                style={{
-                  background: comparison.transit_available ? '#f0fdf4' : '#fef2f2',
-                  border: comparison.transit_available ? '1px solid #bbf7d0' : '1px solid #fecaca',
-                  borderRadius: '6px',
-                  padding: '10px',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: comparison.transit_available ? '#166534' : '#991b1b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Bus size={14} /> {t('transitOption')}
+              <div className={`comparison-card transit-card ${comparison.transit_available ? 'transit-card-avail' : 'transit-card-unavail'}`}>
+                <div className={`comparison-card-header ${comparison.transit_available ? 'transit-header-avail' : 'transit-header-unavail'}`}>
+                  <Bus size={14} />
+                  <span>{t('transitOption')}</span>
                 </div>
                 {comparison.transit_available && comparison.transit_options.length > 0 ? (
-                  <div style={{ fontSize: '0.82rem', color: '#1e293b' }}>
+                  <div className="comparison-card-body">
                     {(() => {
                       const opt = comparison.transit_options[0];
                       return (
@@ -156,32 +124,22 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
                             <strong>{t('transfersCount')}:</strong>{' '}
                             {opt.transfers_count === 0 ? t('directService') : t('viaHubTransfer')}
                           </div>
-                          <div style={{ marginTop: '4px', fontSize: '0.75rem', color: '#047857', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Leaf size={13} /> {language === 'kn' ? comparison.carbon_comparison_note_kn : comparison.carbon_comparison_note_en}
+                          <div className="comparison-eco-note">
+                            <Leaf size={12} color="#059669" />
+                            <span>{language === 'kn' ? comparison.carbon_comparison_note_kn : comparison.carbon_comparison_note_en}</span>
                           </div>
-                          <div
-                            style={{
-                              marginTop: '6px',
-                              background: '#ecfdf5',
-                              border: '1px dashed #6ee7b7',
-                              padding: '4px 6px',
-                              borderRadius: '4px',
-                              fontSize: '0.72rem',
-                              color: '#065f46',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <Info size={12} /> {opt.disclaimer}
+                          <div className="comparison-disclaimer">
+                            <Info size={11} />
+                            <span>{opt.disclaimer}</span>
                           </div>
                         </>
                       );
                     })()}
                   </div>
                 ) : (
-                  <div style={{ fontSize: '0.8rem', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Info size={12} /> {t('transitUnavailable')}
+                  <div className="transit-unavailable-notice">
+                    <Info size={12} />
+                    <span>{t('transitUnavailable')}</span>
                   </div>
                 )}
               </div>
@@ -192,3 +150,5 @@ export const TransitComparisonCard: React.FC<TransitComparisonCardProps> = ({
     </div>
   );
 };
+
+export default TransitComparisonCard;

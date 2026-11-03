@@ -6,7 +6,6 @@ import {
   User,
   Lock,
   X,
-  Zap,
   Smartphone,
   Inbox,
   CalendarDays,
@@ -18,6 +17,8 @@ import { useTranslation } from '../../lib/i18n';
 import { listCloudTrips, deleteCloudTrip, getCloudTrip, saveCloudTrip, ApiClientError } from '../../lib/api';
 import { updateGuestTripSyncStatus } from '../../services/guestStorage';
 import { GuestTransferModal } from './GuestTransferModal';
+import { useAuth } from '../../context/AuthContext';
+import { AuthModal } from '../authentication/AuthModal';
 
 interface SavedTripsViewProps {
   savedTrips: SavedTrip[];
@@ -41,6 +42,8 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   onSelectCloudTrip,
 }) => {
   const { t } = useTranslation(language);
+  const auth = useAuth();
+  const effectiveAuthToken = authToken || auth.token;
   const [activeSubTab, setActiveSubTab] = useState<'local' | 'cloud'>('local');
 
   // Cloud state
@@ -51,20 +54,19 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   const [showTransferModal, setShowTransferModal] = useState<boolean>(false);
   const [tripToDeleteCloud, setTripToDeleteCloud] = useState<SavedTripSummary | null>(null);
   const [isDeletingCloud, setIsDeletingCloud] = useState<boolean>(false);
-  const [tokenInput, setTokenInput] = useState<string>('');
 
   // Count unlinked local trips
   const unlinkedTripsCount = savedTrips.filter((t) => !t.cloud_trip_id).length;
 
   const fetchCloudTrips = useCallback(() => {
-    if (!authToken) {
+    if (!effectiveAuthToken) {
       setCloudTrips([]);
       return;
     }
     setIsLoadingCloud(true);
     setCloudError(null);
 
-    listCloudTrips(authToken)
+    listCloudTrips(effectiveAuthToken)
       .then((res) => {
         setCloudTrips(res.items);
       })
@@ -82,27 +84,20 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
       .finally(() => {
         setIsLoadingCloud(false);
       });
-  }, [authToken, t]);
+  }, [effectiveAuthToken, t]);
 
   // Fetch cloud trips when switching to cloud tab or changing auth token
   useEffect(() => {
-    if (activeSubTab === 'cloud' && authToken) {
+    if (activeSubTab === 'cloud' && effectiveAuthToken) {
       fetchCloudTrips();
-    } else if (!authToken) {
+    } else if (!effectiveAuthToken) {
       // Clear cloud state on sign-out to prevent cross-account cache leakage
       setCloudTrips([]);
     }
-  }, [activeSubTab, authToken, fetchCloudTrips]);
-
-  const handleSignIn = (token: string) => {
-    if (onAuthTokenChange) {
-      onAuthTokenChange(token);
-    }
-    setShowAuthModal(false);
-    setActiveSubTab('cloud');
-  };
+  }, [activeSubTab, effectiveAuthToken, fetchCloudTrips]);
 
   const handleSignOut = () => {
+    auth.signOut();
     if (onAuthTokenChange) {
       onAuthTokenChange(null);
     }
@@ -111,10 +106,10 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   };
 
   const handleConfirmDeleteCloudTrip = async () => {
-    if (!authToken || !tripToDeleteCloud) return;
+    if (!effectiveAuthToken || !tripToDeleteCloud) return;
     setIsDeletingCloud(true);
     try {
-      await deleteCloudTrip(tripToDeleteCloud.id, authToken);
+      await deleteCloudTrip(tripToDeleteCloud.id, effectiveAuthToken);
       setCloudTrips((prev) => prev.filter((item) => item.id !== tripToDeleteCloud.id));
       setTripToDeleteCloud(null);
     } catch (err) {
@@ -126,9 +121,9 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   };
 
   const handleViewCloudTrip = async (tripId: string) => {
-    if (!authToken || !onSelectCloudTrip) return;
+    if (!effectiveAuthToken || !onSelectCloudTrip) return;
     try {
-      const detail = await getCloudTrip(tripId, authToken);
+      const detail = await getCloudTrip(tripId, effectiveAuthToken);
       onSelectCloudTrip(detail);
     } catch (err) {
       const msg = err instanceof ApiClientError ? err.message : 'Failed to load cloud trip details';
@@ -137,7 +132,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
   };
 
   const handleSingleTripTransfer = async (trip: SavedTrip) => {
-    if (!authToken) {
+    if (!effectiveAuthToken) {
       setShowAuthModal(true);
       return;
     }
@@ -154,7 +149,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
         itinerary: trip.plan,
       };
       const idempotencyKey = `import-${trip.id}`;
-      const cloudTrip = await saveCloudTrip(payload, authToken, idempotencyKey);
+      const cloudTrip = await saveCloudTrip(payload, effectiveAuthToken, idempotencyKey);
       updateGuestTripSyncStatus(trip.id, 'synced', cloudTrip.id);
       fetchCloudTrips();
     } catch (err) {
@@ -179,11 +174,11 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
           <h4>{t('accountOverviewTitle')}</h4>
           <p>{t('supabaseNoticeDesc')}</p>
           <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {authToken ? (
+            {effectiveAuthToken ? (
               <>
                 <span className="badge badge-success" data-testid="auth-status-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <Check size={12} strokeWidth={2.5} />
-                  <span>{t('signedInAs')}: {authToken.slice(0, 16)}...</span>
+                  <span>{t('signedInAs')}: {auth.profile?.full_name || auth.user?.email || `${effectiveAuthToken.slice(0, 16)}...`}</span>
                 </span>
                 <button
                   type="button"
@@ -216,83 +211,25 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
         </div>
       </div>
 
-      {/* Authentication Modal / Inline Token Form */}
+      {/* Production Authentication Modal */}
       {showAuthModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" data-testid="auth-modal">
-          <div className="modal-card" style={{ maxWidth: '480px' }}>
-            <div className="modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Lock size={18} strokeWidth={2} color="#0798B5" />
-                <span>{t('signInButton')}</span>
-              </h3>
-              <button
-                type="button"
-                className="close-btn"
-                onClick={() => setShowAuthModal(false)}
-                aria-label={t('close')}
-                style={{ display: 'flex', alignItems: 'center' }}
-              >
-                <X size={16} strokeWidth={2} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Enter your Supabase JWT or Bearer session token to synchronize and manage itineraries across devices.
-              </p>
-              <div style={{ marginTop: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  Bearer Token:
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="eyJhbGciOiJIUzI1Ni... or test-token-user-1"
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}
-                  data-testid="token-input"
-                />
-              </div>
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    handleSignIn('test-token-user-1');
-                  }}
-                  data-testid="demo-user-btn"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <Zap size={14} strokeWidth={2} />
-                  <span>Use Demo User</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => {
-                    if (tokenInput.trim()) {
-                      handleSignIn(tokenInput.trim());
-                    }
-                  }}
-                  disabled={!tokenInput.trim()}
-                  data-testid="submit-auth-btn"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <Check size={14} strokeWidth={2.5} />
-                  <span>Connect</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            if (auth.token && onAuthTokenChange) {
+              onAuthTokenChange(auth.token);
+            }
+          }}
+        />
       )}
 
       {/* Guest-to-Account Transfer Modal */}
-      {showTransferModal && authToken && (
+      {showTransferModal && effectiveAuthToken && (
         <GuestTransferModal
           isOpen={showTransferModal}
           savedTrips={savedTrips}
-          authToken={authToken}
+          authToken={effectiveAuthToken}
           language={language}
           onClose={() => setShowTransferModal(false)}
           onTransferComplete={() => {

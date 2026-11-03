@@ -138,13 +138,11 @@ describe('SavedTripsView Component', () => {
     // Clicking Cloud tab when unauthenticated triggers auth modal
     fireEvent.click(screen.getByTestId('subtab-cloud-trips'));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Authentication Unavailable|Welcome Back/i })).toBeInTheDocument();
 
-    // Enter token and connect
-    const tokenInput = screen.getByTestId('token-input');
-    fireEvent.change(tokenInput, { target: { value: 'mock-valid-jwt-token' } });
-    fireEvent.click(screen.getByTestId('submit-auth-btn'));
-
-    expect(onAuthTokenChange).toHaveBeenCalledWith('mock-valid-jwt-token');
+    // Close auth modal
+    const closeBtn = screen.getByLabelText(/Close authentication modal/i);
+    fireEvent.click(closeBtn);
 
     // Simulate parent re-rendering with new authToken
     rerender(

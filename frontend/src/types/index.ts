@@ -914,3 +914,25 @@ export interface DirectionsResponse {
   warnings?: string[];
 }
 
+// ============================================================================
+// Authentication & User Profile Types
+// ============================================================================
+
+export interface UserProfile {
+  id: string;
+  email?: string | null;
+  full_name: string;
+  avatar_url?: string | null;
+  preferred_language: 'en' | 'kn';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type AuthModalView =
+  | 'login'
+  | 'signup'
+  | 'forgot_password'
+  | 'verification_pending'
+  | 'reset_password';
+
+

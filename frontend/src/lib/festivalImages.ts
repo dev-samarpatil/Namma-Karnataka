@@ -101,3 +101,4 @@ export function toFestivalEvent(
     travelAdvisory: ce.travel_advisory,
   };
 }
+

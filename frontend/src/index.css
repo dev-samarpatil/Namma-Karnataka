@@ -195,6 +195,110 @@ h1, h2, h3, h4, .brand-title, .section-title, .page-title {
   border-color: var(--accent-cyan);
 }
 
+.auth-signin-header-btn {
+  background: linear-gradient(135deg, #0d9488 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(13, 148, 136, 0.2);
+}
+
+.auth-signin-header-btn:hover {
+  background: linear-gradient(135deg, #0f766e 0%, #047857 100%);
+  transform: translateY(-1px);
+}
+
+.auth-signup-header-btn {
+  background: #ffffff;
+  color: #0d9488;
+  border: 1px solid #99f6e4;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.auth-signup-header-btn:hover {
+  background: #f0fdfa;
+  border-color: #0d9488;
+  color: #0f766e;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .auth-signup-header-btn span {
+    display: none;
+  }
+  .auth-signup-header-btn {
+    padding: 0.45rem;
+  }
+}
+
+.user-profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.3rem 0.65rem 0.3rem 0.35rem;
+  border-radius: var(--radius-full);
+  border: 1px solid #e2e8f0;
+  font-size: 0.8125rem;
+  color: #1e293b;
+}
+
+.user-avatar-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #0d9488;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-display-name {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.auth-signout-mini-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.auth-signout-mini-btn:hover {
+  color: #ef4444;
+}
+
 .header-nav {
   max-width: 1200px;
   margin: 0 auto;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, ExternalLink, ShieldCheck, Ticket, Info, Sparkles } from 'lucide-react';
+import { MapPin, Calendar, ExternalLink, ShieldCheck, Ticket, Info } from 'lucide-react';
 import { CulturalEvent, FestivalEvent, Language } from '../../types';
 import { EventImage } from '../../components/ui/EventImage';
 import { toFestivalEvent } from '../../lib/festivalImages';

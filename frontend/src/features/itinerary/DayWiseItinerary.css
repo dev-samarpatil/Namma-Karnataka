@@ -1120,3 +1120,963 @@ html, body {
     height: 190px;
   }
 }
+
+
+/* ==========================================================================
+   8. Itinerary Destination Cards & Stop Hierarchy
+   ========================================================================== */
+.timeline-stop-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  padding: 16px 18px !important;
+  display: flex !important;
+  gap: 14px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  margin-bottom: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+}
+
+.timeline-stop-card:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
+  transform: translateY(-1px);
+}
+
+.timeline-stop-card.meal-stop-card {
+  border-left: 3px solid #F59E0B !important;
+}
+
+.timeline-stop-card.accommodation-stop-card {
+  border-left: 3px solid #8B5CF6 !important;
+}
+
+.timeline-stop-card.event-stop-card {
+  border-left: 3px solid #F59E0B !important;
+}
+
+.timeline-stop-card.transport-stop-card {
+  border-left: 3px solid #0284C7 !important;
+}
+
+.stop-order-indicator {
+  display: flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.stop-order-indicator .order-number {
+  background: #E0F2FE;
+  color: #0369A1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border: 1px solid #BAE6FD;
+}
+
+.stop-order-indicator.stop-type-meal .order-icon {
+  background: #FEF3C7;
+  color: #D97706;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  border: 1px solid #FDE68A;
+}
+
+.stop-order-indicator.stop-type-stay .order-icon {
+  background: #EDE9FE;
+  color: #7C3AED;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  border: 1px solid #DDD6FE;
+}
+
+.stop-order-indicator.stop-type-event .order-icon {
+  background: #FEF3C7;
+  color: #B45309;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  border: 1px solid #FDE68A;
+}
+
+.stop-order-indicator.stop-type-transport .order-icon {
+  background: #E0F2FE;
+  color: #0284C7;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  border: 1px solid #BAE6FD;
+}
+
+.stop-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stop-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 2px;
+}
+
+.stop-name {
+  font-size: 1.08rem !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  margin: 0 !important;
+  line-height: 1.35 !important;
+  flex: 1 1 200px;
+}
+
+.stop-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.stop-time-badge {
+  background: #F1F5F9;
+  color: #334155;
+  border: 1px solid #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stop-duration-badge {
+  background: #F1F5F9;
+  color: #334155;
+  border: 1px solid #E2E8F0;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.card-category-pill {
+  background: #F0FDF4;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.card-category-pill.meal-pill {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+
+.card-category-pill.stay-pill {
+  background: #EDE9FE;
+  color: #6D28D9;
+  border-color: #DDD6FE;
+}
+
+.card-category-pill.event-pill {
+  background: #FEF3C7;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+
+.card-category-pill.transport-pill {
+  background: #E0F2FE;
+  color: #0369A1;
+  border-color: #BAE6FD;
+}
+
+.card-district-pill {
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.card-offbeat-badge {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pill-customized {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.pill-locked {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.stop-summary {
+  font-size: 0.85rem !important;
+  color: #475569 !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stop-user-notes {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #92400E;
+}
+
+.transit-indicator-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #0369A1;
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.stop-rationale-box {
+  background: #FFFDF5 !important;
+  border: 1px solid #FEF3C7 !important;
+  border-left: 3px solid #D97706 !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  color: #92400E !important;
+  line-height: 1.45 !important;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stop-rationale-label {
+  font-weight: 700;
+  color: #78350F;
+  white-space: nowrap;
+}
+
+.stop-rationale-text {
+  color: #92400E;
+}
+
+.stop-footer-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem !important;
+  padding: 8px 0 4px !important;
+  border-top: 1px solid #F1F5F9 !important;
+  color: #64748B !important;
+}
+
+.stop-fee-info {
+  font-weight: 600;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stop-fee-info .text-free {
+  color: #047857;
+  font-weight: 700;
+}
+
+.stop-coords-text {
+  font-family: monospace;
+  font-size: 0.74rem;
+  color: #64748B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.stop-actions-row {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding-top: 4px !important;
+}
+
+.btn-stop-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  border: 1px solid #E2E8F0 !important;
+  background: #FFFFFF !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  line-height: 1 !important;
+}
+
+.btn-stop-action:hover:not(:disabled) {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+.btn-stop-action:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+.btn-stop-regen {
+  background: #FFFBEB !important;
+  border-color: #FDE68A !important;
+  color: #92400E !important;
+}
+
+.btn-stop-regen:hover:not(:disabled) {
+  background: #FEF3C7 !important;
+  border-color: #F59E0B !important;
+}
+
+.btn-stop-danger {
+  background: #FFFFFF !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
+}
+
+.btn-stop-danger:hover:not(:disabled) {
+  background: #FEF2F2 !important;
+  border-color: #EF4444 !important;
+  color: #B91C1C !important;
+}
+
+/* ==========================================================================
+   9. Transit Cards & Journey Legs
+   ========================================================================== */
+.compact-travel-card {
+  margin: 10px 0 14px;
+  padding: 11px 15px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-left: 3px solid #0891B2;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  font-size: 0.82rem;
+  transition: border-color 0.15s ease;
+}
+
+.compact-travel-card:hover {
+  border-color: #CBD5E1;
+}
+
+.travel-leg-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.travel-leg-route-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+  flex: 1 1 auto;
+}
+
+.travel-leg-mode-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0891B2;
+  background: #E0F2FE;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.travel-leg-route-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.travel-leg-node-name {
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.travel-leg-arrow {
+  color: #0891B2;
+  flex-shrink: 0;
+}
+
+.travel-leg-metric-pill {
+  font-size: 0.72rem;
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  color: #0369A1;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.travel-leg-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.travel-leg-cost-summary {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #64748B;
+  white-space: nowrap;
+}
+
+.travel-leg-cost-label {
+  margin-right: 4px;
+  font-size: 0.74rem;
+}
+
+.travel-leg-cost-mode {
+  color: #059669;
+  font-weight: 700;
+}
+
+.travel-leg-cost-divider {
+  margin: 0 5px;
+  color: #CBD5E1;
+}
+
+.travel-leg-cost-amount {
+  color: #D97706;
+  font-weight: 700;
+}
+
+.travel-leg-per-person {
+  font-size: 0.72rem;
+  color: #64748B;
+  margin-left: 3px;
+}
+
+.travel-leg-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.travel-leg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 9px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #0369A1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.travel-leg-btn:hover {
+  background: #F0F9FF;
+  border-color: #BAE6FD;
+}
+
+.travel-leg-btn-active {
+  background: #E0F2FE;
+  border-color: #7DD3FC;
+  color: #0284C7;
+}
+
+.travel-leg-btn-compare {
+  color: #92400E;
+}
+
+.travel-leg-btn-compare:hover {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+}
+
+.travel-leg-btn-compare-active {
+  background: #FEF3C7;
+  border-color: #FCD34D;
+  color: #78350F;
+}
+
+.travel-leg-expanded-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.travel-leg-rationale {
+  color: #334155;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.travel-leg-segments-box {
+  margin-bottom: 10px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.travel-leg-segments-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0891B2;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-segments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.travel-leg-segment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  background: #FFFFFF;
+  padding: 5px 8px;
+  border-radius: 5px;
+  border: 1px solid #E2E8F0;
+}
+
+.travel-leg-segment-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.travel-leg-segment-mode {
+  font-weight: 600;
+  color: #0369A1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.travel-leg-segment-desc {
+  color: #1E293B;
+}
+
+.travel-leg-segment-dist {
+  color: #64748B;
+}
+
+.travel-leg-segment-cost {
+  font-weight: 700;
+  color: #D97706;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+.travel-leg-fuel-box {
+  margin-bottom: 8px;
+  background: #F8FAFC;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  border: 1px solid #E2E8F0;
+}
+
+.travel-leg-fuel-title {
+  color: #0891B2;
+  font-weight: 700;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-fuel-items {
+  color: #334155;
+  line-height: 1.5;
+}
+
+.travel-leg-muted {
+  color: #64748B;
+}
+
+.travel-leg-terminals-badge {
+  font-size: 0.74rem;
+  color: #065F46;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  padding: 4px 8px;
+  border-radius: 5px;
+  margin-bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-walking-badge {
+  font-size: 0.74rem;
+  color: #15803D;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-warning-badge {
+  font-size: 0.72rem;
+  color: #92400E;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  padding: 4px 8px;
+  border-radius: 5px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-footnote {
+  font-size: 0.7rem;
+  color: #64748B;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-expanded-compare {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.travel-leg-compare-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.travel-leg-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.travel-leg-compare-table {
+  width: 100%;
+  font-size: 0.75rem;
+  border-collapse: collapse;
+  color: #172033;
+}
+
+.travel-leg-compare-table th {
+  border-bottom: 1px solid #CBD5E1;
+  text-align: left;
+  color: #64748B;
+  padding: 5px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.travel-leg-compare-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.travel-leg-mode-cell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.travel-leg-cell-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.travel-leg-duration-cell {
+  color: #0369A1;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.travel-leg-cost-cell {
+  color: #D97706;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.travel-leg-notes-cell {
+  color: #64748B;
+  font-size: 0.72rem;
+}
+
+/* ==========================================================================
+   10. Transit Comparison Card
+   ========================================================================== */
+.transit-comparison-wrapper {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.btn-transit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #166534;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-transit-toggle:hover {
+  background: #DCFCE7;
+  border-color: #86EFAC;
+}
+
+.btn-transit-toggle-open {
+  background: #DCFCE7;
+  border-color: #86EFAC;
+}
+
+.transit-comparison-panel {
+  margin-top: 8px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.transit-comparison-title {
+  margin: 0 0 10px 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.transit-comparison-loading {
+  font-size: 0.82rem;
+  color: #64748B;
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.transit-comparison-error {
+  font-size: 0.82rem;
+  color: #B91C1C;
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .comparison-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.comparison-card {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+}
+
+.road-card {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+}
+
+.road-header {
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.transit-card-avail {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+}
+
+.transit-card-unavail {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+}
+
+.transit-header-avail {
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.transit-header-unavail {
+  font-weight: 700;
+  color: #991B1B;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.comparison-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.comparison-footnote {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  margin-top: 4px;
+}
+
+.comparison-eco-note {
+  margin-top: 4px;
+  font-size: 0.74rem;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.comparison-disclaimer {
+  margin-top: 5px;
+  background: #ECFDF5;
+  border: 1px dashed #6EE7B7;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: #065F46;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.transit-unavailable-notice {
+  font-size: 0.78rem;
+  color: #991B1B;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

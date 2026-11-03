@@ -24,16 +24,19 @@ import { DestinationDiscovery } from './features/discovery/DestinationDiscovery'
 import { TripPlannerForm } from './features/planner/TripPlannerForm';
 import { ItineraryView } from './features/itinerary/ItineraryView';
 import { SavedTripsView } from './features/saved-trips/SavedTripsView';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthModal } from './features/authentication/AuthModal';
 import { GradientDots } from './components/ui/gradient-dots';
 import { WifiOff, Wifi, AlertTriangle, X } from 'lucide-react';
 
 const AUTH_TOKEN_STORAGE_KEY = 'nk_auth_token';
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [language, setLanguage] = useState<Language>(getSavedLanguage());
   const { t } = useTranslation(language);
   const { isOnline, wasOffline } = useOnlineStatus();
   const [currentTab, setCurrentTab] = useState<ActiveTab>('home');
+  const auth = useAuth();
 
   // Preselected destination from discovery card
   const [preselectedDest, setPreselectedDest] = useState<DestinationRead | null>(null);
@@ -53,8 +56,17 @@ export const App: React.FC = () => {
     }
   });
 
+  useEffect(() => {
+    if (auth.token !== authToken) {
+      setAuthToken(auth.token);
+    }
+  }, [auth.token, authToken]);
+
   const handleAuthTokenChange = (token: string | null) => {
     setAuthToken(token);
+    if (!token && auth.token) {
+      auth.signOut();
+    }
     try {
       if (token) {
         localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
@@ -465,8 +477,17 @@ export const App: React.FC = () => {
         )}
       </main>
 
+      <AuthModal />
       <Footer language={language} />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

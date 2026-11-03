@@ -8,10 +8,9 @@ import math
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
-from fastapi.responses import Response
-import httpx
 
 from app.core.errors import AppError
 from app.repositories.destinations import DestinationRepository, get_destination_repository

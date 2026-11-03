@@ -6,6 +6,7 @@ import json
 import math
 from pathlib import Path
 
+from app.core.paths import get_seed_data_path
 from app.schemas.places import AccommodationRead, RestaurantRead
 from app.services.places.provider import PlacesProvider
 
@@ -28,8 +29,7 @@ class CuratedPlacesProvider(PlacesProvider):
 
     def __init__(self, data_path: Path | None = None) -> None:
         if data_path is None:
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
-            data_path = repo_root / "data" / "seed" / "places.json"
+            data_path = get_seed_data_path("places.json")
 
         self._data_path = data_path
         self._restaurants: dict[str, RestaurantRead] = {}

@@ -11,14 +11,14 @@ import json
 import math
 import time
 import uuid
-from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import httpx
 
 from app.core.config import settings
 from app.core.errors import AppError
 from app.core.logging import get_logger
+from app.core.paths import get_seed_data_path
 from app.schemas.destinations import (
     Coordinates,
     DestinationFilterParams,
@@ -27,6 +27,15 @@ from app.schemas.destinations import (
 )
 
 logger = get_logger("app.repositories.destinations")
+
+
+def _is_valid_uuid(val: Any) -> bool:
+    """Return True if val is a valid UUID string or instance."""
+    try:
+        uuid.UUID(str(val))
+        return True
+    except (ValueError, AttributeError):
+        return False
 
 
 def haversine_distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -113,9 +122,8 @@ class InMemoryDestinationRepository:
             self._load_default_destinations()
 
     def _load_default_districts(self) -> None:
-        repo_root = Path(__file__).resolve().parent.parent.parent.parent
-        path = repo_root / "data" / "seed" / "districts.json"
-        if path.exists():
+        path = get_seed_data_path("districts.json")
+        if path and path.exists():
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             for d in data:
@@ -126,9 +134,8 @@ class InMemoryDestinationRepository:
                 )
 
     def _load_default_destinations(self) -> None:
-        repo_root = Path(__file__).resolve().parent.parent.parent.parent
-        path = repo_root / "data" / "seed" / "destinations.json"
-        if path.exists():
+        path = get_seed_data_path("destinations.json")
+        if path and path.exists():
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             self._load_records(data)
@@ -441,15 +448,20 @@ class SupabaseDestinationRepository:
         ):
             return self._fallback_repo.list_destinations(params, published_only)
         try:
-            deprecated_ids = ",".join(InMemoryDestinationRepository.CANONICAL_ID_MAPPINGS.keys())
+            valid_uuid_deprecated_ids = [
+                k
+                for k in InMemoryDestinationRepository.CANONICAL_ID_MAPPINGS.keys()
+                if _is_valid_uuid(k)
+            ]
             query_params: dict[str, str] = {
                 "select": "*,destination_translations(*),destination_sources(*),districts(*)",
                 "order": "slug.asc,id.asc",
                 "limit": str(params.limit),
                 "offset": str(params.offset),
                 "active": "eq.true",
-                "id": f"not.in.({deprecated_ids})",
             }
+            if valid_uuid_deprecated_ids:
+                query_params["id"] = f"not.in.({','.join(valid_uuid_deprecated_ids)})"
             if published_only:
                 query_params["content_status"] = "eq.published"
             if params.district:

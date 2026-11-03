@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from app.core.paths import get_seed_data_path
 from app.services.routing.service import get_routing_service
 from app.services.transit.models import (
     StationType,
@@ -34,8 +35,7 @@ class CuratedTransitProvider(TransitProvider):
 
     def __init__(self, data_path: Path | None = None) -> None:
         if data_path is None:
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
-            data_path = repo_root / "data" / "seed" / "transit_network.json"
+            data_path = get_seed_data_path("transit_network.json")
         self._data_path = data_path
         self._stops: dict[str, TransitStop] = {}
         self._routes: list[dict[str, Any]] = []

@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: namma-karnataka-backend
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: API_V1_STR
+        value: /api/v1
+      - key: CORS_ORIGINS
+        value: '["https://namma-karnataka-eight.vercel.app","http://localhost:5173","http://127.0.0.1:5173"]'
+      - key: ROUTING_PROVIDER
+        value: osrm
+      - key: OSRM_BASE_URL
+        value: https://router.project-osrm.org
+      - key: AI_PLANNING_ENABLED
+        value: "true"
+      - key: AI_ENABLE_LIVE_PROVIDERS
+        value: "false"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+

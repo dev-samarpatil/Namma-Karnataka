@@ -20,9 +20,16 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     APP_ENV: str = "development"
     LOG_LEVEL: str = "INFO"
+    PORT: int = 8000
     API_V1_STR: str = "/api/v1"
     CORS_ORIGINS: list[str] = Field(
-        default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
+        default_factory=lambda: [
+            "https://namma-karnataka-eight.vercel.app",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
     )
 
     # Supabase (Optional placeholders for initial scaffold)
@@ -56,6 +63,23 @@ class Settings(BaseSettings):
     # Routing
     ROUTING_PROVIDER: str = "osrm"
     OSRM_BASE_URL: str = "https://router.project-osrm.org"
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def _parse_cors_origins(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            import json
+
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return [str(item).strip() for item in parsed if str(item).strip()]
+            except Exception:
+                pass
+            return [item.strip() for item in v.split(",") if item.strip()]
+        if isinstance(v, list):
+            return [str(item).strip() for item in v if str(item).strip()]
+        return v
 
     @field_validator("GEMINI_FALLBACK_MODELS", "GROQ_FALLBACK_MODELS", mode="before")
     @classmethod

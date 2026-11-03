@@ -69,7 +69,11 @@ def apply_seed_to_supabase(
     try:
         with httpx.Client(timeout=30.0) as client:
             # 1. Upsert districts
-            res_dist = client.post(f"{base_url}/rest/v1/districts", headers=headers, json=districts)
+            res_dist = client.post(
+                f"{base_url}/rest/v1/districts?on_conflict=code",
+                headers=headers,
+                json=districts,
+            )
             if res_dist.status_code not in (200, 201):
                 errors.append(f"Failed upserting districts ({res_dist.status_code}): {res_dist.text}")
 
@@ -121,8 +125,12 @@ def apply_seed_to_supabase(
                         "attribution_required": s.get("attribution_required", False),
                     })
 
-            # 3. Upsert destinations
-            res_dest = client.post(f"{base_url}/rest/v1/destinations", headers=headers, json=dest_rows)
+            # 3. Upsert destinations (target unique constraint on slug)
+            res_dest = client.post(
+                f"{base_url}/rest/v1/destinations?on_conflict=slug",
+                headers=headers,
+                json=dest_rows,
+            )
             if res_dest.status_code not in (200, 201):
                 errors.append(f"Failed upserting destinations ({res_dest.status_code}): {res_dest.text}")
 

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from app.core.config import settings
+from app.repositories.destinations import InMemoryDestinationRepository
 from app.repositories.trips import InMemoryTripRepository
 
 # Add project root to sys.path so data/ and other root packages are importable
@@ -27,9 +28,14 @@ def configure_test_environment(monkeypatch):
     monkeypatch.setattr(settings, "AI_ENABLE_LIVE_PROVIDERS", False)
     monkeypatch.setattr(settings, "GEMINI_ENABLED", False)
     monkeypatch.setattr(settings, "GROQ_ENABLED", False)
+    monkeypatch.setattr(settings, "SUPABASE_URL", None)
+    monkeypatch.setattr(settings, "SUPABASE_SERVICE_ROLE_KEY", None)
 
+    import app.repositories.destinations as dest_module
     import app.repositories.trips as trips_module
 
+    dest_module._repository_instance = InMemoryDestinationRepository()
     trips_module._trip_repository_instance = InMemoryTripRepository()
     yield
+    dest_module._repository_instance = None
     trips_module._trip_repository_instance = None

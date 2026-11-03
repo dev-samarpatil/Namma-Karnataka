@@ -7,6 +7,7 @@ import logging
 import math
 from pathlib import Path
 
+from app.core.paths import get_seed_data_path
 from app.schemas.events import EventRead
 
 logger = logging.getLogger(__name__)
@@ -27,24 +28,7 @@ class EventsService:
 
     def __init__(self, seed_path: Path | None = None) -> None:
         if seed_path is None:
-            # Check multiple candidate directories (repo root, backend parent, cwd)
-            candidates = [
-                Path(__file__).resolve().parent.parent.parent.parent.parent
-                / "data"
-                / "seed"
-                / "events.json",
-                Path(__file__).resolve().parent.parent.parent.parent
-                / "data"
-                / "seed"
-                / "events.json",
-                Path("data/seed/events.json").resolve(),
-            ]
-            for c in candidates:
-                if c.exists():
-                    seed_path = c
-                    break
-            else:
-                seed_path = candidates[0]
+            seed_path = get_seed_data_path("events.json")
         self._seed_path = seed_path
         self._events: list[EventRead] = []
         self._load_events()

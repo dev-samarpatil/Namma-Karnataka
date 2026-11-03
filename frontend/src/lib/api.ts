@@ -87,7 +87,12 @@ const DEFAULT_TIMEOUT_MS = 25000;
 const PLANNING_TIMEOUT_MS = 35000; // Allows backend 28s monotonic deadline to complete
 
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (!envUrl) {
+    return 'http://127.0.0.1:8000/api/v1';
+  }
+  const clean = envUrl.replace(/\/+$/, '');
+  return clean.endsWith('/api/v1') ? clean : `${clean}/api/v1`;
 }
 
 /**

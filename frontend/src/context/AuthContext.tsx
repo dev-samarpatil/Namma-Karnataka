@@ -6,8 +6,6 @@
  */
 
 import React, {
-  createContext,
-  useContext,
   useEffect,
   useState,
   useCallback,
@@ -29,33 +27,7 @@ import {
 } from '../services/authService';
 import { isSupabaseConfigured, getSupabaseConfigStatus } from '../lib/supabaseClient';
 import { UserProfile, AuthModalView } from '../types';
-
-interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
-  profile: UserProfile | null;
-  token: string | null;
-  loading: boolean;
-  isConfigured: boolean;
-  configError: string | null;
-  isDemoMode: boolean;
-  authModalOpen: boolean;
-  authModalView: AuthModalView;
-  pendingVerificationEmail: string | null;
-  signIn: (params: SignInParams) => Promise<{ success: boolean; error?: string }>;
-  signUp: (
-    params: SignUpParams
-  ) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updateUserPassword: (password: string) => Promise<{ success: boolean; error?: string }>;
-  resendVerification: (email: string) => Promise<{ success: boolean; error?: string }>;
-  loginAsDemo: (userNumber?: number) => void;
-  openAuthModal: (view?: AuthModalView, email?: string) => void;
-  closeAuthModal: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+import { AuthContext, AuthContextValue } from './useAuth';
 
 function mapUserToProfile(user: User | null): UserProfile | null {
   if (!user) return null;
@@ -282,32 +254,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-const defaultGuestContext: AuthContextValue = {
-  user: null,
-  session: null,
-  profile: null,
-  token: null,
-  loading: false,
-  isConfigured: false,
-  configError: null,
-  isDemoMode: false,
-  authModalOpen: false,
-  authModalView: 'login',
-  pendingVerificationEmail: null,
-  signIn: async () => ({ success: false, error: 'Auth provider not found.' }),
-  signUp: async () => ({ success: false, error: 'Auth provider not found.' }),
-  signOut: async () => {},
-  resetPassword: async () => ({ success: false, error: 'Auth provider not found.' }),
-  updateUserPassword: async () => ({ success: false, error: 'Auth provider not found.' }),
-  resendVerification: async () => ({ success: false, error: 'Auth provider not found.' }),
-  loginAsDemo: () => {},
-  openAuthModal: () => {},
-  closeAuthModal: () => {},
-};
-
-export const useAuth = (): AuthContextValue => {
-  const context = useContext(AuthContext);
-  return context || defaultGuestContext;
 };

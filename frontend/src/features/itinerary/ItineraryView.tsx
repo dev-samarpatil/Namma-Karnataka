@@ -159,7 +159,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       });
     });
     return days.sort((a, b) => a.day_number - b.day_number);
-  }, [plan]);
+  }, [cleanPlan, plan]);
 
   // Load verified catalogue, offline catalogue and query API in background for authentic destination photos
   useEffect(() => {

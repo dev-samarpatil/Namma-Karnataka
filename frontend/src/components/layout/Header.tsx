@@ -3,7 +3,7 @@ import { Globe, LogIn, LogOut, UserPlus } from 'lucide-react';
 import { Language } from '../../types';
 import { useTranslation } from '../../lib/i18n';
 import { LiquidMorphFloatingMenu } from '../ui/liquid-morph-floating-menu';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 
 export type ActiveTab = 'home' | 'discovery' | 'planner' | 'itinerary' | 'saved-trips';
 

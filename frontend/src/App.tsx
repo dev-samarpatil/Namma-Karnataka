@@ -24,7 +24,8 @@ import { DestinationDiscovery } from './features/discovery/DestinationDiscovery'
 import { TripPlannerForm } from './features/planner/TripPlannerForm';
 import { ItineraryView } from './features/itinerary/ItineraryView';
 import { SavedTripsView } from './features/saved-trips/SavedTripsView';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 import { AuthModal } from './features/authentication/AuthModal';
 import { GradientDots } from './components/ui/gradient-dots';
 import { WifiOff, Wifi, AlertTriangle, X } from 'lucide-react';

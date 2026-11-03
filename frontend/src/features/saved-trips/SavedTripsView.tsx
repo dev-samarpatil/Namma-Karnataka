@@ -33,7 +33,7 @@ import {
   ApiClientError,
 } from '../../lib/api';
 import { updateGuestTripSyncStatus } from '../../services/guestStorage';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { AuthModal } from '../authentication/AuthModal';
 import './SavedTripsView.css';
 
@@ -267,8 +267,7 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
     fetchCloudTrips();
 
     setSuccessToast(
-      `${tripsToImport.length} selected → ${importedCount} imported, ${duplicateCount} already synced${
-        failedCount > 0 ? `, ${failedCount} failed` : ''
+      `${tripsToImport.length} selected → ${importedCount} imported, ${duplicateCount} already synced${failedCount > 0 ? `, ${failedCount} failed` : ''
       }`
     );
     setTimeout(() => setSuccessToast(null), 4500);
@@ -602,9 +601,8 @@ export const SavedTripsView: React.FC<SavedTripsViewProps> = ({
 
                     {/* Storage Badge */}
                     <div
-                      className={`card-storage-badge ${
-                        trip.cloud_trip_id ? 'cloud' : 'device'
-                      }`}
+                      className={`card-storage-badge ${trip.cloud_trip_id ? 'cloud' : 'device'
+                        }`}
                       data-testid={
                         trip.cloud_trip_id
                           ? `badge-cloud-${trip.id}`

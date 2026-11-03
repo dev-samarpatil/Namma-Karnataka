@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Ticket, Check, Info, MapPin, Landmark, AlertTriangle, ExternalLink } from 'lucide-react';
 import { CulturalEvent, Language } from '../../types';
+import { EventImage } from '../../components/ui/EventImage';
 
 interface FestivalRecommendationsProps {
   events: CulturalEvent[];
@@ -89,6 +90,16 @@ export const FestivalRecommendations: React.FC<FestivalRecommendationsProps> = (
                 }}
               >
                 <div>
+                  <div style={{ marginBottom: '12px', height: '170px' }}>
+                    <EventImage
+                      src={event.image_url}
+                      eventId={event.id}
+                      alt={title}
+                      category={event.event_category}
+                      loading="lazy"
+                    />
+                  </div>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
                     <span
                       style={{

@@ -115,8 +115,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=500.0,
         ticket_cost_status="free",
         travel_advisory="Major peak tourist period. Advance booking for transit and hotel accommodations is essential.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mysore_Palace_Illumination_Dasara.jpg/1200px-Mysore_Palace_Illumination_Dasara.jpg",
-        image_attribution="Photo by Muhammad Mahdi Karim / Wikimedia Commons",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/c/c5/Mysore_Dasara_procession.jpg",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
     KarnatakaEvent(
         id="bengaluru-karaga",
@@ -142,8 +142,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="All-night cultural street procession with heavy local participation in Chickpet market area.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Bengaluru_Karaga.jpg/1200px-Bengaluru_Karaga.jpg",
-        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/6/61/Decorations_Day_Before_Karaga_Festival.jpg",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 4.0",
     ),
     KarnatakaEvent(
         id="karnataka-rajyotsava",
@@ -169,8 +169,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="Public holiday across Karnataka with vibrant street processions and flag hoisting.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Mysore_Palace_Morning.jpg/1200px-Mysore_Palace_Morning.jpg",
-        image_attribution="Wikimedia Commons Contributor",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/7/7d/Karnataka-rajyotsava.jpg",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
 
     # 2. Regional Festivals & Indigenous Traditions
@@ -198,7 +198,7 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=100.0,
         ticket_cost_status="free",
         travel_advisory="Weekend sport held predominantly on Saturdays and Sundays. Heavy crowds near coastal bypass routes.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Kambala_Race_Karnataka.jpg/1200px-Kambala_Race_Karnataka.jpg",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/a/a3/Kambala_race_held_at_paivalike_%2Ckasargod.jpg",
         image_attribution="Photo by Wikimedia Commons, CC BY-SA 4.0",
     ),
     KarnatakaEvent(
@@ -225,8 +225,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="Solemn religious tradition. Visitors must maintain solemn respect, remove footwear, and follow photography guidelines.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Yakshagana_Coastal_Karnataka.jpg/1200px-Yakshagana_Coastal_Karnataka.jpg",
-        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/c/c7/Yakshagana_on_stage.jpg",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 4.0",
     ),
     KarnatakaEvent(
         id="kadalekai-parishe",
@@ -252,8 +252,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="Streets closed to vehicular traffic. Best experienced on foot in early evening.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Dodda_Basavana_Gudi.jpg/1200px-Dodda_Basavana_Gudi.jpg",
-        image_attribution="Photo by Dineshkannambadi / Wikimedia Commons",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/0/0c/Bull_temple_Mast.jpg",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
     KarnatakaEvent(
         id="kailpodh-coorg",
@@ -279,8 +279,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="Community festival. Local homestays arrange cultural experiences for guests.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Talakaveri_temple_Kodagu.jpg/1200px-Talakaveri_temple_Kodagu.jpg",
-        image_attribution="Photo by Vinayaraj / Wikimedia Commons",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/c/c2/1632_px_-_Talakaveri_India.JPG",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
     KarnatakaEvent(
         id="melukote-vairamudi",
@@ -306,8 +306,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="Attracts over 400,000 pilgrims. KSRTC operates continuous special buses from Mandya and Mysuru.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/0/06/Thonnur_Lake.jpg",
-        image_attribution="Photo by Sushma B S / Wikimedia Commons",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/f/fc/Melukote_BNC.jpg",
+        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
     ),
 
     # 3. Cultural Festivals & Arts
@@ -335,8 +335,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=0.0,
         ticket_cost_status="free",
         travel_advisory="Roads around Hampi village pedestrianized during evenings; free shuttle transit from Kamalapur.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Hampi_chariot_illuminated.jpg/1200px-Hampi_chariot_illuminated.jpg",
-        image_attribution="Photo by Wikimedia Commons, CC BY-SA 3.0",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Hampi_Garuda_stone_chariot.jpg/960px-Hampi_Garuda_stone_chariot.jpg",
+        image_attribution="Photo by Dey.sandip / Wikimedia Commons, CC BY-SA 3.0",
     ),
     KarnatakaEvent(
         id="pattadakal-dance-festival",
@@ -362,8 +362,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=25.0,
         ticket_cost_status="paid",
         travel_advisory="Entry to festival covered by regular ASI monument day pass.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Pattadakal_temple_complex.jpg/1200px-Pattadakal_temple_complex.jpg",
-        image_attribution="Photo by Dineshkannambadi / Wikimedia Commons",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/7th_-_9th_century_Hindu_and_Jain_temples%2C_Pattadakal_monuments_Karnataka_7.jpg/960px-7th_-_9th_century_Hindu_and_Jain_temples%2C_Pattadakal_monuments_Karnataka_7.jpg",
+        image_attribution="Photo by Ms Sarah Welch / Wikimedia Commons, CC BY-SA 4.0",
     ),
 
     # 4. Seasonal Nature & Environmental Phenomena
@@ -391,8 +391,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=100.0,
         ticket_cost_status="paid",
         travel_advisory="Lalbagh Metro station is directly adjacent. Green line metro recommended to bypass parking rush.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Lalbagh_Glasshouse_Flower_Show.jpg/1200px-Lalbagh_Glasshouse_Flower_Show.jpg",
-        image_attribution="Photo by Wikimedia Commons, CC BY-SA 4.0",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/9/9b/Glass_House_Botanical_Garden_Lal_Bagh_Bangalore_%2848186335066%29.jpg",
+        image_attribution="Photo by Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0",
     ),
     KarnatakaEvent(
         id="western-ghats-monsoon-jog",
@@ -418,8 +418,8 @@ KARNATAKA_EVENTS_REGISTRY: list[KarnatakaEvent] = [
         ticket_cost_max_inr=50.0,
         ticket_cost_status="paid",
         travel_advisory="Steps to foot of waterfall closed during heavy inflows for visitor safety; viewing galleries open.",
-        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Jog_Falls_monsoon.jpg/1200px-Jog_Falls_monsoon.jpg",
-        image_attribution="Photo by Arkadeep Meta / Wikimedia Commons",
+        image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Gerosoppa_Falls_or_Jog_Falls.jpg/960px-Gerosoppa_Falls_or_Jog_Falls.jpg",
+        image_attribution="Photo by Arkadeep Meta / Wikimedia Commons, CC BY-SA 4.0",
     ),
 ]
 

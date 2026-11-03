@@ -347,6 +347,22 @@ export interface CulturalEvent {
   image_url?: string | null;
 }
 
+export interface FestivalEvent {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  imageAlt: string;
+  category: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  entryFee?: number | null;
+  verificationSource?: string;
+  officialUrl?: string;
+  travelAdvisory?: string | null;
+}
+
 export interface DayPlan {
   day_number: number;
   date?: string | null;

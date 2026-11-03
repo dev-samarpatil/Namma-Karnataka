@@ -19,9 +19,32 @@ html, body {
   overflow: visible;
 }
 
-/* Full Viewport-Width Hanging Twine String Layer (Removed for sleek modern travel timeline) */
+/* Full Viewport-Width Hanging Twine String Layer (100vw, extreme left to extreme right) */
 .nk-viewport-rope-layer {
-  display: none !important;
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  height: 120px;
+  pointer-events: none;
+  z-index: 12;
+  overflow: visible;
+}
+
+.nk-viewport-rope-layer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .nk-viewport-rope-layer {
+    top: 12px;
+    height: 100px;
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -30,9 +53,9 @@ html, body {
 .nk-day-gallery {
   position: relative;
   width: 100%;
-  height: 350px;
-  min-height: 330px;
-  max-height: 370px;
+  height: 480px;
+  min-height: 480px;
+  max-height: 510px;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
@@ -48,9 +71,9 @@ html, body {
 
 @media (max-width: 640px) {
   .nk-day-gallery {
-    height: 300px;
-    min-height: 290px;
-    max-height: 320px;
+    height: 430px;
+    min-height: 430px;
+    max-height: 450px;
   }
 }
 
@@ -61,10 +84,10 @@ html, body {
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 290px;
+  min-height: 380px;
   display: flex;
   align-items: flex-start;
-  padding-top: 12px;
+  padding-top: 36px;
   box-sizing: border-box;
   overflow: visible;
 }
@@ -155,29 +178,29 @@ html, body {
   min-height: 295px;
   max-height: 295px;
   background-color: #FFFFFF;
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 12px 12px 14px 12px;
   cursor: pointer;
-  transition: transform 300ms ease, opacity 300ms ease, box-shadow 300ms ease;
-  transform-origin: center center;
+  transition: transform 400ms ease, opacity 400ms ease, box-shadow 400ms ease;
+  transform-origin: top center;
   box-sizing: border-box;
 }
 
 .nk-polaroid-card.is-active {
   z-index: 20;
-  box-shadow: 0 16px 36px -6px rgba(7, 155, 181, 0.22), 0 4px 12px rgba(23, 35, 59, 0.08);
-  border: 2px solid #0798B5;
+  box-shadow: 0 20px 40px -8px rgba(7, 155, 181, 0.22), 0 4px 12px rgba(23, 35, 59, 0.08);
+  border: 1px solid rgba(7, 155, 181, 0.35);
 }
 
 .nk-polaroid-card.is-inactive {
   z-index: 10;
-  box-shadow: 0 6px 16px -4px rgba(23, 35, 59, 0.07), 0 1px 4px rgba(23, 35, 59, 0.03);
+  box-shadow: 0 8px 20px -4px rgba(23, 35, 59, 0.08), 0 2px 6px rgba(23, 35, 59, 0.04);
   border: 1px solid #E2E8F0;
 }
 
 .nk-polaroid-card:hover {
   opacity: 1 !important;
-  box-shadow: 0 14px 28px -4px rgba(7, 155, 181, 0.2), 0 3px 8px rgba(23, 35, 59, 0.06);
+  box-shadow: 0 16px 32px -6px rgba(7, 155, 181, 0.26), 0 3px 10px rgba(23, 35, 59, 0.07);
 }
 
 @media (max-width: 640px) {
@@ -190,17 +213,33 @@ html, body {
     min-height: 250px;
     max-height: 250px;
     padding: 10px 10px 12px 10px;
-    border-radius: 10px;
   }
 }
 
-/* Clothespin / Peg layer (hidden for clean modern card look) */
+/* Wooden Clothespin / Peg */
 .nk-polaroid-clip {
-  display: none !important;
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11px;
+  height: 28px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #DDB88E 0%, #C6A77D 50%, #A9875C 100%);
+  box-shadow: 0 2px 5px rgba(198, 167, 125, 0.4);
+  border: 1px solid rgba(169, 135, 92, 0.5);
+  z-index: 25;
+  pointer-events: none;
 }
 
 .nk-polaroid-clip-wire {
-  display: none !important;
+  position: absolute;
+  top: 11px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #94A3B8;
+  border-top: 1px solid #CBD5E1;
 }
 
 /* Photo Frame & Image */
@@ -841,4 +880,243 @@ html, body {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
+}
+
+/* --------------------------------------------------------------------------
+   7. Happening During Your Trip - Refined Festival Cards & Section
+   -------------------------------------------------------------------------- */
+.nk-events-wrapper {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 20px;
+}
+
+.nk-card-icon-festival {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.nk-events-count-badge {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.nk-events-empty-state {
+  margin-top: 14px;
+  border-radius: 8px;
+  border: 1px dashed #CBD5E1;
+  background: #F8FAFC;
+  padding: 18px 20px;
+  text-align: center;
+  font-size: 0.84rem;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.nk-events-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nk-event-card {
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: stretch;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.nk-event-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
+
+.nk-event-card-left {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.nk-event-card-left .event-image-container {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+}
+
+.nk-event-card-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nk-event-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nk-event-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+  line-height: 1.35;
+  flex: 1 1 200px;
+}
+
+.nk-event-badges-group {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nk-event-fee-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #047857;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.nk-event-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.nk-event-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.nk-event-category-pill {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #92400E;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.nk-event-description {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.nk-event-advisory {
+  font-size: 0.78rem;
+  color: #334155;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 3px solid #0891B2;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.45;
+}
+
+.nk-event-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 10px;
+  margin-top: 2px;
+  font-size: 0.76rem;
+  color: #64748B;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nk-event-verification {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #15803D;
+  font-weight: 600;
+}
+
+.nk-event-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #0891B2;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.nk-event-source-link:hover {
+  color: #0E7490;
+  text-decoration: underline;
+}
+
+/* Tablet Layout (641px - 899px) */
+@media (max-width: 899px) and (min-width: 641px) {
+  .nk-event-card {
+    grid-template-columns: 200px 1fr;
+    gap: 14px;
+    padding: 14px;
+  }
+}
+
+/* Mobile Layout (<= 640px) */
+@media (max-width: 640px) {
+  .nk-event-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .nk-event-card-left {
+    min-height: unset;
+    height: 190px;
+  }
 }

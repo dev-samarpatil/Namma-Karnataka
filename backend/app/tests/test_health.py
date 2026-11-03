@@ -79,37 +79,25 @@ def test_readiness_database_unavailable():
         assert data["checks"]["catalog"] == "empty"
 
 
-def test_root_destinations_redirect():
-    """Verify root /destinations and subpaths redirect with 307 to canonical /api/v1/destinations preserving queries."""
-    response = client.get("/destinations", follow_redirects=False)
-    assert response.status_code == 307
-    assert response.headers["location"] == f"{settings.API_V1_STR}/destinations"
+def test_root_unversioned_route_availability():
+    """Verify unversioned root routes (destinations, events, planning, visual-discovery) resolve natively."""
+    response = client.get("/destinations?limit=5")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert len(data["items"]) <= 5
 
-    # Query parameters preserved
-    response_with_query = client.get("/destinations?limit=100&offset=0", follow_redirects=False)
-    assert response_with_query.status_code == 307
-    assert (
-        response_with_query.headers["location"]
-        == f"{settings.API_V1_STR}/destinations?limit=100&offset=0"
-    )
+    # Events unversioned
+    response_events = client.get("/events?district_code=KA-MYS")
+    assert response_events.status_code == 200
 
-    # Subpath and query preserved (e.g. media/proxy)
-    response_proxy = client.get(
-        "/destinations/media/proxy?url=https%3A%2F%2Fexample.com%2Fimg.jpg",
-        follow_redirects=False,
-    )
-    assert response_proxy.status_code == 307
-    assert (
-        response_proxy.headers["location"]
-        == f"{settings.API_V1_STR}/destinations/media/proxy?url=https%3A%2F%2Fexample.com%2Fimg.jpg"
-    )
+    # Visual discovery unversioned endpoint is routed (rejects empty POST with 422, not 404)
+    response_vd = client.post("/visual-discovery/analyze-image")
+    assert response_vd.status_code == 422
 
-    # Events catchall redirect
-    response_events = client.get("/events?district_code=KA-MYS", follow_redirects=False)
-    assert response_events.status_code == 307
-    assert (
-        response_events.headers["location"] == f"{settings.API_V1_STR}/events?district_code=KA-MYS"
-    )
+    # Planning unversioned endpoint is routed (rejects empty POST with 422, not 404)
+    response_plan = client.post("/planning/recommendations")
+    assert response_plan.status_code == 422
 
 
 def test_custom_request_id_propagation():

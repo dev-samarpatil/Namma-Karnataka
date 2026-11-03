@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 
 from app.api.v1 import api_v1_router
 from app.api.v1.health import check_health, check_readiness
@@ -43,8 +42,12 @@ app.add_middleware(
 # 3. Register Centralized Error Handlers
 register_error_handlers(app)
 
-# 4. Mount versioned API router
+# 4. Mount API router
+# A. Canonical versioned router (published in OpenAPI / Swagger docs)
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
+
+# B. Root unversioned router (transparent backwards compatibility for unversioned clients / cached bundles)
+app.include_router(api_v1_router, include_in_schema=False)
 
 
 # 5. Root-level Health and Readiness Endpoints (for Render, Docker, and external probes)
@@ -58,52 +61,6 @@ async def root_health() -> HealthResponse:
 async def root_ready() -> ReadinessResponse:
     """Root readiness probe indicating subsystem and database connectivity."""
     return await check_readiness()
-
-
-@app.api_route(
-    "/destinations",
-    methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    include_in_schema=False,
-)
-@app.api_route(
-    "/destinations/{subpath:path}",
-    methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    include_in_schema=False,
-)
-async def redirect_destinations_catchall(request: Request, subpath: str = "") -> RedirectResponse:
-    """Redirect versionless destinations requests to canonical versioned endpoint, preserving path and query string."""
-    subpath_clean = subpath.strip("/")
-    target_path = (
-        f"{settings.API_V1_STR}/destinations/{subpath_clean}"
-        if subpath_clean
-        else f"{settings.API_V1_STR}/destinations"
-    )
-    query_str = str(request.url.query)
-    target_url = f"{target_path}?{query_str}" if query_str else target_path
-    return RedirectResponse(url=target_url, status_code=307)
-
-
-@app.api_route(
-    "/events",
-    methods=["GET", "HEAD", "OPTIONS"],
-    include_in_schema=False,
-)
-@app.api_route(
-    "/events/{subpath:path}",
-    methods=["GET", "HEAD", "OPTIONS"],
-    include_in_schema=False,
-)
-async def redirect_events_catchall(request: Request, subpath: str = "") -> RedirectResponse:
-    """Redirect versionless events requests to canonical versioned endpoint, preserving path and query string."""
-    subpath_clean = subpath.strip("/")
-    target_path = (
-        f"{settings.API_V1_STR}/events/{subpath_clean}"
-        if subpath_clean
-        else f"{settings.API_V1_STR}/events"
-    )
-    query_str = str(request.url.query)
-    target_url = f"{target_path}?{query_str}" if query_str else target_path
-    return RedirectResponse(url=target_url, status_code=307)
 
 
 @app.get("/", tags=["Root"])
